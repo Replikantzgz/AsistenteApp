@@ -52,7 +52,7 @@ export default function Sidebar() {
         <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 transition-all duration-300">
             <div className="p-6">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                    IATUALCANCE
+                    Propel
                 </h1>
                 <p className="text-xs text-slate-400 mt-1">Asistente Personal Pro</p>
             </div>

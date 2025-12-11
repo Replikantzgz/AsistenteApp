@@ -2,13 +2,13 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-    title: 'IATUALCANCE',
+    title: 'Propel',
     description: 'Tu asistente personal inteligente',
     manifest: '/manifest.json',
     appleWebApp: {
         capable: true,
         statusBarStyle: 'black-translucent',
-        title: 'IATUALCANCE',
+        title: 'Propel',
     },
 };
 

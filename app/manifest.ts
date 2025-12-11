@@ -2,8 +2,8 @@ import type { MetadataRoute } from 'next'
 
 export default function manifest(): MetadataRoute.Manifest {
     return {
-        name: 'IATUALCANCE - Asistente Personal',
-        short_name: 'Asistente IA',
+        name: 'Propel - Asistente Personal',
+        short_name: 'Propel',
         description: 'Tu asistente personal inteligente para calendario, tareas y correos.',
         start_url: '/',
         display: 'standalone',

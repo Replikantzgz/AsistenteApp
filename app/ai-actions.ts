@@ -125,7 +125,7 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
             messages: [
                 {
                     role: 'system',
-                    content: `Eres IATUALCANCE, un asistente personal inteligente y eficiente.
+                    content: `Eres Propel, un asistente personal inteligente y eficiente.
           Tu objetivo es ayudar al usuario a gestionar su agenda, tareas y correos.
           
           Reglas:
