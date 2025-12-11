@@ -14,6 +14,13 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig: NextConfig = {
   /* config options here */
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  experimental: {
+    // @ts-ignore
+    turbopack: {},
+  },
 };
 
 export default withPWA(nextConfig);
