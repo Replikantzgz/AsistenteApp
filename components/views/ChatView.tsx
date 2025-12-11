@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore } from '@/store';
 import { Send, Mic, Calendar, CheckSquare, Bell } from 'lucide-react';
 import { processUserCommand } from '@/app/ai-actions';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 interface Message {
     role: 'user' | 'assistant';

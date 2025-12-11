@@ -5,7 +5,7 @@ import {
     MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, User
 } from 'lucide-react';
 import clsx from 'clsx';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, ChevronRight, Shield, Mail } from 'lucide-react';
-import { createClient } from '@/lib/supabase';
+import { createClient } from '@/lib/supabase/client';
 
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
     const [step, setStep] = useState(1);
