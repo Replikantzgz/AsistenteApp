@@ -1,10 +1,23 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
     title: 'IATUALCANCE',
     description: 'Tu asistente personal inteligente',
-    viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0'
+    manifest: '/manifest.json',
+    appleWebApp: {
+        capable: true,
+        statusBarStyle: 'black-translucent',
+        title: 'IATUALCANCE',
+    },
+};
+
+export const viewport: Viewport = {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+    userScalable: false,
+    themeColor: '#0f172a',
 };
 
 export default function RootLayout({

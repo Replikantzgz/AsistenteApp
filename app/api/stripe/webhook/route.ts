@@ -7,10 +7,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-01-27.acacia',
 });
 
-// Admin client for webhook updates
+// Admin client for webhook updates using Service Role (simulated if missing)
+// NOTE: Make sure SUPABASE_SERVICE_ROLE_KEY is set in production
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY! // Fallback to Anon (will fail RLS without policy, user should add Service Role)
 );
 
 export async function POST(req: Request) {
@@ -26,6 +27,7 @@ export async function POST(req: Request) {
             process.env.STRIPE_WEBHOOK_SECRET!
         );
     } catch (error: any) {
+        console.error('Webhook verification failed:', error.message);
         return new NextResponse(`Webhook Error: ${error.message}`, { status: 400 });
     }
 
@@ -39,29 +41,26 @@ export async function POST(req: Request) {
         }
 
         // Update user profile in Supabase
-        // Note: We are using email as userId in metadata for mapping, 
-        // but in Supabase we should ideally look up by email if we don't have the UUID.
-        // Assuming profiles are synced by email.
-
         const { error } = await supabase
             .from('profiles')
             .update({
                 stripe_customer_id: subscription.customer as string,
                 subscription_status: 'active',
-                plan: session.metadata.plan,
+                plan: session.metadata.plan || 'pro',
                 updated_at: new Date().toISOString(),
             })
-            .eq('email', session.metadata.userId); // Using email to match
+            .eq('id', session.metadata.userId);
 
         if (error) {
             console.error('Supabase Update Error:', error);
-            return new NextResponse('Database Update Failed', { status: 500 });
+            // Don't fail the webhook response to avoid retries if it's a logic error
         }
     }
 
-    if (event.type === 'customer.subscription.updated') {
-        // Handle renewals/cancellations
-        // ...
+    if (event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object as Stripe.Subscription;
+        // In a real app, find user by customer_id and downgrade them
+        console.log('Subscription deleted:', subscription.id);
     }
 
     return new NextResponse(null, { status: 200 });

@@ -1,6 +1,8 @@
 'use client';
 
+
 import { useState, useRef, useEffect } from 'react';
+import { useStore } from '@/store';
 import { Send, Mic } from 'lucide-react';
 import { processUserCommand } from '@/app/ai-actions';
 
@@ -32,10 +34,68 @@ export default function ChatView() {
         setIsProcessing(true);
 
         try {
-            const response = await processUserCommand(userMsg);
-            setMessages(prev => [...prev, { role: 'assistant', content: response }]);
+            // Call Server Action
+            const result = await processUserCommand(userMsg);
+
+            // Show AI Message
+            setMessages(prev => [...prev, { role: 'assistant', content: result.message }]);
+
+            // Execute Client-Side Action (if any)
+            if (result.action) {
+                const { type, data } = result.action;
+                const store = useStore.getState(); // Access store imperatively
+
+                if (type === 'create_appointment') {
+                    const start = new Date();
+                    start.setDate(start.getDate() + (data.startOffsetDays || 1));
+                    start.setHours(10, 0, 0, 0); // Default to 10 AM
+
+                    const end = new Date(start);
+                    end.setHours(start.getHours() + (data.durationHours || 1));
+
+                    store.addAppointment({
+                        id: Date.now().toString(),
+                        title: data.title,
+                        start,
+                        end,
+                    });
+                    store.setView('calendar');
+                }
+
+                if (type === 'create_task') {
+                    store.addTask({
+                        id: Date.now().toString(),
+                        title: data.title,
+                        priority: data.priority || 'medium',
+                        status: 'pending'
+                    });
+                    store.setView('tasks');
+                }
+
+                if (type === 'create_email') {
+                    store.addEmail({
+                        id: Date.now().toString(),
+                        subject: data.subject,
+                        body: data.body,
+                        recipient: data.recipient || '',
+                        type: 'draft'
+                    });
+                    store.setView('emails');
+                }
+
+                if (type === 'create_template') {
+                    store.addTemplate({
+                        id: Date.now().toString(),
+                        name: data.name,
+                        content: data.content
+                    });
+                    store.setView('templates');
+                }
+            }
+
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error procesando tu solicitud.' }]);
+            console.error(error);
+            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error conectando con la IA.' }]);
         } finally {
             setIsProcessing(false);
         }
@@ -54,8 +114,8 @@ export default function ChatView() {
                 {messages.map((msg, idx) => (
                     <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                         <div className={`max-w-[80%] rounded-2xl px-6 py-4 shadow-sm ${msg.role === 'user'
-                                ? 'bg-blue-600 text-white rounded-br-none'
-                                : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none'
+                            ? 'bg-blue-600 text-white rounded-br-none'
+                            : 'bg-white text-slate-800 border border-slate-100 rounded-bl-none'
                             }`}>
                             {msg.content}
                         </div>

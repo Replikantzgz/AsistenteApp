@@ -2,12 +2,43 @@
 
 import { useStore, ViewType } from '@/store';
 import {
-    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut
+    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, User
 } from 'lucide-react';
 import clsx from 'clsx';
+import { createClient } from '@/lib/supabase';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function Sidebar() {
     const { currentView, setView } = useStore();
+    const [userEmail, setUserEmail] = useState<string | null>(null);
+    const router = useRouter();
+    const supabase = createClient();
+
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setUserEmail(user?.email || null);
+        };
+        getUser();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUserEmail(session?.user?.email || null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.refresh();
+        setUserEmail(null);
+        router.push('/login');
+    };
+
+    const handleLogin = () => {
+        router.push('/login');
+    };
 
     const navItems: { id: ViewType; label: string; icon: any }[] = [
         { id: 'chat', label: 'Asistente IA', icon: MessageSquare },
@@ -44,7 +75,7 @@ export default function Sidebar() {
                 ))}
             </nav>
 
-            <div className="p-4 border-t border-slate-800">
+            <div className="p-4 border-t border-slate-800 space-y-2">
                 <button
                     onClick={() => setView('settings')}
                     className={clsx(
@@ -55,6 +86,30 @@ export default function Sidebar() {
                     <Settings className="w-5 h-5 mr-3" />
                     <span>Configuración</span>
                 </button>
+
+                {userEmail ? (
+                    <div className="pt-2 border-t border-slate-800 mt-2">
+                        <div className="px-4 py-2">
+                            <p className="text-xs text-slate-500">Sesión activa</p>
+                            <p className="text-xs font-medium text-slate-300 truncate" title={userEmail}>{userEmail}</p>
+                        </div>
+                        <button
+                            onClick={handleLogout}
+                            className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
+                        >
+                            <LogOut className="w-5 h-5 mr-3" />
+                            <span>Cerrar Sesión</span>
+                        </button>
+                    </div>
+                ) : (
+                    <button
+                        onClick={handleLogin}
+                        className="flex items-center w-full px-4 py-3 rounded-xl transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white mt-4"
+                    >
+                        <User className="w-5 h-5 mr-3" />
+                        <span>Iniciar Sesión</span>
+                    </button>
+                )}
             </div>
         </aside>
     );

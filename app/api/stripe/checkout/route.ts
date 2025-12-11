@@ -1,30 +1,40 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-    apiVersion: '2025-01-27.acacia', // Use latest or fixed version
+    apiVersion: '2025-01-27.acacia',
 });
 
 export async function POST(req: Request) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        const cookieStore = await cookies();
+        const supabase = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() { return cookieStore.getAll() }
+                }
+            }
+        );
+
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
         const { plan } = await req.json();
 
-        // Define prices (You should create these in Stripe Dashboard and put IDs in env)
-        // For this demo, we'll use price_data to create on the fly or use env vars
+        // ⚠️ Live Price ID Check
         const priceId = plan === 'pro'
             ? process.env.STRIPE_PRICE_ID_PRO
             : process.env.STRIPE_PRICE_ID_ECO;
 
-        if (!priceId) {
-            // Fallback for demo if no env var set
-            return new NextResponse('Stripe Price ID not configured', { status: 500 });
+        if (!priceId || priceId === 'price_replace_me') {
+            return new NextResponse('Stripe Price ID is not configured in .env.local', { status: 500 });
         }
 
         const checkoutSession = await stripe.checkout.sessions.create({
@@ -38,16 +48,16 @@ export async function POST(req: Request) {
             ],
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?success=true`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?canceled=true`,
-            customer_email: session.user.email,
+            customer_email: user.email,
             metadata: {
-                userId: session.user.email, // Using email as ID for simplicity in this mapping
+                userId: user.id, // Storing Supabase UUID
                 plan,
             },
         });
 
         return NextResponse.json({ url: checkoutSession.url });
-    } catch (error) {
+    } catch (error: any) {
         console.error('[STRIPE_CHECKOUT]', error);
-        return new NextResponse('Internal Error', { status: 500 });
+        return new NextResponse(error.message, { status: 500 });
     }
 }
