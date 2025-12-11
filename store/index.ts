@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { addDays, format } from 'date-fns';
 
-export type ViewType = 'chat' | 'calendar' | 'tasks' | 'emails' | 'templates' | 'settings';
+export type ViewType = 'chat' | 'calendar' | 'tasks' | 'emails' | 'templates' | 'contacts' | 'settings';
 
 export interface Appointment {
     id: string;
