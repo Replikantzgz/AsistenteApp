@@ -22,9 +22,9 @@ export default function SettingsView() {
 
             const { url } = await res.json();
             if (url) window.location.href = url;
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('Error al conectar con Stripe. Asegúrate de haber iniciado sesión.');
+            alert(`Error: ${error.message}`);
         }
     };
 
@@ -88,6 +88,38 @@ export default function SettingsView() {
                                 Conectar
                             </button>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">General</h2>
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+                        </div>
+                        <span className="font-medium text-slate-700">Notificaciones</span>
+                    </div>
+                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200">
+                        <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition" />
+                    </div>
+                </div>
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                        </div>
+                        <span className="font-medium text-slate-700">Privacidad y Seguridad</span>
+                    </div>
+                    <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                </div>
+                <div className="p-4 flex items-center justify-between hover:bg-red-50 transition-colors cursor-pointer group">
+                    <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center group-hover:bg-red-100">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </div>
+                        <span className="font-medium text-red-600">Eliminar Cuenta</span>
                     </div>
                 </div>
             </div>

@@ -29,10 +29,31 @@ import { twMerge } from 'tailwind-merge';
 type ViewType = 'month' | 'week' | 'day';
 
 export default function CalendarView() {
-    const { appointments } = useStore();
+    const { appointments, addAppointment } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newEventTitle, setNewEventTitle] = useState('');
-    const { addAppointment } = useStore();
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [view, setView] = useState<ViewType>('month');
+
+    const next = () => {
+        if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+        else if (view === 'week') setCurrentDate(addWeeks(currentDate, 1));
+        else setCurrentDate(addDays(currentDate, 1));
+    };
+
+    const prev = () => {
+        if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+        else if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
+        else setCurrentDate(subDays(currentDate, 1));
+    };
+
+    const today = () => setCurrentDate(new Date());
+
+    const getEventsForDay = (date: Date) => {
+        return appointments.filter(appt =>
+            isSameDay(new Date(appt.start), date)
+        );
+    };
 
     const handleAddEvent = () => {
         if (!newEventTitle.trim()) return;
@@ -91,7 +112,16 @@ export default function CalendarView() {
 
             {/* Calendar Content */}
             <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                {view === 'month' && <MonthView currentDate={currentDate} getEvents={getEventsForDay} />}
+                {view === 'month' && (
+                    <MonthView
+                        currentDate={currentDate}
+                        getEvents={getEventsForDay}
+                        onDateClick={(date: Date) => {
+                            setCurrentDate(date);
+                            setView('day');
+                        }}
+                    />
+                )}
                 {view === 'week' && <WeekView currentDate={currentDate} getEvents={getEventsForDay} />}
                 {view === 'day' && <DayView currentDate={currentDate} getEvents={getEventsForDay} />}
             </div>
@@ -146,7 +176,11 @@ export default function CalendarView() {
 
 // Sub-components for cleaner file structure
 
-function MonthView({ currentDate, getEvents }: { currentDate: Date, getEvents: (d: Date) => any[] }) {
+function MonthView({ currentDate, getEvents, onDateClick }: {
+    currentDate: Date;
+    getEvents: (d: Date) => any[];
+    onDateClick: (d: Date) => void;
+}) {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(monthStart);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 }); // Monday start
@@ -170,8 +204,9 @@ function MonthView({ currentDate, getEvents }: { currentDate: Date, getEvents: (
                     return (
                         <div
                             key={day.toString()}
+                            onClick={() => onDateClick(day)}
                             className={clsx(
-                                "min-h-[100px] border-b border-r border-slate-50 p-2 transition-colors hover:bg-slate-50/50 flex flex-col gap-1 relative",
+                                "min-h-[100px] border-b border-r border-slate-50 p-2 transition-colors hover:bg-slate-50/50 flex flex-col gap-1 relative cursor-pointer", // Added cursor-pointer
                                 !isSameMonth(day, monthStart) && "bg-slate-50/30 text-slate-400",
                                 isToday(day) && "bg-blue-50/30"
                             )}

@@ -121,29 +121,22 @@ export default function Sidebar() {
                     <span>Configuración</span>
                 </button>
 
-                {displayEmail ? (
-                    <div className="pt-2 border-t border-slate-800 mt-2">
-                        <div className="px-4 py-2">
-                            <p className="text-xs text-slate-500">Sesión activa</p>
-                            <p className="text-xs font-medium text-slate-300 truncate" title={displayEmail}>{displayEmail}</p>
-                        </div>
-                        <button
-                            onClick={handleLogout}
-                            className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
-                        >
-                            <LogOut className="w-5 h-5 mr-3" />
-                            <span>Cerrar Sesión</span>
-                        </button>
-                    </div>
-                ) : (
-                    <button
-                        onClick={handleLogin}
-                        className="flex items-center w-full px-4 py-3 rounded-xl transition-all bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white mt-4"
-                    >
-                        <User className="w-5 h-5 mr-3" />
-                        <span>Iniciar Sesión</span>
+                <div className="px-4 py-2 border-t border-slate-800 space-y-1">
+                    <button className="text-[10px] text-slate-500 hover:text-slate-300 w-full text-left transition-colors">
+                        Política de Privacidad
                     </button>
-                )}
+                    <button className="text-[10px] text-slate-500 hover:text-slate-300 w-full text-left transition-colors">
+                        Términos de Servicio
+                    </button>
+                </div>
+
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
+                >
+                    <LogOut className="w-5 h-5 mr-3" />
+                    <span>Cerrar Sesión</span>
+                </button>
             </div>
         </aside>
     );

@@ -29,7 +29,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="es">
-            <body className="h-screen w-screen overflow-hidden bg-slate-100 text-slate-900 antialiased">
+            <body className="h-dvh w-screen overflow-hidden bg-slate-100 text-slate-900 antialiased">
                 <NextAuthProvider>
                     {children}
                 </NextAuthProvider>
