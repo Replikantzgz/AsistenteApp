@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "120508811722",
+    "project_id": "propel-297dd",
+    "storage_bucket": "propel-297dd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:120508811722:android:9c05164f2cfa978682a733",
+        "android_client_info": {
+          "package_name": "com.iatualcance.propel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCL_FzmiUTf68CwiOWfepl_fq6mJbBeQZE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

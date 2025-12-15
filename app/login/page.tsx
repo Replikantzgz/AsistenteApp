@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 
+import { handleCombinedLogin } from '@/lib/native-auth';
+
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -14,8 +16,6 @@ export default function LoginPage() {
     const [mode, setMode] = useState<'signin' | 'signup'>('signin');
     const router = useRouter();
     const supabase = createClient();
-
-    import { handleCombinedLogin } from '@/lib/native-auth';
 
     // ...
 
