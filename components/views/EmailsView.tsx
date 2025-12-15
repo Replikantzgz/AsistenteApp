@@ -5,8 +5,8 @@ export default function EmailsView() {
     const { emails } = useStore();
 
     return (
-        <div className="h-full bg-slate-50 p-8 overflow-y-auto">
-            <h2 className="text-3xl font-bold text-slate-800 mb-6">Buzón de Correo</h2>
+        <div className="h-full bg-slate-50 p-4 overflow-y-auto">
+            {/* Header removed globally */}
             {emails.length === 0 ? (
                 <div className="bg-white rounded-xl p-10 text-center border border-dashed border-slate-300 text-slate-400">
                     No hay correos pendientes

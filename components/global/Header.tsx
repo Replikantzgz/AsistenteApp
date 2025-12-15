@@ -21,33 +21,42 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
 
     const title = titles[currentView] || 'Propel Assistant';
 
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+
     return (
-        <header className="h-16 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+        <header className="h-14 bg-white/80 backdrop-blur-md border-b border-slate-200 flex items-center justify-between px-4 sticky top-0 z-10">
+            <div className="flex items-center gap-3">
                 <button
                     onClick={onMenuClick}
-                    className="p-2 -ml-2 text-slate-500 hover:bg-slate-100 rounded-lg lg:hidden"
+                    className="p-1.5 -ml-1 text-slate-500 hover:bg-slate-100 rounded-lg lg:hidden"
                 >
-                    <Menu className="w-6 h-6" />
+                    <Menu className="w-5 h-5" />
                 </button>
-                <h1 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h1>
+                <h1 className="text-lg font-bold text-slate-800 tracking-tight">{title}</h1>
             </div>
 
             <div className="flex items-center gap-2">
                 {/* Search Bar (Optional visual only for now) */}
-                <div className="hidden md:flex items-center bg-slate-100 rounded-full px-4 py-1.5 mr-2">
-                    <Search className="w-4 h-4 text-slate-400 mr-2" />
+                <div className="hidden md:flex items-center bg-slate-100 rounded-full px-3 py-1 mr-2">
+                    <Search className="w-3 h-3 text-slate-400 mr-2" />
                     <input
                         type="text"
                         placeholder="Buscar..."
-                        className="bg-transparent border-none outline-none text-sm text-slate-600 placeholder:text-slate-400 w-48"
+                        className="bg-transparent border-none outline-none text-xs text-slate-600 placeholder:text-slate-400 w-32"
                     />
                 </div>
 
                 <div className="flex items-center gap-1">
-                    <button className="p-2 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative">
-                        <Bell className="w-5 h-5" />
-                        <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    <button
+                        onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                        className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
+                    >
+                        <Bell className={clsx("w-5 h-5 transition-colors", notificationsEnabled ? "text-slate-600" : "text-red-400 opacity-50")} />
+                        {notificationsEnabled ? (
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></span>
+                        ) : (
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                        )}
                     </button>
 
                     <button

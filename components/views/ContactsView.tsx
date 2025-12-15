@@ -23,23 +23,21 @@ export default function ContactsView() {
     return (
         <div className="h-full flex flex-col bg-slate-50">
             {/* Header */}
-            <div className="p-6 bg-white border-b border-slate-100">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-2xl font-bold text-slate-900">Agenda</h1>
-                    <button className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
+            <div className="p-4 bg-white border-b border-slate-100">
+                <div className="flex gap-2">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+                        <input
+                            type="text"
+                            placeholder="Buscar contacto..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-9 pr-4 py-2 bg-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-900 text-sm"
+                        />
+                    </div>
+                    <button className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
                         <Plus className="w-5 h-5" />
                     </button>
-                </div>
-
-                <div className="relative">
-                    <Search className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
-                    <input
-                        type="text"
-                        placeholder="Buscar contacto..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-900"
-                    />
                 </div>
             </div>
 

@@ -5,6 +5,7 @@ import { useStore } from '@/store';
 import { Send, Mic, Calendar, CheckSquare, Bell } from 'lucide-react';
 import { processUserCommand } from '@/app/ai-actions';
 import { createClient } from '@/lib/supabase/client';
+import { clsx } from 'clsx';
 
 interface Message {
     role: 'user' | 'assistant';
@@ -18,6 +19,48 @@ export default function ChatView() {
     // const [userName, setUserName] = useState('Alex'); // Using global store now
     const scrollRef = useRef<HTMLDivElement>(null);
     const supabase = createClient();
+
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
+            // @ts-ignore
+            const recognition = new window.webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            recognition.lang = 'es-ES';
+
+            recognition.onresult = (event: any) => {
+                const transcript = event.results[0][0].transcript;
+                setInput(prev => prev + (prev ? ' ' : '') + transcript);
+                setIsListening(false);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error', event.error);
+                setIsListening(false);
+            };
+
+            recognition.onend = () => setIsListening(false);
+
+            recognitionRef.current = recognition;
+        }
+    }, []);
+
+    const toggleListening = () => {
+        if (!recognitionRef.current) {
+            alert("Tu navegador no soporta reconocimiento de voz.");
+            return;
+        }
+
+        if (isListening) {
+            recognitionRef.current.stop();
+        } else {
+            recognitionRef.current.start();
+            setIsListening(true);
+        }
+    };
 
     // Removed Supabase fetch for name, relying on Onboarding/Store
     // useEffect(() => { ... }, []);
@@ -186,12 +229,18 @@ export default function ChatView() {
                     <input
                         type="text"
                         className="flex-1 bg-transparent px-4 py-2 outline-none text-slate-800 placeholder:text-slate-400"
-                        placeholder="Escribe aquí..."
+                        placeholder={isListening ? "Escuchando... " : "Escribe aquí..."}
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                     />
-                    <button className="p-3 text-slate-400 hover:text-blue-600 transition-colors">
+                    <button
+                        onClick={toggleListening}
+                        className={clsx(
+                            "p-3 rounded-full transition-colors",
+                            isListening ? "bg-red-100 text-red-600 animate-pulse" : "text-slate-400 hover:text-blue-600"
+                        )}
+                    >
                         <Mic className="w-5 h-5" />
                     </button>
                     <button

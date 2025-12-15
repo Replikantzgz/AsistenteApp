@@ -71,42 +71,43 @@ export default function CalendarView() {
     };
 
     return (
-        <div className="h-full flex flex-col bg-white/50 p-6 relative">
-            {/* Calendar Header */}
-            <div className="flex items-center justify-between mb-6">
-                {/* ... existing header code ... */}
-                <div className="flex items-center gap-4">
-                    <h2 className="text-2xl font-bold text-slate-800 capitalize min-w-[200px]">
-                        {format(currentDate, view === 'day' ? "d 'de' MMMM" : 'MMMM yyyy', { locale: es })}
-                    </h2>
-                    <div className="flex items-center bg-white rounded-lg shadow-sm border border-slate-200 p-1">
-                        <button onClick={prev} className="p-1 hover:bg-slate-100 rounded-md text-slate-600">
-                            <ChevronLeft className="w-5 h-5" />
-                        </button>
-                        <button onClick={today} className="px-3 py-1 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-md mx-1">
-                            Hoy
-                        </button>
-                        <button onClick={next} className="p-1 hover:bg-slate-100 rounded-md text-slate-600">
-                            <ChevronRight className="w-5 h-5" />
-                        </button>
+        <div className="h-full flex flex-col bg-white/50 p-2 md:p-4 relative">
+            {/* Compact Calendar Header */}
+            <div className="flex flex-col gap-3 mb-4">
+                <div className="flex items-center justify-between">
+                    <div className="flex bg-slate-100 p-0.5 rounded-lg shrink-0">
+                        {(['month', 'week', 'day'] as ViewType[]).map((v) => (
+                            <button
+                                key={v}
+                                onClick={() => setView(v)}
+                                className={clsx(
+                                    "px-3 py-1 rounded-md text-xs font-medium transition-all capitalize",
+                                    view === v
+                                        ? "bg-white text-slate-900 shadow-sm"
+                                        : "text-slate-500 hover:text-slate-700"
+                                )}
+                            >
+                                {v === 'month' ? 'Mes' : v === 'week' ? 'Sem' : 'Día'}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
-                <div className="flex bg-slate-100 p-1 rounded-lg">
-                    {(['month', 'week', 'day'] as ViewType[]).map((v) => (
-                        <button
-                            key={v}
-                            onClick={() => setView(v)}
-                            className={clsx(
-                                "px-4 py-1.5 rounded-md text-sm font-medium transition-all capitalize",
-                                view === v
-                                    ? "bg-white text-slate-900 shadow-sm"
-                                    : "text-slate-500 hover:text-slate-700"
-                            )}
-                        >
-                            {v === 'month' ? 'Mes' : v === 'week' ? 'Semana' : 'Día'}
+                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
+                    <button onClick={prev} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-600">
+                        <ChevronLeft className="w-5 h-5" />
+                    </button>
+
+                    <h2 className="text-sm font-bold text-slate-800 capitalize flex items-center gap-2">
+                        {format(currentDate, view === 'day' ? "EEEE, d 'de' MMMM" : 'MMMM yyyy', { locale: es })}
+                        <button onClick={today} className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-bold uppercase hover:bg-blue-100">
+                            Hoy
                         </button>
-                    ))}
+                    </h2>
+
+                    <button onClick={next} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-600">
+                        <ChevronRight className="w-5 h-5" />
+                    </button>
                 </div>
             </div>
 

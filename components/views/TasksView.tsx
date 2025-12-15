@@ -21,8 +21,8 @@ export default function TasksView() {
     };
 
     return (
-        <div className="h-full bg-slate-50 p-8 overflow-y-auto relative">
-            <h2 className="text-3xl font-bold text-slate-800 mb-6">Tareas Pendientes</h2>
+        <div className="h-full bg-slate-50 p-4 overflow-y-auto relative">
+            {/* Header removed globally */}
             <div className="space-y-3 pb-20">
                 {tasks.map((task) => (
                     <div
