@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
     appName: 'Propel',
     webDir: 'public',
     server: {
-        url: 'https://asistente-app-replikantzgzs-projects.vercel.app',
+        url: 'https://asistente-app-teal.vercel.app',
         cleartext: true
     }
 };

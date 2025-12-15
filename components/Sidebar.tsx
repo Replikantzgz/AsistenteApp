@@ -62,7 +62,7 @@ export default function Sidebar() {
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
                     Propel
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">Asistente Personal Pro</p>
+                <p className="text-xs text-slate-400 mt-1">Asistente Personal Pro v2.0</p>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">
