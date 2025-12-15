@@ -2,6 +2,7 @@
 
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
+import { handleCombinedLogin } from '@/lib/native-auth';
 
 export default function SettingsView() {
     const { data: session, status } = useSession();
@@ -82,7 +83,7 @@ export default function SettingsView() {
                             </div>
                         ) : (
                             <button
-                                onClick={() => signIn('google')}
+                                onClick={() => handleCombinedLogin()}
                                 className="px-5 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 shadow-sm transition-all"
                             >
                                 Conectar

@@ -15,12 +15,16 @@ export default function LoginPage() {
     const router = useRouter();
     const supabase = createClient();
 
+    import { handleCombinedLogin } from '@/lib/native-auth';
+
+    // ...
+
     const handleGoogleLogin = async () => {
         setLoading(true);
         try {
-            await signIn('google', { callbackUrl: '/' });
+            await handleCombinedLogin();
         } catch (err: any) {
-            setError(err.message);
+            setError(err.message || 'Error al iniciar sesión con Google');
             setLoading(false);
         }
     };
