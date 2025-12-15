@@ -4,15 +4,16 @@ import { clsx } from 'clsx';
 import { useState, useEffect } from 'react';
 
 export default function TasksView() {
-    const { tasks, addTask, toggleTask, triggerAction } = useStore();
+    const { tasks, addTask, toggleTask, triggerAction, setTriggerAction } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
 
     useEffect(() => {
         if (triggerAction) {
             setIsModalOpen(true);
+            setTriggerAction(null);
         }
-    }, [triggerAction]);
+    }, [triggerAction, setTriggerAction]);
 
     const handleAddTask = () => {
         if (!newTaskTitle.trim()) return;

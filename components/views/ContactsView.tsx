@@ -15,7 +15,7 @@ const INITIAL_CONTACTS = [
 
 export default function ContactsView() {
     const [searchTerm, setSearchTerm] = useState('');
-    const { triggerAction, addMessage } = useStore(); // Access store
+    const { triggerAction, setTriggerAction } = useStore(); // Access store
 
     // Using global trigger to simulate add contact
     useEffect(() => {
@@ -31,8 +31,9 @@ export default function ContactsView() {
                 // Let's just mock it or say "Saved".
                 alert(`Contacto ${name} guardado (Simulación).`);
             }
+            setTriggerAction(null);
         }
-    }, [triggerAction]);
+    }, [triggerAction, setTriggerAction]);
 
     const filteredContacts = INITIAL_CONTACTS.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

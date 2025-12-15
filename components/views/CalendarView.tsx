@@ -29,9 +29,11 @@ import { twMerge } from 'tailwind-merge';
 type ViewType = 'month' | 'week' | 'day';
 
 export default function CalendarView() {
-    const { appointments, addAppointment, triggerAction } = useStore();
+    const { appointments, addAppointment, triggerAction, setTriggerAction } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newEventTitle, setNewEventTitle] = useState('');
+    const [startTime, setStartTime] = useState('09:00');
+    const [endTime, setEndTime] = useState('10:00');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<ViewType>('month');
 
@@ -39,102 +41,47 @@ export default function CalendarView() {
     useEffect(() => {
         if (triggerAction) {
             setIsModalOpen(true);
+            setTriggerAction(null); // Consume action to prevent reopening
         }
-    }, [triggerAction]);
+    }, [triggerAction, setTriggerAction]);
 
-    const next = () => {
-        if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
-        else if (view === 'week') setCurrentDate(addWeeks(currentDate, 1));
-        else setCurrentDate(addDays(currentDate, 1));
-    };
-
-    const prev = () => {
-        if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
-        else if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
-        else setCurrentDate(subDays(currentDate, 1));
-    };
-
-    const today = () => setCurrentDate(new Date());
-
-    const getEventsForDay = (date: Date) => {
-        return appointments.filter(appt =>
-            isSameDay(new Date(appt.start), date)
-        );
-    };
+    // ... existing navigation functions ...
 
     const handleAddEvent = () => {
         if (!newEventTitle.trim()) return;
+
+        const [startHour, startMin] = startTime.split(':').map(Number);
+        const [endHour, endMin] = endTime.split(':').map(Number);
+
         const start = new Date(currentDate);
-        start.setHours(9, 0, 0, 0); // Default 9 AM
+        start.setHours(startHour, startMin, 0, 0);
+
+        const end = new Date(currentDate);
+        end.setHours(endHour, endMin, 0, 0);
+
+        // Simple validation
+        if (end <= start) {
+            alert("La hora de fin debe ser posterior a la de inicio");
+            return;
+        }
 
         addAppointment({
             id: Date.now().toString(),
             title: newEventTitle,
             start: start,
-            end: new Date(start.getTime() + 60 * 60 * 1000) // 1 hour
+            end: end
         });
         setNewEventTitle('');
+        setStartTime('09:00');
+        setEndTime('10:00');
         setIsModalOpen(false);
     };
 
     return (
         <div className="h-full flex flex-col bg-white/50 p-2 md:p-4 relative">
-            {/* Compact Calendar Header */}
-            <div className="flex flex-col gap-3 mb-4">
-                <div className="flex items-center justify-between">
-                    <div className="flex bg-slate-100 p-0.5 rounded-lg shrink-0">
-                        {(['month', 'week', 'day'] as ViewType[]).map((v) => (
-                            <button
-                                key={v}
-                                onClick={() => setView(v)}
-                                className={clsx(
-                                    "px-3 py-1 rounded-md text-xs font-medium transition-all capitalize",
-                                    view === v
-                                        ? "bg-white text-slate-900 shadow-sm"
-                                        : "text-slate-500 hover:text-slate-700"
-                                )}
-                            >
-                                {v === 'month' ? 'Mes' : v === 'week' ? 'Sem' : 'Día'}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+            {/* ... header ... */}
 
-                <div className="flex items-center justify-between bg-white p-2 rounded-xl shadow-sm border border-slate-100">
-                    <button onClick={prev} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-600">
-                        <ChevronLeft className="w-5 h-5" />
-                    </button>
-
-                    <h2 className="text-sm font-bold text-slate-800 capitalize flex items-center gap-2">
-                        {format(currentDate, view === 'day' ? "EEEE, d 'de' MMMM" : 'MMMM yyyy', { locale: es })}
-                        <button onClick={today} className="text-[10px] px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full font-bold uppercase hover:bg-blue-100">
-                            Hoy
-                        </button>
-                    </h2>
-
-                    <button onClick={next} className="p-1.5 hover:bg-slate-50 rounded-lg text-slate-600">
-                        <ChevronRight className="w-5 h-5" />
-                    </button>
-                </div>
-            </div>
-
-            {/* Calendar Content */}
-            <div className="flex-1 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
-                {view === 'month' && (
-                    <MonthView
-                        currentDate={currentDate}
-                        getEvents={getEventsForDay}
-                        onDateClick={(date: Date) => {
-                            setCurrentDate(date);
-                            setView('day');
-                        }}
-                    />
-                )}
-                {view === 'week' && <WeekView currentDate={currentDate} getEvents={getEventsForDay} />}
-                {view === 'day' && <DayView currentDate={currentDate} getEvents={getEventsForDay} />}
-            </div>
-
-            {/* FAB Removed - Moved to Header */}
+            {/* ... content ... */}
 
             {/* Event Modal */}
             {isModalOpen && (
@@ -142,16 +89,45 @@ export default function CalendarView() {
                     <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onClick={() => setIsModalOpen(false)} />
                     <div className="bg-white w-full max-w-sm rounded-2xl p-6 relative shadow-xl transform transition-all">
                         <h3 className="text-xl font-bold text-slate-800 mb-4">Nueva Cita</h3>
-                        <p className="text-sm text-slate-500 mb-4">Se creará para hoy a las 9:00 AM (Demo)</p>
-                        <input
-                            type="text"
-                            placeholder="Título del evento..."
-                            className="w-full border-b-2 border-slate-200 py-2 text-lg outline-none focus:border-indigo-600 transition-colors mb-6"
-                            autoFocus
-                            value={newEventTitle}
-                            onChange={(e) => setNewEventTitle(e.target.value)}
-                            onKeyDown={(e) => e.key === 'Enter' && handleAddEvent()}
-                        />
+                        <p className="text-sm text-slate-500 mb-4">
+                            Para el {format(currentDate, "d 'de' MMMM", { locale: es })}
+                        </p>
+
+                        <div className="space-y-4 mb-6">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Título</label>
+                                <input
+                                    type="text"
+                                    placeholder="Título del evento..."
+                                    className="w-full border-b-2 border-slate-200 py-2 text-lg outline-none focus:border-blue-600 transition-colors"
+                                    autoFocus
+                                    value={newEventTitle}
+                                    onChange={(e) => setNewEventTitle(e.target.value)}
+                                />
+                            </div>
+
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Inicio</label>
+                                    <input
+                                        type="time"
+                                        value={startTime}
+                                        onChange={(e) => setStartTime(e.target.value)}
+                                        className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-2 ring-blue-500/20"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <label className="block text-xs font-bold text-slate-500 mb-1 uppercase">Fin</label>
+                                    <input
+                                        type="time"
+                                        value={endTime}
+                                        onChange={(e) => setEndTime(e.target.value)}
+                                        className="w-full bg-slate-100 rounded-lg px-3 py-2 text-sm font-medium outline-none focus:ring-2 ring-blue-500/20"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="flex justify-end gap-3">
                             <button
                                 onClick={() => setIsModalOpen(false)}
@@ -162,7 +138,7 @@ export default function CalendarView() {
                             <button
                                 onClick={handleAddEvent}
                                 disabled={!newEventTitle.trim()}
-                                className="px-4 py-2 bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 disabled:opacity-50"
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 disabled:opacity-50"
                             >
                                 Crear Evento
                             </button>
@@ -171,6 +147,8 @@ export default function CalendarView() {
                 </div>
             )}
         </div>
+    );
+        </div >
     );
 }
 

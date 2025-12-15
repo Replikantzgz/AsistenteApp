@@ -4,13 +4,14 @@ import { useStore } from '@/store';
 import { useState, useEffect } from 'react';
 
 export default function EmailsView() {
-    const { emails, triggerAction } = useStore();
+    const { emails, triggerAction, setTriggerAction } = useStore();
 
     useEffect(() => {
         if (triggerAction) {
             alert("Función de redactar manual próximamente");
+            setTriggerAction(null);
         }
-    }, [triggerAction]);
+    }, [triggerAction, setTriggerAction]);
 
     return (
         <div className="h-full bg-slate-50 p-4 overflow-y-auto">

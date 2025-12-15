@@ -21,6 +21,7 @@ export default function ChatView() {
     const supabase = createClient();
 
     const [isListening, setIsListening] = useState(false);
+    const [permissionDenied, setPermissionDenied] = useState(false);
     const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
@@ -42,8 +43,9 @@ export default function ChatView() {
             recognition.onerror = (event: any) => {
                 console.error('Speech recognition error', event.error);
                 setIsListening(false);
-                // Optional: alert user on specific errors like 'not-allowed'
-                if (event.error === 'not-allowed') alert("Permiso de micrófono denegado.");
+                if (event.error === 'not-allowed') {
+                    setPermissionDenied(true);
+                }
             };
 
             recognition.onend = () => setIsListening(false);
@@ -52,17 +54,37 @@ export default function ChatView() {
         }
     }, []);
 
+    const requestMicrophonePermission = async () => {
+        try {
+            await navigator.mediaDevices.getUserMedia({ audio: true });
+            setPermissionDenied(false);
+            alert("Permiso concedido. Intenta usar el micrófono ahora.");
+        } catch (err) {
+            console.error(err);
+            alert("No se pudo obtener acceso al micrófono. Por favor revisa la configuración de tu navegador/dispositivo.");
+        }
+    };
+
     const toggleListening = () => {
         if (!recognitionRef.current) {
-            alert("Tu dispositivo no soporta reconocimiento de voz nativo. Intenta usar el dictado del teclado.");
+            alert("Tu dispositivo no soporta reconocimiento de voz nativo.");
+            return;
+        }
+
+        if (permissionDenied) {
+            requestMicrophonePermission();
             return;
         }
 
         if (isListening) {
             recognitionRef.current.stop();
         } else {
-            recognitionRef.current.start();
-            setIsListening(true);
+            try {
+                recognitionRef.current.start();
+                setIsListening(true);
+            } catch (e) {
+                console.error(e);
+            }
         }
     };
 
