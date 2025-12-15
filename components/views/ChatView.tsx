@@ -24,9 +24,11 @@ export default function ChatView() {
     const recognitionRef = useRef<any>(null);
 
     useEffect(() => {
-        if (typeof window !== 'undefined' && 'webkitSpeechRecognition' in window) {
-            // @ts-ignore
-            const recognition = new window.webkitSpeechRecognition();
+        // Support both standard and webkit prefixed API
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+        if (typeof window !== 'undefined' && SpeechRecognition) {
+            const recognition = new SpeechRecognition();
             recognition.continuous = false;
             recognition.interimResults = false;
             recognition.lang = 'es-ES';
@@ -40,6 +42,8 @@ export default function ChatView() {
             recognition.onerror = (event: any) => {
                 console.error('Speech recognition error', event.error);
                 setIsListening(false);
+                // Optional: alert user on specific errors like 'not-allowed'
+                if (event.error === 'not-allowed') alert("Permiso de micrófono denegado.");
             };
 
             recognition.onend = () => setIsListening(false);
@@ -50,7 +54,7 @@ export default function ChatView() {
 
     const toggleListening = () => {
         if (!recognitionRef.current) {
-            alert("Tu navegador no soporta reconocimiento de voz.");
+            alert("Tu dispositivo no soporta reconocimiento de voz nativo. Intenta usar el dictado del teclado.");
             return;
         }
 

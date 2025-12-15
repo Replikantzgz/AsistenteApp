@@ -52,6 +52,9 @@ interface AppState {
     toggleSidebar: boolean;
     setToggleSidebar: (v: boolean) => void;
 
+    triggerAction: number | null; // Timestamp to trigger effect
+    setTriggerAction: (action: number | null) => void;
+
     messages: Message[];
     addMessage: (msg: Message) => void;
     setMessages: (msgs: Message[]) => void;
@@ -99,6 +102,10 @@ export const useStore = create<AppState>((set) => ({
 
     toggleSidebar: true,
     setToggleSidebar: (v) => set({ toggleSidebar: v }),
+
+    // Header Actions
+    triggerAction: null,
+    setTriggerAction: (action) => set({ triggerAction: action }),
 
     // Chats
     messages: [],

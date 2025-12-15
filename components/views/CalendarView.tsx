@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useStore } from '@/store';
 import {
     format,
@@ -29,11 +29,18 @@ import { twMerge } from 'tailwind-merge';
 type ViewType = 'month' | 'week' | 'day';
 
 export default function CalendarView() {
-    const { appointments, addAppointment } = useStore();
+    const { appointments, addAppointment, triggerAction } = useStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newEventTitle, setNewEventTitle] = useState('');
     const [currentDate, setCurrentDate] = useState(new Date());
     const [view, setView] = useState<ViewType>('month');
+
+    // Effect to listen for Header action
+    useEffect(() => {
+        if (triggerAction) {
+            setIsModalOpen(true);
+        }
+    }, [triggerAction]);
 
     const next = () => {
         if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
@@ -127,15 +134,7 @@ export default function CalendarView() {
                 {view === 'day' && <DayView currentDate={currentDate} getEvents={getEventsForDay} />}
             </div>
 
-            {/* FAB */}
-            <button
-                onClick={() => setIsModalOpen(true)}
-                className="fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-600/30 flex items-center justify-center hover:scale-105 transition-transform z-20"
-            >
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
+            {/* FAB Removed - Moved to Header */}
 
             {/* Event Modal */}
             {isModalOpen && (

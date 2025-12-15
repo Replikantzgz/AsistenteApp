@@ -1,8 +1,16 @@
 'use client';
 import { useStore } from '@/store';
 
+import { useState, useEffect } from 'react';
+
 export default function EmailsView() {
-    const { emails } = useStore();
+    const { emails, triggerAction } = useStore();
+
+    useEffect(() => {
+        if (triggerAction) {
+            alert("Función de redactar manual próximamente");
+        }
+    }, [triggerAction]);
 
     return (
         <div className="h-full bg-slate-50 p-4 overflow-y-auto">
@@ -28,15 +36,7 @@ export default function EmailsView() {
                 </div>
             )}
 
-            {/* FAB */}
-            <button
-                className="fixed bottom-6 right-6 w-14 h-14 bg-red-600 text-white rounded-full shadow-lg shadow-red-600/30 flex items-center justify-center hover:scale-105 transition-transform z-20"
-                onClick={() => alert("Función de redactar manual próximamente")} // Placeholder for now or open modal
-            >
-                <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-            </button>
+            {/* FAB Removed - Moved to Header */}
         </div>
     );
 }

@@ -132,7 +132,7 @@ export default function SettingsView() {
                     <div className="mb-4">
                         <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Plan Eco</span>
                     </div>
-                    <h3 className="text-4xl font-bold text-slate-900 mb-2">3,99€ <span className="text-lg font-normal text-slate-500">/mes</span></h3>
+                    <h3 className="text-4xl font-bold text-slate-900 mb-2">Plan Básico <span className="text-lg font-normal text-slate-500"></span></h3>
                     <p className="text-slate-500 mb-6">Ideal para organizar tu día a día.</p>
                     <ul className="space-y-3 mb-8 flex-1">
                         <li className="flex items-center text-slate-600">
@@ -149,7 +149,7 @@ export default function SettingsView() {
                         onClick={() => handleCheckout('eco')}
                         className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-800 hover:text-slate-900 transition-all"
                     >
-                        Elegir Eco
+                        Ver Precio
                     </button>
                 </div>
 
@@ -161,7 +161,7 @@ export default function SettingsView() {
                     <div className="mb-4">
                         <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Plan Pro</span>
                     </div>
-                    <h3 className="text-4xl font-bold text-white mb-2">8,99€ <span className="text-lg font-normal text-slate-400">/mes</span></h3>
+                    <h3 className="text-4xl font-bold text-white mb-2">Plan Pro <span className="text-lg font-normal text-slate-400"></span></h3>
                     <p className="text-slate-400 mb-6">Potencia ilimitada para profesionales.</p>
                     <ul className="space-y-3 mb-8 flex-1">
                         <li className="flex items-center text-slate-300">

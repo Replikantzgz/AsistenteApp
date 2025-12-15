@@ -1,7 +1,7 @@
 'use client';
 
 import { useStore } from '@/store';
-import { Settings, Bell, Search, Menu } from 'lucide-react';
+import { Settings, Bell, Search, Menu, Plus } from 'lucide-react';
 import clsx from 'clsx';
 import { useState } from 'react';
 
@@ -36,45 +36,54 @@ export default function Header({ onMenuClick }: { onMenuClick?: () => void }) {
             </div>
 
             <div className="flex items-center gap-2">
-                {/* Search Bar (Optional visual only for now) */}
-                <div className="hidden md:flex items-center bg-slate-100 rounded-full px-3 py-1 mr-2">
+                {/* Search Bar - Removed as per user request to clean up or kept? User said "menu inferior tapa botones + ... subelo arriba ... ponerlo en el sitio de la campana". 
+                   Actually, let's keep search but make it small. Or remove if crowded. Let's keep small.
+                */}
+                <div className="hidden md:flex items-center bg-slate-100 rounded-full px-3 py-1 mr-1">
                     <Search className="w-3 h-3 text-slate-400 mr-2" />
                     <input
                         type="text"
                         placeholder="Buscar..."
-                        className="bg-transparent border-none outline-none text-xs text-slate-600 placeholder:text-slate-400 w-32"
+                        className="bg-transparent border-none outline-none text-xs text-slate-600 placeholder:text-slate-400 w-24 lg:w-32"
                     />
                 </div>
 
-                <div className="flex items-center gap-1">
+                {/* ACTION BUTTON (+). Replaces Bell position roughly */}
+                {['calendar', 'tasks', 'contacts', 'emails'].includes(currentView) && (
                     <button
-                        onClick={() => setNotificationsEnabled(!notificationsEnabled)}
-                        className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
+                        onClick={() => useStore.getState().setTriggerAction(Date.now())}
+                        className="p-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all shadow-sm shadow-blue-500/30"
                     >
-                        <Bell className={clsx("w-5 h-5 transition-colors", notificationsEnabled ? "text-slate-600" : "text-red-400 opacity-50")} />
-                        {notificationsEnabled ? (
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></span>
-                        ) : (
-                            <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                        )}
+                        <Plus className="w-5 h-5" />
                     </button>
+                )}
 
-                    <button
-                        onClick={() => setView('settings')}
-                        className={clsx(
-                            "p-2 rounded-full transition-colors",
-                            currentView === 'settings'
-                                ? "bg-slate-100 text-blue-600"
-                                : "text-slate-500 hover:bg-slate-100"
-                        )}
-                        title="Configuración"
-                    >
-                        <Settings className="w-5 h-5" />
-                    </button>
+                {/* BELL. Replaces Gear position roughly */}
+                <button
+                    onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+                    className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-full transition-colors relative"
+                >
+                    <Bell className={clsx("w-5 h-5 transition-colors", notificationsEnabled ? "text-slate-600" : "text-red-400 opacity-50")} />
+                    {notificationsEnabled ? (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full border-2 border-white"></span>
+                    ) : (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
+                    )}
+                </button>
 
-                    {/* Tiny User Avatar Placeholder */}
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 ml-2 border-2 border-white shadow-sm cursor-pointer hover:opacity-90"></div>
-                </div>
+                {/* SETTINGS. Replaces Avatar position */}
+                <button
+                    onClick={() => setView('settings')}
+                    className={clsx(
+                        "p-1.5 rounded-full transition-colors",
+                        currentView === 'settings'
+                            ? "bg-slate-100 text-blue-600"
+                            : "text-slate-500 hover:bg-slate-100"
+                    )}
+                    title="Configuración"
+                >
+                    <Settings className="w-5 h-5" />
+                </button>
             </div>
         </header>
     );

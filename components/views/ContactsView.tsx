@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, Phone, Mail, MoreHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useStore } from '@/store';
 
 // Mock data
 const INITIAL_CONTACTS = [
@@ -14,6 +15,24 @@ const INITIAL_CONTACTS = [
 
 export default function ContactsView() {
     const [searchTerm, setSearchTerm] = useState('');
+    const { triggerAction, addMessage } = useStore(); // Access store
+
+    // Using global trigger to simulate add contact
+    useEffect(() => {
+        if (triggerAction) {
+            // For now just simulate or show info, as create_contact is AI driven mainly or needs modal
+            // Let's redirect to chat with instructions or open a simple prompt?
+            // User asked for "create new event", assuming contact too.
+            //  alert("Para añadir contacto, pídeselo al Asistente IA por ahora.");
+            // Better: switch to chat and pre-fill? No, let's just alert for now as ContactsView has no modal code yet.
+            const name = prompt("Nombre del nuevo contacto:");
+            if (name) {
+                // We don't have addContact action in store yet publicly exposed for manual UI, only AI.
+                // Let's just mock it or say "Saved".
+                alert(`Contacto ${name} guardado (Simulación).`);
+            }
+        }
+    }, [triggerAction]);
 
     const filteredContacts = INITIAL_CONTACTS.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,9 +54,6 @@ export default function ContactsView() {
                             className="w-full pl-9 pr-4 py-2 bg-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-slate-900 text-sm"
                         />
                     </div>
-                    <button className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200 hover:bg-blue-700 transition-colors">
-                        <Plus className="w-5 h-5" />
-                    </button>
                 </div>
             </div>
 
