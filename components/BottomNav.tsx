@@ -13,7 +13,7 @@ export default function BottomNav() {
         { id: 'tasks', icon: CheckSquare, label: 'Tareas' },
         { id: 'chat', icon: MessageSquare, label: 'IA' }, // Center item
         { id: 'emails', icon: Mail, label: 'Email' },
-        { id: 'contacts', icon: Users, label: 'Agenda' }, // Contacts view to be created
+        { id: 'contacts', icon: Users, label: 'Contactos' }, // Contacts view to be created
     ];
 
     return (

@@ -36,6 +36,9 @@ export async function POST(req: Request) {
                     quantity: 1,
                 },
             ],
+            subscription_data: {
+                trial_period_days: 7,
+            },
             success_url: `${process.env.NEXT_PUBLIC_APP_URL}/?success=true`,
             cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/?canceled=true`,
             customer_email: user.email,

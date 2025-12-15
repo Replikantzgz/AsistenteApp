@@ -51,11 +51,27 @@ interface AppState {
 
     toggleSidebar: boolean;
     setToggleSidebar: (v: boolean) => void;
+
+    messages: Message[];
+    addMessage: (msg: Message) => void;
+    setMessages: (msgs: Message[]) => void;
+
+    // User Profile
+    userName: string;
+    setUserName: (name: string) => void;
+}
+
+export interface Message {
+    role: 'user' | 'assistant';
+    content: string;
 }
 
 export const useStore = create<AppState>((set) => ({
     currentView: 'chat',
     setView: (view) => set({ currentView: view }),
+
+    userName: 'Usuario', // Default
+    setUserName: (name) => set({ userName: name }),
 
     appointments: [
         { id: '1', title: 'Reunión inicial', start: new Date(), end: addDays(new Date(), 0) } // Example
@@ -82,5 +98,10 @@ export const useStore = create<AppState>((set) => ({
     addTemplate: (template) => set((state) => ({ templates: [...state.templates, template] })),
 
     toggleSidebar: true,
-    setToggleSidebar: (v) => set({ toggleSidebar: v })
+    setToggleSidebar: (v) => set({ toggleSidebar: v }),
+
+    // Chats
+    messages: [],
+    addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+    setMessages: (msgs) => set({ messages: msgs }),
 }));

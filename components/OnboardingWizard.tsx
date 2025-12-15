@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useStore } from '@/store';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, Check, ChevronRight, Shield, Mail } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -8,6 +9,8 @@ import { createClient } from '@/lib/supabase/client';
 export default function OnboardingWizard({ onComplete }: { onComplete: () => void }) {
     const [step, setStep] = useState(1);
     const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+    const [nameInput, setNameInput] = useState('');
+    const { setUserName } = useStore();
     const supabase = createClient();
 
     const requestNotifications = async () => {
@@ -21,6 +24,11 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
     };
 
     const handleNext = () => {
+        if (step === 1) {
+            if (!nameInput.trim()) return; // Require name
+            setUserName(nameInput);
+            localStorage.setItem('propel_user_name', nameInput);
+        }
         if (step < 3) setStep(step + 1);
         else onComplete();
     };
@@ -53,9 +61,17 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                                     <span className="text-4xl">👋</span>
                                 </div>
                                 <h2 className="text-2xl font-bold text-slate-900 mb-2">Hola, soy Propel</h2>
-                                <p className="text-slate-500 mb-8">
-                                    Tu asistente personal inteligente. Antes de empezar, configuremos algunas cosas importantes.
+                                <p className="text-slate-500 mb-6">
+                                    Tu asistente personal inteligente. ¿Cómo te gustaría que te llame?
                                 </p>
+                                <input
+                                    type="text"
+                                    placeholder="Tu nombre..."
+                                    value={nameInput}
+                                    onChange={(e) => setNameInput(e.target.value)}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-lg text-center font-medium focus:ring-2 ring-blue-500 outline-none transition-all"
+                                    autoFocus
+                                />
                             </motion.div>
                         )}
 

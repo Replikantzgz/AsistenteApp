@@ -12,23 +12,15 @@ interface Message {
 }
 
 export default function ChatView() {
-    const [messages, setMessages] = useState<Message[]>([]);
+    const { messages, addMessage, setView, addAppointment, addTask, addEmail, addTemplate, userName } = useStore();
     const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
-    const [userName, setUserName] = useState('Alex'); // Default/Placeholder
+    // const [userName, setUserName] = useState('Alex'); // Using global store now
     const scrollRef = useRef<HTMLDivElement>(null);
     const supabase = createClient();
 
-    useEffect(() => {
-        // Fetch real user name
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user?.user_metadata?.full_name) {
-                setUserName(user.user_metadata.full_name.split(' ')[0]);
-            }
-        };
-        getUser();
-    }, []);
+    // Removed Supabase fetch for name, relying on Onboarding/Store
+    // useEffect(() => { ... }, []);
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -40,42 +32,68 @@ export default function ChatView() {
         if (!input.trim()) return;
 
         const userMsg = input;
-        setMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+        addMessage({ role: 'user', content: userMsg });
         setInput('');
         setIsProcessing(true);
 
         try {
             const result = await processUserCommand(userMsg);
-            setMessages(prev => [...prev, { role: 'assistant', content: result.message }]);
 
-            // Handle Actions (Re-using existing logic)
-            if (result.action) {
-                const { type, data } = result.action;
-                const store = useStore.getState();
+            // Add Assistant Message
+            addMessage({ role: 'assistant', content: result.message });
 
-                if (type === 'create_appointment') {
-                    // ... existing logic can be imported or kept here ...
-                    // For brevity, assuming store actions handle this or we keep the logic
-                    // To keep it clean, we'll just log or implement basic add
-                    const start = new Date();
-                    start.setDate(start.getDate() + (data.startOffsetDays || 1));
-                    store.addAppointment({
-                        id: Date.now().toString(),
-                        title: data.title,
-                        start,
-                        end: new Date(start.getTime() + 3600000),
-                    });
-                    store.setView('calendar');
-                }
-                // ... other actions
-                if (type === 'create_task') {
-                    store.addTask({ id: Date.now().toString(), title: data.title, priority: 'medium', status: 'pending' });
-                    store.setView('tasks');
-                }
+            // Handle Multiple Actions
+            if (result.actions && result.actions.length > 0) {
+                result.actions.forEach(action => {
+                    const { type, data } = action;
+
+                    if (type === 'create_appointment') {
+                        const start = new Date();
+                        start.setDate(start.getDate() + (data.startOffsetDays || 1));
+                        addAppointment({
+                            id: Date.now().toString(),
+                            title: data.title,
+                            start,
+                            end: new Date(start.getTime() + (data.durationHours || 1) * 3600000),
+                        });
+                        // Don't switch view immediately for multi-actions, or maybe just for the last one?
+                        // For now, let's NOT switch view automatically to keep context, or maybe notify via toast?
+                        // User requested persistence, so staying in chat is better.
+                    }
+
+                    if (type === 'create_task') {
+                        addTask({
+                            id: Date.now().toString(),
+                            title: data.title,
+                            priority: 'medium',
+                            status: 'pending'
+                        });
+                    }
+
+                    if (type === 'create_email') {
+                        addEmail({
+                            id: Date.now().toString(),
+                            recipient: data.recipient || '',
+                            subject: data.subject,
+                            body: data.body,
+                            type: 'draft'
+                        });
+                    }
+
+                    if (type === 'create_template') {
+                        addTemplate({
+                            id: Date.now().toString(),
+                            name: data.name,
+                            content: data.content
+                        });
+                    }
+
+                    // For 'create_contact', we don't have a store method yet, but it's "simulated" by AI message for now.
+                });
             }
 
         } catch (error) {
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Lo siento, hubo un error.' }]);
+            addMessage({ role: 'assistant', content: 'Lo siento, hubo un error procesando tu solicitud.' });
         } finally {
             setIsProcessing(false);
         }

@@ -16,10 +16,14 @@ const deepseek = new OpenAI({
 
 export interface AIResponse {
     message: string;
-    action?: {
+    action?: { // Deprecated, kept for backward compatibility if needed, but we should use actions
         type: 'create_appointment' | 'create_task' | 'create_email' | 'create_template' | 'switch_view';
         data: any;
     };
+    actions?: {
+        type: 'create_appointment' | 'create_task' | 'create_email' | 'create_template' | 'switch_view' | 'create_contact'; // Added create_contact
+        data: any;
+    }[];
 }
 
 // Tool Definitions are shared
@@ -85,39 +89,71 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
                 required: ['name', 'content']
             }
         }
+    },
+    {
+        type: 'function',
+        function: {
+            name: 'create_contact',
+            description: 'Add a new contact to the address book.',
+            parameters: {
+                type: 'object',
+                properties: {
+                    name: { type: 'string', description: 'Full name of the contact' },
+                    phone: { type: 'string', description: 'Phone number' },
+                    email: { type: 'string', description: 'Email address' }
+                },
+                required: ['name']
+            }
+        }
     }
 ];
 
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { GoogleService } from '@/lib/google-service';
+
 export async function processUserCommand(text: string): Promise<AIResponse> {
     try {
+        // --- AUTH & GOOGLE SERVICE ---
+        const session: any = await getServerSession(authOptions);
+        const accessToken = session?.accessToken;
+        let googleService: GoogleService | null = null;
+
+        if (accessToken) {
+            googleService = new GoogleService(accessToken);
+        } else {
+            console.warn('⚠️ No access token found. Using simulation mode.');
+        }
+
         // --- SMART ROUTING LOGIC ---
         // 1. Detect Intent: If the user uses specific keywords, force DeepSeek (Tools).
         // 2. Detect Plan: (Simulated) If Pro -> OpenAI for conversation. If Eco -> DeepSeek.
 
         const lowerText = text.toLowerCase();
-        const actionKeywords = ['crear', 'nueva', 'nuevo', 'agendar', 'cita', 'reunión', 'tarea', 'recordatorio', 'email', 'correo', 'plantilla'];
+        const actionKeywords = ['crear', 'nueva', 'nuevo', 'agendar', 'cita', 'reunión', 'tarea', 'recordatorio', 'email', 'correo', 'plantilla', 'agrega', 'contacto'];
         const isAction = actionKeywords.some(kw => lowerText.includes(kw));
 
         // TODO: Get real user plan from Supabase/Auth
         const userPlan: 'eco' | 'pro' = 'pro';
         // TODO: Check monthly usage limit for Pro
 
-        let activeClient = deepseek; // Default to DeepSeek (Cheaper/Free logic)
-        let model = 'deepseek-chat';
+        let activeClient = openai; // Default to OpenAI (User request to use only GPT-4o-mini)
+        let model = 'gpt-4o-mini';
 
         if (isAction) {
-            // Actions always go to DeepSeek (Cost optimization)
-            activeClient = deepseek;
-            model = 'deepseek-chat';
-            // console.log('🤖 Routing: Action detected -> Using DeepSeek');
+            // Actions now go to OpenAI too (DeepSeek failing)
+            activeClient = openai;
+            model = 'gpt-4o-mini';
+            // console.log('🤖 Routing: Action detected -> Using GPT-4o-mini');
         } else if (userPlan === 'pro') {
             // General questions for Pro -> OpenAI
             activeClient = openai;
             model = 'gpt-4o-mini';
             // console.log('🤖 Routing: Pro Question -> Using GPT-4o-mini');
         } else {
-            // General questions for Eco -> DeepSeek
-            // console.log('🤖 Routing: Eco Question -> Using DeepSeek');
+            // General questions for Eco -> OpenAI (fallback for now)
+            activeClient = openai;
+            model = 'gpt-4o-mini';
         }
 
         const response = await activeClient.chat.completions.create({
@@ -129,9 +165,10 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
           Tu objetivo es ayudar al usuario a gestionar su agenda, tareas y correos.
           
           Reglas:
-          1. Si el usuario pide crear algo (cita, tarea, email), USA LAS TOOLS disponibles.
-          2. Sé profesional pero cercano.
-          3. Si usas una tool, responde confirmando brevemente la acción.`
+          1. Si el usuario pide crear algo (cita, tarea, email, contacto), USA LAS TOOLS disponibles.
+          2. PUEDES Y DEBES USAR MÚLTIPLES TOOLS en una sola respuesta si el usuario pide varias cosas.
+          3. Sé profesional pero cercano.
+          4. Si usas tools, SIEMPRE responde confirmando TODAS las acciones realizadas.`
                 },
                 { role: 'user', content: text }
             ],
@@ -140,51 +177,91 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
         });
 
         const choice = response.choices[0];
-        const toolCall = choice.message.tool_calls?.[0];
+        const toolCalls = choice.message.tool_calls;
 
         // If no tool called, return the conversation message
-        if (!toolCall) {
+        if (!toolCalls || toolCalls.length === 0) {
             return {
                 message: choice.message.content || 'No entendí eso, ¿puedes repetir?',
             };
         }
 
-        // Handle Tools (DeepSeek & OpenAI outputs are compatible)
-        const fnName = (toolCall as any).function.name;
-        const args = JSON.parse((toolCall as any).function.arguments);
+        // Handle Multiple Tools
+        const actions: AIResponse['actions'] = [];
+        let feedbackMessage = '';
 
-        if (fnName === 'create_appointment') {
-            return {
-                message: `Entendido, he agendado: "${args.title}".`,
-                action: { type: 'create_appointment', data: args }
-            };
+        for (const toolCall of toolCalls) {
+            const fnName = (toolCall as any).function.name;
+            const args = JSON.parse((toolCall as any).function.arguments);
+
+            try {
+                if (fnName === 'create_appointment') {
+                    if (googleService) {
+                        const start = new Date();
+                        start.setDate(start.getDate() + (args.startOffsetDays || 1));
+                        start.setHours(10, 0, 0, 0); // Default to 10AM if time not specified (simplified)
+                        // Ideally args should have exact time, but for now we use offset
+
+                        const end = new Date(start.getTime() + (args.durationHours || 1) * 3600000);
+
+                        await googleService.createEvent(args.title, start, end);
+                        feedbackMessage += `Agendada en Google Calendar: "${args.title}". `;
+                    } else {
+                        feedbackMessage += `(Simulado) Agendada: "${args.title}". `;
+                    }
+                    actions.push({ type: 'create_appointment', data: args });
+                }
+
+                if (fnName === 'create_task') {
+                    if (googleService) {
+                        await googleService.createTask(args.title);
+                        feedbackMessage += `Tarea creada en Google Tasks: "${args.title}". `;
+                    } else {
+                        feedbackMessage += `(Simulado) Tarea creada: "${args.title}". `;
+                    }
+                    actions.push({ type: 'create_task', data: args });
+                }
+
+                if (fnName === 'create_email_draft') {
+                    if (googleService) {
+                        await googleService.createDraft(args.recipient, args.subject, args.body);
+                        feedbackMessage += `Borrador creado en Gmail: "${args.subject}". `;
+                    } else {
+                        feedbackMessage += `(Simulado) Borrador de email: "${args.subject}". `;
+                    }
+                    actions.push({ type: 'create_email', data: args });
+                }
+
+                if (fnName === 'create_contact') {
+                    if (googleService) {
+                        await googleService.createContact(args.name, args.email, args.phone);
+                        feedbackMessage += `Contacto añadido a Google: ${args.name}. `;
+                    } else {
+                        feedbackMessage += `(Simulado) Contacto añadido: ${args.name}. `;
+                    }
+                    actions.push({ type: 'create_contact', data: args });
+                }
+
+                if (fnName === 'create_template') {
+                    // Templates are internal only, no Google API
+                    feedbackMessage += `Plantilla "${args.name}" guardada. `;
+                    actions.push({ type: 'create_template', data: args });
+                }
+
+            } catch (err: any) {
+                console.error(`Error executing tool ${fnName}:`, err);
+                feedbackMessage += `Error al ejecutar ${fnName}: ${err.message}. `;
+            }
         }
 
-        if (fnName === 'create_task') {
-            return {
-                message: `Anotado en tareas: "${args.title}".`,
-                action: { type: 'create_task', data: args }
-            };
-        }
+        return {
+            message: feedbackMessage || choice.message.content || 'Acciones realizadas.',
+            actions: actions
+        };
 
-        if (fnName === 'create_email_draft') {
-            return {
-                message: `He creado el borrador del correo sobre "${args.subject}".`,
-                action: { type: 'create_email', data: args }
-            };
-        }
-
-        if (fnName === 'create_template') {
-            return {
-                message: `Plantilla "${args.name}" guardada.`,
-                action: { type: 'create_template', data: args }
-            };
-        }
-
-        return { message: 'Función no reconocida, pero te escuché.' };
-
-    } catch (error) {
+    } catch (error: any) {
         console.error('AI Error:', error);
-        return { message: 'Lo siento, tuve un problema conectando con mi cerebro digital. Intenta de nuevo.' };
+        // Return the actual error to the UI for better debugging
+        return { message: `Lo siento, hubo un error técnico: ${error.message || JSON.stringify(error)}` };
     }
 }

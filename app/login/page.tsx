@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -17,15 +18,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithOAuth({
-                provider: 'google',
-                options: {
-                    redirectTo: `${window.location.origin}/auth/callback`,
-                    // We can ask for more scopes here if we want to integrate Calendar later
-                    // scopes: 'https://www.googleapis.com/auth/calendar' 
-                },
-            });
-            if (error) throw error;
+            await signIn('google', { callbackUrl: '/' });
         } catch (err: any) {
             setError(err.message);
             setLoading(false);

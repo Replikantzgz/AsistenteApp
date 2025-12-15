@@ -2,16 +2,19 @@
 
 import { useStore, ViewType } from '@/store';
 import {
-    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, User
+    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, User, Users
 } from 'lucide-react';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { useSession, signOut } from 'next-auth/react';
+
 export default function Sidebar() {
     const { currentView, setView } = useStore();
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const { data: session } = useSession();
     const router = useRouter();
     const supabase = createClient();
 
@@ -29,8 +32,12 @@ export default function Sidebar() {
         return () => subscription.unsubscribe();
     }, []);
 
+    // Combine email from both sources
+    const displayEmail = userEmail || session?.user?.email;
+
     const handleLogout = async () => {
         await supabase.auth.signOut();
+        await signOut({ redirect: false });
         router.refresh();
         setUserEmail(null);
         router.push('/login');
@@ -42,9 +49,10 @@ export default function Sidebar() {
 
     const navItems: { id: ViewType; label: string; icon: any }[] = [
         { id: 'chat', label: 'Asistente IA', icon: MessageSquare },
-        { id: 'calendar', label: 'Agenda', icon: Calendar },
+        { id: 'calendar', label: 'Calendario', icon: Calendar },
         { id: 'tasks', label: 'Tareas', icon: CheckSquare },
         { id: 'emails', label: 'Emails', icon: Mail },
+        { id: 'contacts', label: 'Contactos', icon: Users },
         { id: 'templates', label: 'Plantillas', icon: FileText },
     ];
 
@@ -87,11 +95,11 @@ export default function Sidebar() {
                     <span>Configuración</span>
                 </button>
 
-                {userEmail ? (
+                {displayEmail ? (
                     <div className="pt-2 border-t border-slate-800 mt-2">
                         <div className="px-4 py-2">
                             <p className="text-xs text-slate-500">Sesión activa</p>
-                            <p className="text-xs font-medium text-slate-300 truncate" title={userEmail}>{userEmail}</p>
+                            <p className="text-xs font-medium text-slate-300 truncate" title={displayEmail}>{displayEmail}</p>
                         </div>
                         <button
                             onClick={handleLogout}

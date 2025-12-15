@@ -1,5 +1,6 @@
-import type { Metadata, Viewport } from 'next';
+import { Metadata, Viewport } from 'next';
 import './globals.css';
+import NextAuthProvider from '@/components/providers/NextAuthProvider';
 
 export const metadata: Metadata = {
     title: 'Propel',
@@ -28,7 +29,9 @@ export default function RootLayout({
     return (
         <html lang="es">
             <body className="h-screen w-screen overflow-hidden bg-slate-100 text-slate-900 antialiased">
-                {children}
+                <NextAuthProvider>
+                    {children}
+                </NextAuthProvider>
             </body>
         </html>
     );
