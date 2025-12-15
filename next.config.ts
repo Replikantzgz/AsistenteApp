@@ -13,7 +13,7 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 });
 
 const nextConfig: NextConfig = {
-  // @ts-expect-error Turbopack config might not be in types yet
+
   turbopack: {},
 };
 
