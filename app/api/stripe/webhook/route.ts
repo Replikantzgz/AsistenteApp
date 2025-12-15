@@ -66,7 +66,7 @@ export async function POST(req: Request) {
                 .update({
                     stripe_customer_id: subscription.customer as string,
                     subscription_status: 'active',
-                    plan: session.metadata.plan || 'pro',
+                    plan: session.metadata?.plan || 'pro',
                     updated_at: new Date().toISOString(),
                 })
                 .eq('email', userEmail);
