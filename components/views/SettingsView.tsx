@@ -107,10 +107,10 @@ export default function SettingsView() {
                             <span className="text-green-500 mr-2">✓</span> IA Básica
                         </li>
                         <li className="flex items-center text-slate-600">
-                            <span className="text-green-500 mr-2">✓</span> 50 comandos/día
+                            <span className="text-green-500 mr-2">✓</span> Gestión de Emails
                         </li>
-                        <li className="flex items-center text-slate-600">
-                            <span className="text-green-500 mr-2">✓</span> Calendario y Tareas
+                        <li className="flex items-center text-slate-400 line-through decoration-slate-400/50">
+                            <span className="text-slate-400 mr-2">✕</span> Calendario y Tareas
                         </li>
                     </ul>
                     <button

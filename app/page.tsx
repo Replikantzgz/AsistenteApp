@@ -16,8 +16,9 @@ import SettingsView from '@/components/views/SettingsView';
 
 export default function Home() {
     const { currentView, setUserName } = useStore();
-    const [onboardingDone, setOnboardingDone] = useState(true); // Default true to avoid flash, check effect
+    const [onboardingDone, setOnboardingDone] = useState(true);
     const [mounted, setMounted] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         setMounted(true);
@@ -35,6 +36,7 @@ export default function Home() {
 
     const renderView = () => {
         switch (currentView) {
+            // ... (keeping same switch)
             case 'chat': return <ChatView />;
             case 'calendar': return <CalendarView />;
             case 'tasks': return <TasksView />;
@@ -57,8 +59,21 @@ export default function Home() {
                 <Sidebar />
             </div>
 
+            {/* Mobile Sidebar Overlay */}
+            {mobileMenuOpen && (
+                <div className="fixed inset-0 z-50 lg:hidden flex">
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+                    <div className="relative w-64 h-full bg-slate-900 shadow-2xl animate-in slide-in-from-left duration-300">
+                        {/* Close button inside sidebar could be added, but clicking outside works */}
+                        <div onClick={() => setMobileMenuOpen(false)}>
+                            <Sidebar />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <main className="flex-1 h-full flex flex-col overflow-hidden relative">
-                <Header />
+                <Header onMenuClick={() => setMobileMenuOpen(true)} />
                 <div className="flex-1 overflow-y-auto pb-20 lg:pb-0 scroll-smooth">
                     {renderView()}
                 </div>

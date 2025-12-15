@@ -181,7 +181,7 @@ export default function ChatView() {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 bg-white border-t border-slate-100 pb-24 lg:pb-4">
+            <div className="p-4 bg-white border-t border-slate-100 pb-[calc(1rem+env(safe-area-inset-bottom))] lg:pb-4">
                 <div className="flex items-center gap-2 bg-slate-100 p-2 rounded-full border border-slate-200 focus-within:ring-2 ring-blue-500/20 transition-all">
                     <input
                         type="text"

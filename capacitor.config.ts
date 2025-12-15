@@ -6,7 +6,13 @@ const config: CapacitorConfig = {
     webDir: 'public',
     server: {
         url: 'https://asistente-app-teal.vercel.app',
-        cleartext: true
+        cleartext: true,
+        allowNavigation: [
+            'asistente-app-teal.vercel.app',
+            'accounts.google.com',
+            '*.google.com',
+            '*.stripe.com'
+        ]
     }
 };
 
