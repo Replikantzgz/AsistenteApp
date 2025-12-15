@@ -11,9 +11,12 @@ import { useRouter } from 'next/navigation';
 
 import { useSession, signOut } from 'next-auth/react';
 
+import { Lock } from 'lucide-react';
+
 export default function Sidebar() {
     const { currentView, setView } = useStore();
     const [userEmail, setUserEmail] = useState<string | null>(null);
+    const [userPlan, setUserPlan] = useState<'free' | 'eco' | 'pro'>('free'); // Default to free/basic
     const { data: session } = useSession();
     const router = useRouter();
     const supabase = createClient();
@@ -22,6 +25,17 @@ export default function Sidebar() {
         const getUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             setUserEmail(user?.email || null);
+
+            if (user) {
+                // Fetch profile for plan
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('plan')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile?.plan) setUserPlan(profile.plan);
+            }
         };
         getUser();
 
@@ -66,21 +80,33 @@ export default function Sidebar() {
             </div>
 
             <nav className="flex-1 px-4 space-y-2">
-                {navItems.map((item) => (
-                    <button
-                        key={item.id}
-                        onClick={() => setView(item.id)}
-                        className={clsx(
-                            'flex items-center w-full px-4 py-3 rounded-xl transition-all',
-                            currentView === item.id
-                                ? 'bg-blue-600 shadow-lg shadow-blue-900/50 text-white'
-                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                        )}
-                    >
-                        <item.icon className="w-5 h-5 mr-3" />
-                        <span className="font-medium">{item.label}</span>
-                    </button>
-                ))}
+                {navItems.map((item) => {
+                    // Restriction Logic:
+                    // Basic/Free = Chat + Emails + Settings (always available)
+                    // Pro = All
+                    // Eco = Can be defined, here assuming Eco behaves like Basic for blocked features or unlocked.
+                    // Let's implement User's request: "Basic solo IA con correo" -> Block others.
+
+                    const isRestricted = userPlan !== 'pro' && !['chat', 'emails'].includes(item.id);
+
+                    return (
+                        <button
+                            key={item.id}
+                            onClick={() => !isRestricted && setView(item.id)}
+                            className={clsx(
+                                'flex items-center w-full px-4 py-3 rounded-xl transition-all',
+                                currentView === item.id
+                                    ? 'bg-blue-600 shadow-lg shadow-blue-900/50 text-white'
+                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white',
+                                isRestricted && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-slate-400'
+                            )}
+                        >
+                            <item.icon className="w-5 h-5 mr-3" />
+                            <span className="font-medium flex-1 text-left">{item.label}</span>
+                            {isRestricted && <Lock className="w-4 h-4 text-slate-600" />}
+                        </button>
+                    );
+                })}
             </nav>
 
             <div className="p-4 border-t border-slate-800 space-y-2">

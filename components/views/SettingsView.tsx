@@ -7,6 +7,27 @@ export default function SettingsView() {
     const { data: session, status } = useSession();
     const loading = status === 'loading';
 
+    const handleCheckout = async (plan: 'eco' | 'pro') => {
+        try {
+            const res = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ plan }),
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text || 'Error al iniciar pago');
+            }
+
+            const { url } = await res.json();
+            if (url) window.location.href = url;
+        } catch (error) {
+            console.error(error);
+            alert('Error al conectar con Stripe. Asegúrate de haber iniciado sesión.');
+        }
+    };
+
     return (
         <div className="h-full bg-slate-50 p-8 overflow-y-auto">
             <h2 className="text-3xl font-bold text-slate-800 mb-8">Configuración</h2>
@@ -18,6 +39,7 @@ export default function SettingsView() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 bg-white border border-slate-200 rounded-full flex items-center justify-center p-2 shadow-sm">
+                                {/* Google G Logo */}
                                 <svg viewBox="0 0 24 24" className="w-6 h-6">
                                     <path
                                         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -91,7 +113,10 @@ export default function SettingsView() {
                             <span className="text-green-500 mr-2">✓</span> Calendario y Tareas
                         </li>
                     </ul>
-                    <button className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-800 hover:text-slate-900 transition-all">
+                    <button
+                        onClick={() => handleCheckout('eco')}
+                        className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-800 hover:text-slate-900 transition-all"
+                    >
                         Elegir Eco
                     </button>
                 </div>
@@ -120,7 +145,10 @@ export default function SettingsView() {
                             <span className="text-blue-400 mr-2">✓</span> Plantillas Ilimitadas
                         </li>
                     </ul>
-                    <button className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-blue-900/50 transition-all">
+                    <button
+                        onClick={() => handleCheckout('pro')}
+                        className="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-blue-900/50 transition-all"
+                    >
                         Prueba gratis 7 días
                     </button>
                 </div>
