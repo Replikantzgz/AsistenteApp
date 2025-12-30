@@ -58,10 +58,10 @@ export default function ChatView() {
         try {
             await navigator.mediaDevices.getUserMedia({ audio: true });
             setPermissionDenied(false);
-            alert("Permiso concedido. Intenta usar el micrófono ahora.");
+            // Permission granted silently, no alert needed
         } catch (err) {
-            console.error(err);
-            alert("No se pudo obtener acceso al micrófono. Por favor revisa la configuración de tu navegador/dispositivo.");
+            console.error('Microphone permission denied:', err);
+            setPermissionDenied(true);
         }
     };
 
