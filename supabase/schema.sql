@@ -10,8 +10,20 @@ create table public.profiles (
   plan text default 'eco' check (plan in ('eco', 'pro')),
   stripe_customer_id text,
   subscription_status text,
+  referral_code text unique default substring(md5(random()::text) from 1 for 8),
+  referred_by uuid references public.profiles(id),
+  referral_balance numeric default 0,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+-- Create referrals table to track conversions
+create table public.referrals (
+  id uuid default uuid_generate_v4() primary key,
+  referrer_id uuid references public.profiles(id) not null,
+  referred_id uuid references public.profiles(id) not null unique,
+  reward_paid boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
 -- Create api_keys table (securely store user keys)
@@ -38,6 +50,10 @@ create table public.usage_logs (
 alter table public.profiles enable row level security;
 alter table public.api_keys enable row level security;
 alter table public.usage_logs enable row level security;
+alter table public.referrals enable row level security;
+
+create policy "Users can view own referral status" on public.referrals
+  for select using (auth.uid() = referrer_id or auth.uid() = referred_id);
 
 create policy "Users can view own profile" on public.profiles
   for select using (auth.uid() = id);
@@ -69,3 +85,13 @@ $$ language plpgsql security definer;
 -- create trigger on_auth_user_created
 --   after insert on auth.users
 --   for each row execute procedure public.handle_new_user();
+
+-- Function to increment referral balance
+create or replace function public.increment_referral_balance(user_id uuid, amount numeric)
+returns void as $$
+begin
+  update public.profiles
+  set referral_balance = referral_balance + amount
+  where id = user_id;
+end;
+$$ language plpgsql security definer;

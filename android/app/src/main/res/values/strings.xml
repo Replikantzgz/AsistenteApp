@@ -1,7 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Propel</string>
-    <string name="title_activity_main">Propel</string>
+    <string name="app_name">Alfred</string>
+    <string name="title_activity_main">Alfred</string>
     <string name="package_name">com.iatualcance.propel</string>
     <string name="custom_url_scheme">com.iatualcance.propel</string>
+    <string name="server_client_id">969656696808-jec60cd9fi0rapd9en5.apps.googleusercontent.com</string>
 </resources>

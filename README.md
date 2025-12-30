@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Propel - Asistente Personal AI
 
-## Getting Started
+Aplicación de asistencia personal con IA, notas de voz, y gestión de calendario. Integrada con Google Services y construida con Next.js + Capacitor.
 
-First, run the development server:
+## Características
+
+- **Asistente AI:** Chat interactivo con capacidades de gestión.
+- **Notas Inteligentes:** Transcripción de voz y resúmenes automáticos.
+- **Integración Google:** Login nativo, Calendario, Contactos y Gmail.
+- **Multi-Plataforma:** Web (PWA) y Android.
+
+## Configuración del Entorno
+
+### Requisitos
+- Node.js 20+
+- Android Studio (para build nativo)
+- Clave de API de Google (Web Client ID)
+
+### Instalación
+
+```bash
+npm install
+```
+
+### Ejecutar en Desarrollo
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Construcción para Android
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Build Web Assets:**
+   ```bash
+   npm run build
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Sync Native:**
+   ```bash
+   npx cap sync android
+   ```
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. **Build APK:**
+   Desde `android/`:
+   ```bash
+   ./gradlew assembleDebug
+   ```
+   *Nota: Requiere JAVA_HOME configurado (ver INSTRUCCIONES_RECUPERACION.md).*

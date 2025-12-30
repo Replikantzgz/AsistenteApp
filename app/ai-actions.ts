@@ -1,6 +1,10 @@
 'use server';
 
 import OpenAI from 'openai';
+import { NotesService } from '@/lib/notes-service';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth-options';
+import { GoogleService } from '@/lib/google-service';
 
 // Client 1: OpenAI (GPT-4o-mini) - For "Pro" questions
 const openai = new OpenAI({
@@ -8,7 +12,6 @@ const openai = new OpenAI({
 });
 
 // Client 2: DeepSeek (V3) - For Tools & "Eco" questions
-// DeepSeek uses an OpenAI-compatible API
 const deepseek = new OpenAI({
     apiKey: process.env.DEEPSEEK_API_KEY,
     baseURL: 'https://api.deepseek.com',
@@ -16,17 +19,16 @@ const deepseek = new OpenAI({
 
 export interface AIResponse {
     message: string;
-    action?: { // Deprecated, kept for backward compatibility if needed, but we should use actions
-        type: 'create_appointment' | 'create_task' | 'create_email' | 'create_template' | 'switch_view';
+    action?: {
+        type: 'create_appointment' | 'create_note' | 'create_email' | 'create_template' | 'switch_view';
         data: any;
     };
     actions?: {
-        type: 'create_appointment' | 'create_task' | 'create_email' | 'create_template' | 'switch_view' | 'create_contact'; // Added create_contact
+        type: 'create_appointment' | 'create_note' | 'create_email' | 'create_template' | 'switch_view' | 'create_contact';
         data: any;
     }[];
 }
 
-// Tool Definitions are shared
 const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
         type: 'function',
@@ -47,13 +49,14 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     {
         type: 'function',
         function: {
-            name: 'create_task',
-            description: 'Add a new task or reminder to the list.',
+            name: 'create_note',
+            description: 'Save a note, task, or meeting summary.',
             parameters: {
                 type: 'object',
                 properties: {
-                    title: { type: 'string', description: 'Description of the task' },
-                    priority: { type: 'string', enum: ['low', 'medium', 'high'], default: 'medium' }
+                    title: { type: 'string', description: 'Title of the note' },
+                    content: { type: 'string', description: 'Content or details of the note' },
+                    tags: { type: 'array', items: { type: 'string' }, description: 'Tags for organization' }
                 },
                 required: ['title']
             }
@@ -108,67 +111,39 @@ const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
     }
 ];
 
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth-options';
-import { GoogleService } from '@/lib/google-service';
-
 export async function processUserCommand(text: string): Promise<AIResponse> {
     try {
-        // --- AUTH & GOOGLE SERVICE ---
         const session: any = await getServerSession(authOptions);
         const accessToken = session?.accessToken;
         let googleService: GoogleService | null = null;
 
         if (accessToken) {
             googleService = new GoogleService(accessToken);
-        } else {
-            console.warn('⚠️ No access token found. Using simulation mode.');
         }
-
-        // --- SMART ROUTING LOGIC ---
-        // 1. Detect Intent: If the user uses specific keywords, force DeepSeek (Tools).
-        // 2. Detect Plan: (Simulated) If Pro -> OpenAI for conversation. If Eco -> DeepSeek.
 
         const lowerText = text.toLowerCase();
-        const actionKeywords = ['crear', 'nueva', 'nuevo', 'agendar', 'cita', 'reunión', 'tarea', 'recordatorio', 'email', 'correo', 'plantilla', 'agrega', 'contacto'];
+        // Updated keywords to include notes related terms
+        const actionKeywords = ['crear', 'nueva', 'nuevo', 'agendar', 'cita', 'reunión', 'nota', 'resumen', 'recordatorio', 'email', 'correo', 'plantilla', 'agrega', 'contacto'];
         const isAction = actionKeywords.some(kw => lowerText.includes(kw));
 
-        // TODO: Get real user plan from Supabase/Auth
-        const userPlan: 'eco' | 'pro' = 'pro';
-        // TODO: Check monthly usage limit for Pro
-
-        let activeClient = openai; // Default to OpenAI (User request to use only GPT-4o-mini)
-        let model = 'gpt-4o-mini';
-
-        if (isAction) {
-            // Actions now go to OpenAI too (DeepSeek failing)
-            activeClient = openai;
-            model = 'gpt-4o-mini';
-            // console.log('🤖 Routing: Action detected -> Using GPT-4o-mini');
-        } else if (userPlan === 'pro') {
-            // General questions for Pro -> OpenAI
-            activeClient = openai;
-            model = 'gpt-4o-mini';
-            // console.log('🤖 Routing: Pro Question -> Using GPT-4o-mini');
-        } else {
-            // General questions for Eco -> OpenAI (fallback for now)
-            activeClient = openai;
-            model = 'gpt-4o-mini';
-        }
+        // Default to OpenAI
+        const activeClient = openai;
+        const model = 'gpt-4o-mini';
 
         const response = await activeClient.chat.completions.create({
             model: model,
             messages: [
                 {
                     role: 'system',
-                    content: `Eres Propel, un asistente personal inteligente y eficiente.
-          Tu objetivo es ayudar al usuario a gestionar su agenda, tareas y correos.
+                    content: `Eres Alfred, un asistente personal inteligente, sofisticado y eficiente, al estilo de un mayordomo moderno.
+          Tu objetivo es ayudar al usuario a gestionar su agenda, notas y correos de manera impecable.
           
           Reglas:
-          1. Si el usuario pide crear algo (cita, tarea, email, contacto), USA LAS TOOLS disponibles.
+          1. Si el usuario pide crear algo (cita, nota, email, contacto), USA LAS TOOLS disponibles.
           2. PUEDES Y DEBES USAR MÚLTIPLES TOOLS en una sola respuesta si el usuario pide varias cosas.
-          3. Sé profesional pero cercano.
-          4. Si usas tools, SIEMPRE responde confirmando TODAS las acciones realizadas.`
+          3. Sé profesional, servicial y elegante en tu trato.
+          4. Si usas tools, SIEMPRE responde confirmando TODAS las acciones realizadas.
+          5. Si el usuario pide recordar algo, crear una tarea o guardar un resumen, crea una NOTA (create_note). NO existen las tareas en Google.`
                 },
                 { role: 'user', content: text }
             ],
@@ -179,14 +154,12 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
         const choice = response.choices[0];
         const toolCalls = choice.message.tool_calls;
 
-        // If no tool called, return the conversation message
         if (!toolCalls || toolCalls.length === 0) {
             return {
                 message: choice.message.content || 'No entendí eso, ¿puedes repetir?',
             };
         }
 
-        // Handle Multiple Tools
         const actions: AIResponse['actions'] = [];
         let feedbackMessage = '';
 
@@ -199,9 +172,7 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
                     if (googleService) {
                         const start = new Date();
                         start.setDate(start.getDate() + (args.startOffsetDays || 1));
-                        start.setHours(10, 0, 0, 0); // Default to 10AM if time not specified (simplified)
-                        // Ideally args should have exact time, but for now we use offset
-
+                        start.setHours(10, 0, 0, 0);
                         const end = new Date(start.getTime() + (args.durationHours || 1) * 3600000);
 
                         await googleService.createEvent(args.title, start, end);
@@ -212,14 +183,14 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
                     actions.push({ type: 'create_appointment', data: args });
                 }
 
-                if (fnName === 'create_task') {
-                    if (googleService) {
-                        await googleService.createTask(args.title);
-                        feedbackMessage += `Tarea creada en Google Tasks: "${args.title}". `;
-                    } else {
-                        feedbackMessage += `(Simulado) Tarea creada: "${args.title}". `;
-                    }
-                    actions.push({ type: 'create_task', data: args });
+                if (fnName === 'create_note') {
+                    await NotesService.createNote({
+                        title: args.title,
+                        content: args.content || '',
+                        tags: args.tags || []
+                    });
+                    feedbackMessage += `Nota guardada: "${args.title}". `;
+                    actions.push({ type: 'create_note', data: args });
                 }
 
                 if (fnName === 'create_email_draft') {
@@ -243,7 +214,6 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
                 }
 
                 if (fnName === 'create_template') {
-                    // Templates are internal only, no Google API
                     feedbackMessage += `Plantilla "${args.name}" guardada. `;
                     actions.push({ type: 'create_template', data: args });
                 }
@@ -261,7 +231,6 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
 
     } catch (error: any) {
         console.error('AI Error:', error);
-        // Return the actual error to the UI for better debugging
         return { message: `Lo siento, hubo un error técnico: ${error.message || JSON.stringify(error)}` };
     }
 }

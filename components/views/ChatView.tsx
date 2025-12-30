@@ -130,7 +130,7 @@ export default function ChatView() {
                         // User requested persistence, so staying in chat is better.
                     }
 
-                    if (type === 'create_task') {
+                    if (type === 'create_note') {
                         addTask({
                             id: Date.now().toString(),
                             title: data.title,

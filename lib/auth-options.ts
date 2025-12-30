@@ -9,7 +9,7 @@ export const authOptions: NextAuthOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
             authorization: {
                 params: {
-                    scope: 'openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/contacts https://www.googleapis.com/auth/tasks',
+                    scope: 'openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/contacts',
                     access_type: 'offline',
                     prompt: 'consent',
                 },
@@ -39,16 +39,22 @@ export const authOptions: NextAuthOptions = {
         })
     ],
     callbacks: {
-        async jwt({ token, account }) {
+        async jwt({ token, account, user }) {
             if (account) {
                 token.accessToken = account.access_token;
                 token.refreshToken = account.refresh_token;
+            }
+            if (user) {
+                token.id = user.id;
             }
             return token;
         },
         async session({ session, token }: any) {
             session.accessToken = token.accessToken;
             session.refreshToken = token.refreshToken;
+            if (session.user) {
+                session.user.id = token.id;
+            }
             return session;
         },
     },

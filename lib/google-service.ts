@@ -24,19 +24,7 @@ export class GoogleService {
         return res.data;
     }
 
-    // --- TASKS ---
-    async createTask(title: string) {
-        const tasks = google.tasks({ version: 'v1', auth: this.auth });
-        // First get the default list
-        const lists = await tasks.tasklists.list();
-        const taskListId = lists.data.items?.[0]?.id || '@default';
 
-        const res = await tasks.tasks.insert({
-            tasklist: taskListId,
-            requestBody: { title: title },
-        });
-        return res.data;
-    }
 
     // --- GMAIL (Draft) ---
     async createDraft(recipient: string, subject: string, body: string) {

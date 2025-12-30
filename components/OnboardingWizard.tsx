@@ -27,7 +27,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
         if (step === 1) {
             if (!nameInput.trim()) return; // Require name
             setUserName(nameInput);
-            localStorage.setItem('propel_user_name', nameInput);
+            localStorage.setItem('alfred_user_name', nameInput);
         }
         if (step < 3) setStep(step + 1);
         else onComplete();
@@ -60,7 +60,7 @@ export default function OnboardingWizard({ onComplete }: { onComplete: () => voi
                                 <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <span className="text-4xl">👋</span>
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-900 mb-2">Hola, soy Propel</h2>
+                                <h2 className="text-2xl font-bold text-slate-900 mb-2">Hola, soy Alfred</h2>
                                 <p className="text-slate-500 mb-6">
                                     Tu asistente personal inteligente. ¿Cómo te gustaría que te llame?
                                 </p>

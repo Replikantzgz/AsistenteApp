@@ -2,8 +2,8 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
     appId: 'com.iatualcance.propel',
-    appName: 'Propel',
-    webDir: 'public',
+    appName: 'Alfred',
+    webDir: 'out',
     server: {
         url: 'https://asistente-app-teal.vercel.app',
         cleartext: true,
@@ -19,7 +19,7 @@ const config: CapacitorConfig = {
     plugins: {
         GoogleAuth: {
             scopes: ["openid", "email", "profile"],
-            serverClientId: "REEMPLAZAR_CON_TU_GOOGLE_CLIENT_ID_DE_FIREBASE_O_CLOUD",
+            serverClientId: "969656696808-jec60cd9fi0rapd9en5.apps.googleusercontent.com",
             forceCodeForRefreshToken: true
         }
     }

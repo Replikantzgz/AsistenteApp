@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import { handleCombinedLogin } from '@/lib/native-auth';
@@ -7,6 +8,54 @@ import { handleCombinedLogin } from '@/lib/native-auth';
 export default function SettingsView() {
     const { data: session, status } = useSession();
     const loading = status === 'loading';
+    const [referralData, setReferralData] = useState({ code: '', balance: 0, count: 0 });
+    const [inputCode, setInputCode] = useState('');
+    const [applying, setApplying] = useState(false);
+    const [hasReferrer, setHasReferrer] = useState(true);
+
+    useEffect(() => {
+        if (session) {
+            fetchReferralData();
+        }
+    }, [session]);
+
+    const fetchReferralData = async () => {
+        try {
+            const res = await fetch('/api/referral');
+            if (res.ok) {
+                const data = await res.json();
+                setReferralData(data);
+                // We'll assume if they have a referrer already we don't show the input
+                // This logic might need refinement in the API to return referred_by status
+                setHasReferrer(!!data.referred_by); // I'll update the API to return this
+            }
+        } catch (err) {
+            console.error('Error fetching referral data:', err);
+        }
+    };
+
+    const handleApplyCode = async () => {
+        if (!inputCode.trim()) return;
+        setApplying(true);
+        try {
+            const res = await fetch('/api/referral', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: inputCode }),
+            });
+            if (res.ok) {
+                alert('¡Código aplicado con éxito!');
+                setHasReferrer(true);
+            } else {
+                const msg = await res.text();
+                alert(`Error: ${msg}`);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setApplying(false);
+        }
+    };
 
     const handleCheckout = async (plan: 'eco' | 'pro') => {
         try {
@@ -89,6 +138,67 @@ export default function SettingsView() {
                                 Conectar
                             </button>
                         )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Referrals Section */}
+            <div className="mb-12">
+                <h3 className="text-xl font-semibold text-slate-700 mb-4">Sistema de Referidos</h3>
+                <div className="bg-gradient-to-r from-blue-600 to-indigo-700 p-6 rounded-2xl shadow-lg text-white">
+                    <div className="grid md:grid-cols-2 gap-8 items-center">
+                        <div>
+                            <h4 className="text-2xl font-bold mb-2">¡Gana 1€ por amigo!</h4>
+                            <p className="text-blue-100 mb-4 opacity-90">
+                                Comparte tu código de Alfred. Cuando un amigo se registre y realice su primer pago, recibirás 1€ de saldo directamente.
+                            </p>
+                            <div className="flex items-center gap-3 bg-white/10 p-2 rounded-xl border border-white/20">
+                                <code className="flex-1 font-mono text-xl font-bold text-center tracking-widest">{referralData.code || '------'}</code>
+                                <button
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(referralData.code);
+                                        alert('Código copiado');
+                                    }}
+                                    className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors"
+                                >
+                                    Copiar
+                                </button>
+                            </div>
+                        </div>
+                        <div className="bg-white/10 p-6 rounded-xl border border-white/20">
+                            <div className="flex justify-between items-center mb-4">
+                                <div>
+                                    <p className="text-sm text-blue-100">Saldo Acumulado</p>
+                                    <p className="text-3xl font-bold">{referralData.balance} €</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-sm text-blue-100">Amigos Referidos</p>
+                                    <p className="text-3xl font-bold">{referralData.count}</p>
+                                </div>
+                            </div>
+
+                            {!hasReferrer && (
+                                <div className="mt-6 pt-6 border-t border-white/10">
+                                    <p className="text-sm text-blue-100 mb-3">¿Te han invitado? Introduce el código:</p>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder="Código..."
+                                            value={inputCode}
+                                            onChange={(e) => setInputCode(e.target.value.toUpperCase())}
+                                            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 flex-1 outline-none focus:ring-2 ring-white/50"
+                                        />
+                                        <button
+                                            onClick={handleApplyCode}
+                                            disabled={applying}
+                                            className="px-4 py-2 bg-white text-blue-600 rounded-lg text-sm font-bold hover:bg-blue-50 transition-colors disabled:opacity-50"
+                                        >
+                                            {applying ? '...' : 'Aplicar'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

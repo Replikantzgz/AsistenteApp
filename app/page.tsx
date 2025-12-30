@@ -8,7 +8,7 @@ import BottomNav from '@/components/BottomNav';
 import OnboardingWizard from '@/components/OnboardingWizard';
 import ChatView from '@/components/views/ChatView'; // This will be our "Home"
 import CalendarView from '@/components/views/CalendarView';
-import TasksView from '@/components/views/TasksView';
+import NotesPage from '@/app/notes/page';
 import EmailsView from '@/components/views/EmailsView';
 import TemplatesView from '@/components/views/TemplatesView';
 import ContactsView from '@/components/views/ContactsView';
@@ -22,15 +22,15 @@ export default function Home() {
 
     useEffect(() => {
         setMounted(true);
-        const done = localStorage.getItem('propel_onboarding_completed');
-        const savedName = localStorage.getItem('propel_user_name');
+        const done = localStorage.getItem('alfred_onboarding_completed');
+        const savedName = localStorage.getItem('alfred_user_name');
 
         if (!done) setOnboardingDone(false);
         if (savedName) setUserName(savedName);
     }, []);
 
     const handleOnboardingComplete = () => {
-        localStorage.setItem('propel_onboarding_completed', 'true');
+        localStorage.setItem('alfred_onboarding_completed', 'true');
         setOnboardingDone(true);
     };
 
@@ -39,7 +39,7 @@ export default function Home() {
             // ... (keeping same switch)
             case 'chat': return <ChatView />;
             case 'calendar': return <CalendarView />;
-            case 'tasks': return <TasksView />;
+            case 'notes': return <NotesPage />;
             case 'emails': return <EmailsView />;
             case 'templates': return <TemplatesView />;
             case 'contacts': return <ContactsView />;

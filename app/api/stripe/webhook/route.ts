@@ -41,26 +41,16 @@ export async function POST(req: Request) {
             return new NextResponse('User Email missing in metadata', { status: 400 });
         }
 
-        // Update or Create user profile in Supabase based on EMAIL
-        // We use the Service Role key, so we can bypass RLS and write freely.
-        // Assuming 'email' is a unique column in profiles or we use it to find the record.
-        // Since we switched to NextAuth, we might not have a UUID linked to auth.users yet.
-        // For simplicity, we will UPSERT based on email.
-
-        // LIMITATION: If 'profiles' table has a foreign key constraint on 'id' to 'auth.users', this UPSERT might fail
-        // if we try to generate a random ID. 
-        // Ideally, we should check if a profile exists first.
-
-        const { data: existingProfile } = await supabase
+        const { data: profile } = await supabase
             .from('profiles')
-            .select('id')
+            .select('id, referred_by')
             .eq('email', userEmail)
             .single();
 
         let error;
 
-        if (existingProfile) {
-            // Update
+        if (profile) {
+            // Update profile
             const res = await supabase
                 .from('profiles')
                 .update({
@@ -69,27 +59,40 @@ export async function POST(req: Request) {
                     plan: session.metadata?.plan || 'pro',
                     updated_at: new Date().toISOString(),
                 })
-                .eq('email', userEmail);
+                .eq('id', profile.id);
             error = res.error;
-        } else {
-            // Cannot insert if 'id' is FK to auth.users and we don't have a user...
-            // But we can try to insert just the email if the schema allows text-based ID or self-managed ID.
-            // If this fails, it means we need a real Supabase User.
-            // For now, let's log usage.
-            console.warn(`Profile not found for ${userEmail}. NextAuth user might not exist in Supabase Profiles yet.`);
 
-            // Allow insert if table permits.
-            /* 
-            const res = await supabase.from('profiles').insert({
-                email: userEmail,
-                plan: session.metadata.plan || 'pro',
-                subscription_status: 'active',
-                stripe_customer_id: subscription.customer as string,
-                updated_at: new Date().toISOString()
-            });
-            error = res.error; 
-            */
-            // To be safe, we just return for now if no profile. This needs a sync mechanism if we want to perfect it.
+            // REFERRAL LOGIC:
+            if (profile.referred_by) {
+                // Check if this is the first payment reward
+                const { data: referral } = await supabase
+                    .from('referrals')
+                    .select('id, reward_paid')
+                    .eq('referred_id', profile.id)
+                    .single();
+
+                if (referral && !referral.reward_paid) {
+                    // Reward the referrer (add 1 Euro/Credit)
+                    const { error: rewardError } = await supabase.rpc('increment_referral_balance', {
+                        user_id: profile.referred_by,
+                        amount: 1
+                    });
+
+                    if (!rewardError) {
+                        // Mark reward as paid
+                        await supabase
+                            .from('referrals')
+                            .update({ reward_paid: true })
+                            .eq('id', referral.id);
+
+                        console.log(`Referral reward of 1€ paid to ${profile.referred_by} for ${userEmail}`);
+                    } else {
+                        console.error('Error rewarding referrer:', rewardError);
+                    }
+                }
+            }
+        } else {
+            console.warn(`Profile not found for ${userEmail}.`);
         }
 
         if (error) {

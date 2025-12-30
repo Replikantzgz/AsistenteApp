@@ -148,8 +148,7 @@ export default function CalendarView() {
             )}
         </div>
     );
-        </div >
-    );
+
 }
 
 // Sub-components for cleaner file structure

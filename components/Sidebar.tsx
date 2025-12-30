@@ -64,7 +64,7 @@ export default function Sidebar() {
     const navItems: { id: ViewType; label: string; icon: any }[] = [
         { id: 'chat', label: 'Asistente IA', icon: MessageSquare },
         { id: 'calendar', label: 'Calendario', icon: Calendar },
-        { id: 'tasks', label: 'Tareas', icon: CheckSquare },
+        { id: 'notes', label: 'Notas', icon: CheckSquare },
         { id: 'emails', label: 'Emails', icon: Mail },
         { id: 'contacts', label: 'Contactos', icon: Users },
         { id: 'templates', label: 'Plantillas', icon: FileText },
@@ -74,9 +74,9 @@ export default function Sidebar() {
         <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 transition-all duration-300">
             <div className="p-6">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                    Propel
+                    Alfred
                 </h1>
-                <p className="text-xs text-slate-400 mt-1">Asistente Personal Pro v2.0</p>
+                <p className="text-xs text-slate-400 mt-1">Alfred Premium v1.0</p>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">

@@ -10,14 +10,14 @@ export default function BottomNav() {
 
     const tabs: { id: ViewType; icon: any; label: string }[] = [
         { id: 'calendar', icon: Calendar, label: 'Calendario' },
-        { id: 'tasks', icon: CheckSquare, label: 'Tareas' },
+        { id: 'notes', icon: CheckSquare, label: 'Notas' },
         { id: 'chat', icon: MessageSquare, label: 'IA' }, // Center item
         { id: 'emails', icon: Mail, label: 'Email' },
         { id: 'contacts', icon: Users, label: 'Contactos' }, // Contacts view to be created
     ];
 
     return (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-200 pb-safe pt-2 px-6 z-50 lg:hidden">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-200 pb-[calc(env(safe-area-inset-bottom)+16px)] pt-3 px-6 z-50 lg:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
             <div className="flex items-center justify-between max-w-md mx-auto h-16">
                 {tabs.map((tab, index) => {
                     const isCenter = tab.id === 'chat';

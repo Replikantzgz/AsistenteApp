@@ -3,13 +3,13 @@ import './globals.css';
 import NextAuthProvider from '@/components/providers/NextAuthProvider';
 
 export const metadata: Metadata = {
-    title: 'Propel',
+    title: 'Alfred',
     description: 'Tu asistente personal inteligente',
     manifest: '/manifest.json',
     appleWebApp: {
         capable: true,
         statusBarStyle: 'black-translucent',
-        title: 'Propel',
+        title: 'Alfred',
     },
 };
 
@@ -29,7 +29,7 @@ export default function RootLayout({
 }) {
     return (
         <html lang="es">
-            <body className="h-dvh w-screen overflow-hidden bg-slate-100 text-slate-900 antialiased">
+            <body className="h-dvh w-screen overflow-hidden bg-slate-100 text-slate-900 antialiased pt-[env(safe-area-inset-top)]">
                 <NextAuthProvider>
                     {children}
                 </NextAuthProvider>
