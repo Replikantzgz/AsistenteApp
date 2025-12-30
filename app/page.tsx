@@ -51,7 +51,7 @@ export default function Home() {
     if (!mounted) return null;
 
     return (
-        <div className="flex h-full w-full bg-slate-50 text-slate-900 font-sans">
+        <div className="flex h-full w-full bg-slate-50 text-slate-900 font-sans pt-[env(safe-area-inset-top)]">
             {!onboardingDone && <OnboardingWizard onComplete={handleOnboardingComplete} />}
 
             {/* Desktop Sidebar */}

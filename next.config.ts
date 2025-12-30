@@ -15,8 +15,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {},
-  output: 'export',
-  images: { unoptimized: true }, // Required for static export
+  // Removed output: 'export' to allow dynamic routes for NextAuth
+  images: { unoptimized: true },
 };
 
 export default nextConfig;
