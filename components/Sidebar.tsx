@@ -81,13 +81,8 @@ export default function Sidebar() {
 
             <nav className="flex-1 px-4 space-y-2">
                 {navItems.map((item) => {
-                    // Restriction Logic:
-                    // Basic/Free = Chat + Emails + Settings (always available)
-                    // Pro = All
-                    // Eco = Can be defined, here assuming Eco behaves like Basic for blocked features or unlocked.
-                    // Let's implement User's request: "Basic solo IA con correo" -> Block others.
-
-                    const isRestricted = userPlan !== 'pro' && !['chat', 'emails'].includes(item.id);
+                    // All features unlocked for Premium trial users
+                    const isRestricted = false;
 
                     return (
                         <button
