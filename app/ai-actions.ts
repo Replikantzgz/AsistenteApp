@@ -6,15 +6,10 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { GoogleService } from '@/lib/google-service';
 
-// Client 1: OpenAI (GPT-4o-mini) - For "Pro" questions
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY,
-});
-
-// Client 2: DeepSeek (V3) - For Tools & "Eco" questions
-const deepseek = new OpenAI({
-    apiKey: process.env.DEEPSEEK_API_KEY,
-    baseURL: 'https://api.deepseek.com',
+// Perplexity Sonar - Affordable AI with integrated search
+const perplexity = new OpenAI({
+    apiKey: process.env.PERPLEXITY_API_KEY,
+    baseURL: 'https://api.perplexity.ai',
 });
 
 export interface AIResponse {
@@ -126,12 +121,9 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
         const actionKeywords = ['crear', 'nueva', 'nuevo', 'agendar', 'cita', 'reunión', 'nota', 'resumen', 'recordatorio', 'email', 'correo', 'plantilla', 'agrega', 'contacto'];
         const isAction = actionKeywords.some(kw => lowerText.includes(kw));
 
-        // Default to OpenAI
-        const activeClient = openai;
-        const model = 'gpt-4o-mini';
-
-        const response = await activeClient.chat.completions.create({
-            model: model,
+        // Use Perplexity Sonar for all requests
+        const response = await perplexity.chat.completions.create({
+            model: 'sonar',  // Perplexity's affordable model with search
             messages: [
                 {
                     role: 'system',
@@ -143,7 +135,8 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
           2. PUEDES Y DEBES USAR MÚLTIPLES TOOLS en una sola respuesta si el usuario pide varias cosas.
           3. Sé profesional, servicial y elegante en tu trato.
           4. Si usas tools, SIEMPRE responde confirmando TODAS las acciones realizadas.
-          5. Si el usuario pide recordar algo, crear una tarea o guardar un resumen, crea una NOTA (create_note). NO existen las tareas en Google.`
+          5. Si el usuario pide recordar algo, crear una tarea o guardar un resumen, crea una NOTA (create_note). NO existen las tareas en Google.
+          6. Puedes buscar información actualizada en internet cuando sea necesario.`
                 },
                 { role: 'user', content: text }
             ],
