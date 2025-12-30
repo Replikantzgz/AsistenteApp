@@ -177,9 +177,6 @@ export default function ChatView() {
                         <h1 className="text-3xl font-bold text-slate-900">Hola, {userName}</h1>
                         <p className="text-slate-500">¿Qué necesitas que haga por ti?</p>
                     </div>
-                    <button className="p-2 bg-white rounded-full shadow-sm text-slate-400 hover:text-blue-600">
-                        <Bell className="w-6 h-6" />
-                    </button>
                 </div>
 
                 {/* Widgets Area */}
@@ -204,7 +201,7 @@ export default function ChatView() {
                             </div>
                             <div>
                                 <p className="text-lg font-bold text-slate-900">3</p>
-                                <p className="text-xs text-slate-500">Tareas</p>
+                                <p className="text-xs text-slate-500">Notas</p>
                             </div>
                         </div>
                         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-3">

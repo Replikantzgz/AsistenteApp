@@ -235,57 +235,40 @@ export default function SettingsView() {
                 </div>
             </div>
 
-            <h2 className="text-2xl font-bold text-slate-800 mb-6">Planes y Suscripción</h2>
+            <h2 className="text-2xl font-bold text-slate-800 mb-6">Suscripción Premium</h2>
 
-            <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-                {/* Eco Plan */}
-                <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
-                    <div className="mb-4">
-                        <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Plan Eco</span>
-                    </div>
-                    <h3 className="text-4xl font-bold text-slate-900 mb-2">Plan Básico <span className="text-lg font-normal text-slate-500"></span></h3>
-                    <p className="text-slate-500 mb-6">Ideal para organizar tu día a día.</p>
-                    <ul className="space-y-3 mb-8 flex-1">
-                        <li className="flex items-center text-slate-600">
-                            <span className="text-green-500 mr-2">✓</span> IA Básica
-                        </li>
-                        <li className="flex items-center text-slate-600">
-                            <span className="text-green-500 mr-2">✓</span> Gestión de Emails
-                        </li>
-                        <li className="flex items-center text-slate-400 line-through decoration-slate-400/50">
-                            <span className="text-slate-400 mr-2">✕</span> Calendario y Tareas
-                        </li>
-                    </ul>
-                    <button
-                        onClick={() => handleCheckout('eco')}
-                        className="w-full py-3 rounded-xl border-2 border-slate-200 text-slate-700 font-bold hover:border-slate-800 hover:text-slate-900 transition-all"
-                    >
-                        Ver Precio
-                    </button>
-                </div>
-
-                {/* Pro Plan */}
-                <div className="bg-slate-900 p-8 rounded-2xl shadow-xl flex flex-col relative overflow-hidden">
+            <div className="max-w-md mx-auto">
+                {/* Premium Plan - Only Option */}
+                <div className="bg-gradient-to-br from-slate-900 to-blue-900 p-8 rounded-2xl shadow-xl flex flex-col relative overflow-hidden">
                     <div className="absolute top-0 right-0 bg-gradient-to-l from-purple-600 to-blue-600 text-white px-4 py-1 rounded-bl-xl text-xs font-bold">
-                        RECOMENDADO
+                        7 DÍAS GRATIS
                     </div>
                     <div className="mb-4">
-                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Plan Pro</span>
+                        <span className="bg-blue-500/20 text-blue-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide">Plan Premium</span>
                     </div>
-                    <h3 className="text-4xl font-bold text-white mb-2">Plan Pro <span className="text-lg font-normal text-slate-400"></span></h3>
-                    <p className="text-slate-400 mb-6">Potencia ilimitada para profesionales.</p>
+                    <h3 className="text-4xl font-bold text-white mb-2">Alfred Premium</h3>
+                    <p className="text-slate-300 mb-6">Potencia ilimitada para profesionales.</p>
                     <ul className="space-y-3 mb-8 flex-1">
-                        <li className="flex items-center text-slate-300">
+                        <li className="flex items-center text-slate-200">
                             <span className="text-blue-400 mr-2">✓</span> IA Avanzada (GPT-4)
                         </li>
-                        <li className="flex items-center text-slate-300">
+                        <li className="flex items-center text-slate-200">
                             <span className="text-blue-400 mr-2">✓</span> Comandos Ilimitados
                         </li>
-                        <li className="flex items-center text-slate-300">
+                        <li className="flex items-center text-slate-200">
                             <span className="text-blue-400 mr-2">✓</span> Redacción de Emails
                         </li>
-                        <li className="flex items-center text-slate-300">
+                        <li className="flex items-center text-slate-200">
+                            <span className="text-blue-400 mr-2">✓</span> Calendario y Tareas
+                        </li>
+                        <li className="flex items-center text-slate-200">
+                            <span className="text-blue-400 mr-2">✓</span> Notas con Audio e Imágenes
+                        </li>
+                        <li className="flex items-center text-slate-200">
                             <span className="text-blue-400 mr-2">✓</span> Plantillas Ilimitadas
+                        </li>
+                        <li className="flex items-center text-slate-200">
+                            <span className="text-blue-400 mr-2">✓</span> Soporte Prioritario
                         </li>
                     </ul>
                     <button
@@ -294,6 +277,9 @@ export default function SettingsView() {
                     >
                         Prueba gratis 7 días
                     </button>
+                    <p className="text-xs text-slate-400 text-center mt-3">
+                        Cancela cuando quieras. Sin compromiso.
+                    </p>
                 </div>
             </div>
         </div>
