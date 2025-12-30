@@ -1,7 +1,8 @@
 name: Build Android APK
 
-on:
-  push:
+# Temporarily disabled - use local APK generation instead
+# on:
+#   push:
     branches:
       - main
       - master
