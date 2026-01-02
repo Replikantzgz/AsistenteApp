@@ -72,11 +72,17 @@ export default function Sidebar() {
 
     return (
         <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 transition-all duration-300">
-            <div className="p-6">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
-                    Alfred
-                </h1>
-                <p className="text-xs text-slate-400 mt-1">Alfred Premium v1.0</p>
+            {/* Logo/Brand */}
+            <div className="p-6 border-b border-slate-800">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center overflow-hidden">
+                        <img src="/web-app-manifest-192x192.png" alt="Alfred" className="w-full h-full object-cover" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-white">Alfred</h1>
+                        <p className="text-xs text-slate-400">Alfred Premium v1.0</p>
+                    </div>
+                </div>
             </div>
 
             <nav className="flex-1 px-4 space-y-2">
