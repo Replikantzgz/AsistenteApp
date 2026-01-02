@@ -12,6 +12,9 @@ export default function SettingsView() {
     const [inputCode, setInputCode] = useState('');
     const [applying, setApplying] = useState(false);
     const [hasReferrer, setHasReferrer] = useState(true);
+    const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+    const [showPrivacyDialog, setShowPrivacyDialog] = useState(false);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
     useEffect(() => {
         if (session) {
@@ -57,24 +60,39 @@ export default function SettingsView() {
         }
     };
 
-    const handleCheckout = async (plan: 'eco' | 'pro') => {
+    const handleCheckout = async (plan: 'pro') => {
         try {
             const res = await fetch('/api/stripe/checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ plan }),
+                body: JSON.stringify({ plan })
             });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Error al iniciar pago');
+            const data = await res.json();
+            if (data.url) {
+                window.location.href = data.url;
             }
+        } catch (error) {
+            console.error('Error creating checkout:', error);
+            alert('Error al procesar el pago. Por favor intenta de nuevo.');
+        }
+    };
 
-            const { url } = await res.json();
-            if (url) window.location.href = url;
-        } catch (error: any) {
-            console.error(error);
-            alert(`Error: ${error.message}`);
+    const handleNotificationsToggle = () => {
+        setNotificationsEnabled(!notificationsEnabled);
+        // TODO: Save preference to backend/localStorage
+        alert(notificationsEnabled ? 'Notificaciones desactivadas' : 'Notificaciones activadas');
+    };
+
+    const handleDeleteAccount = async () => {
+        if (!session) return;
+
+        try {
+            // TODO: Implement actual account deletion API
+            alert('Funcionalidad de eliminación de cuenta próximamente. Por favor contacta a soporte.');
+            setShowDeleteDialog(false);
+        } catch (error) {
+            console.error('Error deleting account:', error);
+            alert('Error al eliminar la cuenta. Por favor intenta de nuevo.');
         }
     };
 
@@ -205,18 +223,18 @@ export default function SettingsView() {
 
             <h2 className="text-2xl font-bold text-slate-800 mb-6">General</h2>
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-12">
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+                <div onClick={handleNotificationsToggle} className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
                         </div>
                         <span className="font-medium text-slate-700">Notificaciones</span>
                     </div>
-                    <div className="relative inline-flex h-6 w-11 items-center rounded-full bg-slate-200">
-                        <span className="translate-x-1 inline-block h-4 w-4 transform rounded-full bg-white transition" />
+                    <div className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${notificationsEnabled ? 'bg-blue-600' : 'bg-slate-200'}`}>
+                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition ${notificationsEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
                     </div>
                 </div>
-                <div className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
+                <div onClick={() => setShowPrivacyDialog(true)} className="p-4 border-b border-slate-100 flex items-center justify-between hover:bg-slate-50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
@@ -225,16 +243,63 @@ export default function SettingsView() {
                     </div>
                     <svg className="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
-                <div className="p-4 flex items-center justify-between hover:bg-red-50 transition-colors cursor-pointer group">
+                <div onClick={() => setShowDeleteDialog(true)} className="p-4 flex items-center justify-between hover:bg-red-50 transition-colors cursor-pointer">
                     <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center group-hover:bg-red-100">
+                        <div className="w-8 h-8 rounded-full bg-red-50 text-red-600 flex items-center justify-center">
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                         </div>
                         <span className="font-medium text-red-600">Eliminar Cuenta</span>
                     </div>
+                    <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                 </div>
             </div>
 
+            {/* Privacy Dialog */}
+            {showPrivacyDialog && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPrivacyDialog(false)}>
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-slate-900 mb-4">Privacidad y Seguridad</h3>
+                        <div className="space-y-3 text-sm text-slate-600 mb-6">
+                            <p>• Tus datos están encriptados y protegidos</p>
+                            <p>• No compartimos tu información con terceros</p>
+                            <p>• Puedes exportar tus datos en cualquier momento</p>
+                            <p>• Cumplimos con GDPR y regulaciones de privacidad</p>
+                        </div>
+                        <button
+                            onClick={() => setShowPrivacyDialog(false)}
+                            className="w-full py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            Entendido
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Delete Account Dialog */}
+            {showDeleteDialog && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowDeleteDialog(false)}>
+                    <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+                        <h3 className="text-xl font-bold text-red-600 mb-4">¿Eliminar Cuenta?</h3>
+                        <p className="text-slate-600 mb-6">
+                            Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos, notas, eventos y configuraciones.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowDeleteDialog(false)}
+                                className="flex-1 py-3 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={handleDeleteAccount}
+                                className="flex-1 py-3 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors"
+                            >
+                                Eliminar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <h2 className="text-2xl font-bold text-slate-800 mb-6">Suscripción Premium</h2>
 
             <div className="max-w-md mx-auto">
