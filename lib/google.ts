@@ -1,24 +1,18 @@
 import { google } from 'googleapis';
-import { getServerSession } from 'next-auth';
-import { authOptions } from './auth-options';
+import { createServerSupabaseClient } from '@/lib/supabase/server';
 
 export async function getGoogleAuth() {
-    const session = await getServerSession(authOptions);
+    const supabase = await createServerSupabaseClient();
+    const { data: { session } } = await supabase.auth.getSession();
+    const accessToken = (session as any)?.provider_token;
 
-    if (!session || !session.accessToken) {
-        return null;
-    }
+    if (!session || !accessToken) return null;
 
     const auth = new google.auth.OAuth2(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET
     );
-
-    auth.setCredentials({
-        access_token: session.accessToken as string,
-        refresh_token: session.refreshToken as string,
-    });
-
+    auth.setCredentials({ access_token: accessToken });
     return auth;
 }
 

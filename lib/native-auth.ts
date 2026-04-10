@@ -1,39 +1,40 @@
 import { Capacitor } from '@capacitor/core';
 import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
-import { signIn } from 'next-auth/react';
+import { createClient } from '@/lib/supabase/client';
 
 export async function handleCombinedLogin() {
+    const supabase = createClient();
+
     if (Capacitor.isNativePlatform()) {
         try {
-            console.log('Starting Native Google Sign-In...');
             await GoogleAuth.initialize();
-
             const googleUser = await GoogleAuth.signIn();
-            console.log('Native Google User obtained:', JSON.stringify(googleUser, null, 2));
 
             if (!googleUser.authentication.idToken) {
-                throw new Error('No idToken received from Google');
+                throw new Error('No se recibió token de Google');
             }
 
-            console.log('Attempting NextAuth sign-in with google-native...');
-            // Pass the native token to NextAuth via Credentials provider
-            const result = await signIn('google-native', {
-                idToken: googleUser.authentication.idToken,
-                email: googleUser.email,
-                name: googleUser.name,
-                callbackUrl: '/',
-                redirect: true
+            // Sign in to Supabase using Google idToken
+            const { error } = await supabase.auth.signInWithIdToken({
+                provider: 'google',
+                token: googleUser.authentication.idToken,
             });
-            console.log('NextAuth sign-in result:', result);
 
-        } catch (error) {
+            if (error) throw error;
+        } catch (error: any) {
             console.error('Native Google Sign-In Error:', error);
-            // @ts-ignore
-            alert(`Error nativo detallado: ${error.message || JSON.stringify(error)}`);
             throw error;
         }
     } else {
-        // Fallback to web flow
-        await signIn('google', { callbackUrl: '/' });
+        // Web: use Supabase OAuth flow
+        const { error } = await supabase.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+                scopes: 'openid email profile https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/contacts',
+                queryParams: { access_type: 'offline', prompt: 'consent' },
+                redirectTo: `${window.location.origin}/auth/callback`,
+            },
+        });
+        if (error) throw error;
     }
 }

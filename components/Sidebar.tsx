@@ -2,64 +2,43 @@
 
 import { useStore, ViewType } from '@/store';
 import {
-    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, User, Users
+    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, Users
 } from 'lucide-react';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-
-import { useSession, signOut } from 'next-auth/react';
-
-import { Lock } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function Sidebar() {
     const { currentView, setView } = useStore();
-    const [userEmail, setUserEmail] = useState<string | null>(null);
-    const [userPlan, setUserPlan] = useState<'free' | 'eco' | 'pro'>('free'); // Default to free/basic
-    const { data: session } = useSession();
+    const { user } = useAuth();
+    const [userPlan, setUserPlan] = useState<'free' | 'eco' | 'pro'>('free');
     const router = useRouter();
     const supabase = createClient();
 
     useEffect(() => {
-        const getUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            setUserEmail(user?.email || null);
-
-            if (user) {
-                // Fetch profile for plan
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('plan')
-                    .eq('id', user.id)
-                    .single();
-
-                if (profile?.plan) setUserPlan(profile.plan);
-            }
+        const fetchPlan = async () => {
+            if (!user) return;
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('plan')
+                .eq('id', user.id)
+                .single();
+            if (profile?.plan) setUserPlan(profile.plan);
         };
-        getUser();
+        fetchPlan();
+    }, [user]);
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            setUserEmail(session?.user?.email || null);
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    // Combine email from both sources
-    const displayEmail = userEmail || session?.user?.email;
+    const displayEmail = user?.email;
+    const displayName = user?.user_metadata?.full_name || user?.user_metadata?.name || displayEmail?.split('@')[0];
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        await signOut({ redirect: false });
-        router.refresh();
-        setUserEmail(null);
         router.push('/login');
     };
 
-    const handleLogin = () => {
-        router.push('/login');
-    };
+    const handleLogin = () => router.push('/login');
 
     const navItems: { id: ViewType; label: string; icon: any }[] = [
         { id: 'chat', label: 'Asistente IA', icon: MessageSquare },
@@ -71,7 +50,7 @@ export default function Sidebar() {
     ];
 
     return (
-        <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0 transition-all duration-300">
+        <aside className="w-64 bg-slate-900 text-white flex flex-col h-full shrink-0">
             {/* Logo/Brand */}
             <div className="p-6 border-b border-slate-800">
                 <div className="flex items-center gap-3">
@@ -80,37 +59,30 @@ export default function Sidebar() {
                     </div>
                     <div>
                         <h1 className="text-xl font-bold text-white">Alfred</h1>
-                        <p className="text-xs text-slate-400">Alfred Premium v1.0</p>
+                        <p className="text-xs text-slate-400 capitalize">{userPlan === 'free' ? 'Plan Gratuito' : `Plan ${userPlan}`}</p>
                     </div>
                 </div>
             </div>
 
-            <nav className="flex-1 px-4 space-y-2">
-                {navItems.map((item) => {
-                    // All features unlocked for Premium trial users
-                    const isRestricted = false;
-
-                    return (
-                        <button
-                            key={item.id}
-                            onClick={() => !isRestricted && setView(item.id)}
-                            className={clsx(
-                                'flex items-center w-full px-4 py-3 rounded-xl transition-all',
-                                currentView === item.id
-                                    ? 'bg-blue-600 shadow-lg shadow-blue-900/50 text-white'
-                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white',
-                                isRestricted && 'opacity-50 cursor-not-allowed hover:bg-transparent hover:text-slate-400'
-                            )}
-                        >
-                            <item.icon className="w-5 h-5 mr-3" />
-                            <span className="font-medium flex-1 text-left">{item.label}</span>
-                            {isRestricted && <Lock className="w-4 h-4 text-slate-600" />}
-                        </button>
-                    );
-                })}
+            <nav className="flex-1 px-4 py-4 space-y-1">
+                {navItems.map((item) => (
+                    <button
+                        key={item.id}
+                        onClick={() => setView(item.id)}
+                        className={clsx(
+                            'flex items-center w-full px-4 py-3 rounded-xl transition-all',
+                            currentView === item.id
+                                ? 'bg-blue-600 shadow-lg shadow-blue-900/50 text-white'
+                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                        )}
+                    >
+                        <item.icon className="w-5 h-5 mr-3" />
+                        <span className="font-medium flex-1 text-left">{item.label}</span>
+                    </button>
+                ))}
             </nav>
 
-            <div className="p-4 border-t border-slate-800 space-y-2">
+            <div className="p-4 border-t border-slate-800 space-y-1">
                 <button
                     onClick={() => setView('settings')}
                     className={clsx(
@@ -122,22 +94,30 @@ export default function Sidebar() {
                     <span>Configuración</span>
                 </button>
 
-                <div className="px-4 py-2 border-t border-slate-800 space-y-1">
-                    <button className="text-[10px] text-slate-500 hover:text-slate-300 w-full text-left transition-colors">
-                        Política de Privacidad
-                    </button>
-                    <button className="text-[10px] text-slate-500 hover:text-slate-300 w-full text-left transition-colors">
-                        Términos de Servicio
-                    </button>
-                </div>
+                {/* User info */}
+                {displayEmail && (
+                    <div className="px-4 py-2 text-xs text-slate-500 truncate">
+                        {displayName || displayEmail}
+                    </div>
+                )}
 
-                <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
-                >
-                    <LogOut className="w-5 h-5 mr-3" />
-                    <span>Cerrar Sesión</span>
-                </button>
+                {displayEmail ? (
+                    <button
+                        onClick={handleLogout}
+                        className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-red-400 hover:bg-slate-800 hover:text-red-300"
+                    >
+                        <LogOut className="w-5 h-5 mr-3" />
+                        <span>Cerrar Sesión</span>
+                    </button>
+                ) : (
+                    <button
+                        onClick={handleLogin}
+                        className="flex items-center w-full px-4 py-3 rounded-xl transition-all text-blue-400 hover:bg-slate-800 hover:text-blue-300"
+                    >
+                        <LogOut className="w-5 h-5 mr-3 rotate-180" />
+                        <span>Iniciar Sesión</span>
+                    </button>
+                )}
             </div>
         </aside>
     );
