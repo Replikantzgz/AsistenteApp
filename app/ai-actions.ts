@@ -5,7 +5,7 @@ import { NotesService } from '@/lib/notes-service';
 import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { GoogleService } from '@/lib/google-service';
 
-// Google Gemini — tier gratuito: 15 RPM, 1M tokens/día con gemini-1.5-flash
+// Google Gemini — tier gratuito: 15 RPM, 1M tokens/día con gemini-2.0-flash
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
 
 const toolDeclarations = [
@@ -103,7 +103,7 @@ export async function processUserCommand(text: string): Promise<AIResponse> {
         }
 
         const model = genAI.getGenerativeModel({
-            model: 'gemini-1.5-flash',
+            model: 'gemini-2.0-flash',
             tools: [{ functionDeclarations: toolDeclarations as any }],
             systemInstruction: `Eres Alfred, un asistente personal inteligente, sofisticado y eficiente, al estilo de un mayordomo moderno.
 Tu objetivo es ayudar al usuario a gestionar su agenda, notas y correos de manera impecable.
