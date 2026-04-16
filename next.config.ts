@@ -15,7 +15,8 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   turbopack: {},
-  // Removed output: 'export' to allow dynamic routes for NextAuth
+  // output: 'export' solo para build de APK con Capacitor
+  ...(process.env.BUILD_TARGET === 'capacitor' ? { output: 'export' } : {}),
   images: { unoptimized: true },
 };
 
