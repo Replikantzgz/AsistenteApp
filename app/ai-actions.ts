@@ -129,13 +129,9 @@ Reglas:
             return { message: textResponse || 'No entendí eso, ¿puedes repetir?' };
         }
 
-        const actions: AIResponse['actions'] = [];
-        let feedbackMessage = '';
-
-        for (const call of functionCalls) {
+        const results = await Promise.all(functionCalls.map(async (call) => {
             const fnName = call.name;
             const args = call.args as any;
-
             try {
                 if (fnName === 'create_appointment') {
                     if (googleService) {
@@ -144,52 +140,40 @@ Reglas:
                         start.setHours(10, 0, 0, 0);
                         const end = new Date(start.getTime() + (args.durationHours || 1) * 3600000);
                         await googleService.createEvent(args.title, start, end);
-                        feedbackMessage += `✓ Agendada en Google Calendar: "${args.title}". `;
-                    } else {
-                        feedbackMessage += `✓ Cita creada: "${args.title}". `;
+                        return { msg: `✓ Agendada en Google Calendar: "${args.title}". `, action: { type: 'create_appointment' as const, data: args } };
                     }
-                    actions.push({ type: 'create_appointment', data: args });
+                    return { msg: `✓ Cita creada: "${args.title}". `, action: { type: 'create_appointment' as const, data: args } };
                 }
-
                 if (fnName === 'create_note') {
-                    await NotesService.createNote({
-                        title: args.title,
-                        content: args.content || '',
-                        tags: args.tags || [],
-                    });
-                    feedbackMessage += `✓ Nota guardada: "${args.title}". `;
-                    actions.push({ type: 'create_note', data: args });
+                    await NotesService.createNote({ title: args.title, content: args.content || '', tags: args.tags || [] });
+                    return { msg: `✓ Nota guardada: "${args.title}". `, action: { type: 'create_note' as const, data: args } };
                 }
-
                 if (fnName === 'create_email_draft') {
                     if (googleService) {
                         await googleService.createDraft(args.recipient || '', args.subject, args.body);
-                        feedbackMessage += `✓ Borrador creado en Gmail: "${args.subject}". `;
-                    } else {
-                        feedbackMessage += `✓ Borrador de email: "${args.subject}". `;
+                        return { msg: `✓ Borrador creado en Gmail: "${args.subject}". `, action: { type: 'create_email' as const, data: args } };
                     }
-                    actions.push({ type: 'create_email', data: args });
+                    return { msg: `✓ Borrador de email: "${args.subject}". `, action: { type: 'create_email' as const, data: args } };
                 }
-
                 if (fnName === 'create_contact') {
                     if (googleService) {
                         await googleService.createContact(args.name, args.email, args.phone);
-                        feedbackMessage += `✓ Contacto añadido a Google: ${args.name}. `;
-                    } else {
-                        feedbackMessage += `✓ Contacto guardado: ${args.name}. `;
+                        return { msg: `✓ Contacto añadido a Google: ${args.name}. `, action: { type: 'create_contact' as const, data: args } };
                     }
-                    actions.push({ type: 'create_contact', data: args });
+                    return { msg: `✓ Contacto guardado: ${args.name}. `, action: { type: 'create_contact' as const, data: args } };
                 }
-
                 if (fnName === 'create_template') {
-                    feedbackMessage += `✓ Plantilla "${args.name}" guardada. `;
-                    actions.push({ type: 'create_template', data: args });
+                    return { msg: `✓ Plantilla "${args.name}" guardada. `, action: { type: 'create_template' as const, data: args } };
                 }
+                return null;
             } catch (err: any) {
                 console.error(`Error executing tool ${fnName}:`, err);
-                feedbackMessage += `Error al ejecutar "${fnName}": ${err.message}. `;
+                return { msg: `Error al ejecutar "${fnName}": ${err.message}. `, action: null };
             }
-        }
+        }));
+
+        const actions = results.flatMap(r => r?.action ? [r.action] : []) as AIResponse['actions'];
+        const feedbackMessage = results.map(r => r?.msg ?? '').join('');
 
         return {
             message: feedbackMessage || '✓ Acciones realizadas.',

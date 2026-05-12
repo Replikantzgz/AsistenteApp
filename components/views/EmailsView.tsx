@@ -68,11 +68,12 @@ export default function EmailsView() {
                             }`}
                         >
                             {label}
-                            {value === 'drafts' && emails.filter(e => e.type === 'draft').length > 0 && (
-                                <span className="ml-1 bg-yellow-200 text-yellow-700 rounded-full px-1.5 py-0.5 text-[10px] font-bold">
-                                    {emails.filter(e => e.type === 'draft').length}
-                                </span>
-                            )}
+                            {value === 'drafts' && (() => {
+                                const n = emails.filter(e => e.type === 'draft').length;
+                                return n > 0 ? (
+                                    <span className="ml-1 bg-yellow-200 text-yellow-700 rounded-full px-1.5 py-0.5 text-[10px] font-bold">{n}</span>
+                                ) : null;
+                            })()}
                         </button>
                     ))}
                 </div>

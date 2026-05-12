@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Mail, Lock, Loader2, ArrowRight, Sparkles, Shield, Zap } from 'lucide-react';
@@ -15,7 +15,7 @@ export default function LoginPage() {
     const [success, setSuccess] = useState<string | null>(null);
     const [mode, setMode] = useState<'signin' | 'signup'>('signin');
     const router = useRouter();
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const handleGoogleLogin = async () => {
         setLoading(true);

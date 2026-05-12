@@ -2,7 +2,7 @@
 
 import { useStore, ViewType } from '@/store';
 import {
-    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, Users
+    MessageSquare, Calendar, CheckSquare, Mail, FileText, Settings, LogOut, Users, type LucideIcon
 } from 'lucide-react';
 import clsx from 'clsx';
 import { createClient } from '@/lib/supabase/client';
@@ -40,7 +40,7 @@ export default function Sidebar() {
 
     const handleLogin = () => router.push('/login');
 
-    const navItems: { id: ViewType; label: string; icon: any }[] = [
+    const navItems: { id: ViewType; label: string; icon: LucideIcon }[] = [
         { id: 'chat', label: 'Asistente IA', icon: MessageSquare },
         { id: 'calendar', label: 'Calendario', icon: Calendar },
         { id: 'notes', label: 'Notas', icon: CheckSquare },

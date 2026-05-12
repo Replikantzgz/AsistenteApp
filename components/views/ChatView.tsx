@@ -5,7 +5,7 @@ import { useStore } from '@/store';
 import { Send, Mic, Calendar, CheckSquare, Bell } from 'lucide-react';
 import { processUserCommand } from '@/app/ai-actions';
 import { NotesService } from '@/lib/notes-service';
-import { clsx } from 'clsx';
+import clsx from 'clsx';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
