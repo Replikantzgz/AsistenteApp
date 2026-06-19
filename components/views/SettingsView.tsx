@@ -87,12 +87,22 @@ export default function SettingsView() {
         if (!session) return;
 
         try {
-            // TODO: Implement actual account deletion API
-            alert('Funcionalidad de eliminación de cuenta próximamente. Por favor contacta a soporte.');
-            setShowDeleteDialog(false);
+            const res = await fetch('/api/user/delete', {
+                method: 'DELETE',
+            });
+
+            if (res.ok) {
+                alert('Tu cuenta ha sido eliminada correctamente.');
+                await signOut({ callbackUrl: '/' });
+            } else {
+                const msg = await res.text();
+                throw new Error(msg || 'Error desconocido');
+            }
         } catch (error) {
             console.error('Error deleting account:', error);
             alert('Error al eliminar la cuenta. Por favor intenta de nuevo.');
+        } finally {
+            setShowDeleteDialog(false);
         }
     };
 
