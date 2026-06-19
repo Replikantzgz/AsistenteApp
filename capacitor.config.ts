@@ -18,8 +18,15 @@ const config: CapacitorConfig = {
     overrideUserAgent: "Mozilla/5.0 (Linux; Android 14; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36",
     plugins: {
         GoogleAuth: {
-            scopes: ["openid", "email", "profile"],
-            serverClientId: "969656696808-jec60cd9fi0rapd9en5.apps.googleusercontent.com",
+            scopes: [
+                "openid",
+                "email",
+                "profile",
+                "https://www.googleapis.com/auth/calendar",
+                "https://www.googleapis.com/auth/gmail.modify",
+                "https://www.googleapis.com/auth/contacts"
+            ],
+            serverClientId: "1078256636873-i0rj5l52kf7vop8og1gl70km3qbpg436.apps.googleusercontent.com",
             forceCodeForRefreshToken: true
         }
     }
