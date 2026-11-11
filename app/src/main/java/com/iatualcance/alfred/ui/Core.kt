@@ -117,9 +117,15 @@ private val Pixel = Shapes(
 fun AlfredTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = Colors, typography = Type, shapes = Pixel, content = content)
 
 /** Orden de la barra inferior: Correo · Agenda · ALFRED · Notas · Contactos. */
-enum class Tab { MAIL, AGENDA, CHAT, NOTES, CONTACTS }
+enum class Tab { MAIL, DRIVE, CHAT, NOTES, CONTACTS }
 
 data class MailDraft(val to: String = "", val subject: String = "", val body: String = "")
+
+/** Contenido que otra app ha compartido con Alfred, a la espera de decidir qué hacer con él. */
+data class SharedDraft(val intent: android.content.Intent, val uri: Uri?, val mime: String, val text: String?)
+
+/** Adjunto o texto que se deja preparado en el cuadro de escritura del chat. */
+data class ChatDraft(val uri: Uri?, val text: String)
 
 /** Estado de interfaz compartido entre pestañas. */
 class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
@@ -129,9 +135,14 @@ class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
     var compose by mutableStateOf<MailDraft?>(null)
     /** Pantalla a pantalla completa por encima de las pestañas: "settings" o "drive". */
     var overlay by mutableStateOf<String?>(null)
-    /** Subpestaña de Notas: 0 notas, 1 tareas, 2 plantillas. */
+    /** Subpestaña de Notas: 0 notas, 1 tareas, 2 agenda, 3 plantillas. */
     var notesSub by mutableIntStateOf(0)
     var calendarDate by mutableStateOf<java.time.LocalDate?>(null)
+    /** Correo abierto en la pestaña Correo (lo usan la búsqueda y el resto de pantallas). */
+    var mailOpenId by mutableStateOf<String?>(null)
+    var contactQuery by mutableStateOf("")
+    var shared by mutableStateOf<SharedDraft?>(null)
+    var chatDraft by mutableStateOf<ChatDraft?>(null)
     /** Acción pendiente que ejecuta la pantalla de Notas al abrirse: "scan" o "record". */
     var pending by mutableStateOf<String?>(null)
 
@@ -159,19 +170,20 @@ class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
                 overlay = null
                 when (n.name) {
                     "correo" -> { compose = null; tab = Tab.MAIL }
-                    "calendario" -> tab = Tab.AGENDA
+                    "calendario" -> { openNoteId = null; notesSub = 2; tab = Tab.NOTES }
                     "chat" -> tab = Tab.CHAT
                     "contactos" -> tab = Tab.CONTACTS
                     "notas" -> { openNoteId = null; notesSub = 0; tab = Tab.NOTES }
                     "tareas" -> { openNoteId = null; notesSub = 1; tab = Tab.NOTES }
-                    "plantillas" -> { openNoteId = null; notesSub = 2; tab = Tab.NOTES }
-                    "drive" -> overlay = "drive"
+                    "plantillas" -> { openNoteId = null; notesSub = 3; tab = Tab.NOTES }
+                    "drive" -> tab = Tab.DRIVE
                     "ajustes" -> overlay = "settings"
+                    "buscar" -> overlay = "search"
                 }
             }
             is com.iatualcance.alfred.ai.Nav.Note -> openNote(n.id)
             is com.iatualcance.alfred.ai.Nav.Compose -> composeMail(MailDraft(n.to, n.subject, n.body))
-            is com.iatualcance.alfred.ai.Nav.Calendar -> { overlay = null; calendarDate = n.date; tab = Tab.AGENDA }
+            is com.iatualcance.alfred.ai.Nav.Calendar -> { overlay = null; calendarDate = n.date; openNoteId = null; notesSub = 2; tab = Tab.NOTES }
             com.iatualcance.alfred.ai.Nav.Scan -> { overlay = null; openNoteId = null; notesSub = 0; pending = "scan"; tab = Tab.NOTES }
             com.iatualcance.alfred.ai.Nav.Record -> { overlay = null; openNoteId = null; notesSub = 0; pending = "record"; tab = Tab.NOTES }
         }

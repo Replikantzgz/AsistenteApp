@@ -28,6 +28,9 @@ class Settings(ctx: Context) {
     val notifyEvents = MutableStateFlow(p.getBoolean("notifyEvents", true))
     val notifyTasks = MutableStateFlow(p.getBoolean("notifyTasks", true))
     val leadMin = MutableStateFlow(p.getInt("leadMin", 15))
+    val dailySummary = MutableStateFlow(p.getBoolean("dailySummary", true))
+    val summaryMinutes = MutableStateFlow(p.getInt("summaryMinutes", 8 * 60))
+    val speakReplies = MutableStateFlow(p.getBoolean("speakReplies", false))
     val autoUpdate = MutableStateFlow(p.getBoolean("autoUpdate", true))
     val license = MutableStateFlow(p.getString("license", "") ?: "")
     private val aiDay get() = p.getString("aiDay", "") ?: ""
@@ -52,6 +55,9 @@ class Settings(ctx: Context) {
     fun setNotifyEvents(v: Boolean) { notifyEvents.value = v; p.edit().putBoolean("notifyEvents", v).apply() }
     fun setNotifyTasks(v: Boolean) { notifyTasks.value = v; p.edit().putBoolean("notifyTasks", v).apply() }
     fun setLeadMin(v: Int) { leadMin.value = v; p.edit().putInt("leadMin", v).apply() }
+    fun setDailySummary(v: Boolean) { dailySummary.value = v; p.edit().putBoolean("dailySummary", v).apply() }
+    fun setSummaryMinutes(v: Int) { summaryMinutes.value = v; p.edit().putInt("summaryMinutes", v).apply() }
+    fun setSpeakReplies(v: Boolean) { speakReplies.value = v; p.edit().putBoolean("speakReplies", v).apply() }
     fun setAutoUpdate(v: Boolean) { autoUpdate.value = v; p.edit().putBoolean("autoUpdate", v).apply() }
     fun setLicense(code: String) { license.value = code; p.edit().putString("license", code).apply() }
     fun addAiUse() {
@@ -62,8 +68,8 @@ class Settings(ctx: Context) {
     fun aiUsedToday(): Int = if (aiDay == java.time.LocalDate.now().toString()) p.getInt("aiCount", 0) else 0
     /** Vuelve a los valores de fábrica de los ajustes, sin tocar la clave de Gemini, la licencia ni la cuenta. */
     fun resetPreferences() {
-        p.edit().remove("notifyEvents").remove("notifyTasks").remove("leadMin").remove("driveAuto").remove("autoUpdate").remove("model").apply()
-        notifyEvents.value = true; notifyTasks.value = true; leadMin.value = 15; driveAuto.value = true; autoUpdate.value = true; model.value = DEFAULT_MODEL
+        p.edit().remove("notifyEvents").remove("notifyTasks").remove("leadMin").remove("driveAuto").remove("autoUpdate").remove("speakReplies").remove("dailySummary").remove("summaryMinutes").remove("model").apply()
+        notifyEvents.value = true; notifyTasks.value = true; leadMin.value = 15; driveAuto.value = true; autoUpdate.value = true; speakReplies.value = false; dailySummary.value = true; summaryMinutes.value = 8 * 60; model.value = DEFAULT_MODEL
     }
     fun clear() { val keep = license.value; p.edit().clear().putString("license", keep).apply(); account.value = null; apiKey.value = ""; model.value = DEFAULT_MODEL }
 }

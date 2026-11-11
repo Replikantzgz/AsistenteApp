@@ -44,7 +44,7 @@ data class Reply(val text: String, val actions: List<String>, val nav: List<Nav>
  */
 class Assistant(
     private val gemini: Gemini, private val google: GoogleApi, private val store: Store, private val settings: Settings,
-    private val uploadNote: suspend (Note) -> Note, private val backup: suspend () -> String,
+    private val uploadNote: suspend (Note, String?) -> Note, private val backup: suspend () -> String,
 ) {
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
 
@@ -65,6 +65,8 @@ Normas:
 - Las fechas van en hora local con formato AAAA-MM-DDTHH:MM. Calcula tú las fechas relativas ("mañana", "el viernes") a partir de la fecha actual. Si no dicen hora para una cita, pregunta o usa una razonable y dilo.
 - Antes de modificar o eliminar un evento, o de responder a un correo, búscalo primero para obtener su id.
 - Para enviar un correo necesitas una dirección: si solo te dan un nombre, búscalo en contactos. Si el usuario pide "redactar" o "preparar", crea un borrador; envía solo si pide enviar.
+- Drive: puedes buscar archivos, crear documentos de Google, crear PROYECTOS compartidos (una carpeta en Drive que se comparte con otra persona para trabajar juntos) y compartir archivos o carpetas con alguien por su correo. Antes de compartir, el usuario confirma. Para trabajar dos personas en lo mismo, crea un proyecto y comparte la carpeta; los documentos de Google se editan a la vez desde la app de Docs.
+- Búsqueda global: abre la pantalla "buscar" si el usuario quiere buscar algo en todas partes.
 - Las tareas y recordatorios van como tarea (el móvil avisa con una notificación): si piden una hora, usa `recordatorio`; si solo dan el día, usa `fecha_limite` (avisa a las 9:00). Las citas del calendario avisan solas unos minutos antes. La información para guardar va como nota.
 - No inventes datos (direcciones, teléfonos, importes). Si falta algo imprescindible, pregunta.
 - Respuestas cortas, sin markdown recargado.
@@ -149,13 +151,20 @@ Normas:
         add(fn("papelera_correo", "Mueve un correo a la papelera de Gmail (se pedirá confirmación).", mapOf("id" to s("Id del correo"), "asunto" to s("Asunto, para confirmar")), listOf("id")))
 
         // --- Drive
-        add(fn("guardar_nota_en_drive", "Sube una nota (y sus adjuntos) a la carpeta Alfred de Google Drive.", mapOf("id" to s("Id de la nota")), listOf("id")))
+        add(fn("guardar_nota_en_drive", "Sube una nota (y sus adjuntos) a Google Drive: a la carpeta Alfred o, si se indica, a un proyecto compartido.", mapOf("id" to s("Id de la nota"), "proyecto" to s("Nombre del proyecto (opcional)")), listOf("id")))
+        add(fn("buscar_en_drive", "Busca archivos y carpetas por nombre en todo el Drive del usuario.", mapOf("texto" to s("Texto a buscar")), listOf("texto")))
+        add(fn("crear_proyecto", "Crea un proyecto: una carpeta en Drive con un documento de notas, y la comparte con las personas indicadas para que trabajen juntos (pedirá confirmación si hay invitados).", mapOf(
+            "nombre" to s("Nombre del proyecto"), "invitados" to list("Correos de las personas con las que compartirlo (pueden editar)")), listOf("nombre")))
+        add(fn("compartir_en_drive", "Comparte un archivo o carpeta de Drive con una persona (pedirá confirmación). El id sale de buscar_en_drive o listar_drive.", mapOf(
+            "id" to s("Id del archivo o carpeta"), "nombre" to s("Nombre, para confirmar"), "correo" to s("Correo de la persona"), "rol" to s("editor o lector (por defecto editor)")), listOf("id", "correo")))
+        add(fn("crear_documento_drive", "Crea un documento de Google con el texto indicado, en un proyecto o en la carpeta Alfred de Drive.", mapOf(
+            "nombre" to s("Nombre del documento"), "contenido" to s("Texto del documento"), "proyecto" to s("Nombre del proyecto (opcional)")), listOf("nombre", "contenido")))
         add(fn("listar_drive", "Lista los archivos de la carpeta Alfred de Drive o de una subcarpeta.", mapOf("carpeta" to s("Notas, Escaneos o Facturas. Vacío para la carpeta principal"))))
         add(fn("copia_seguridad_drive", "Guarda en Drive una copia de seguridad de notas, tareas y plantillas."))
 
         // --- interfaz
         add(fn("abrir_pantalla", "Cambia la app a una pantalla. Úsala cuando el usuario pida ver o abrir una sección.", mapOf(
-            "pantalla" to s("correo, calendario, notas, tareas, plantillas, contactos, drive, ajustes o chat")), listOf("pantalla")))
+            "pantalla" to s("correo, calendario, notas, tareas, plantillas, contactos, drive, buscar, ajustes o chat")), listOf("pantalla")))
         add(fn("abrir_nota", "Abre una nota en el editor.", mapOf("id" to s("Id de la nota")), listOf("id")))
         add(fn("abrir_redactar_correo", "Abre la pantalla de redactar con el correo ya escrito para que el usuario lo revise y lo envíe él.", mapOf(
             "para" to s("Correo del destinatario"), "asunto" to s("Asunto"), "cuerpo" to s("Texto")), listOf("asunto", "cuerpo")))
@@ -228,7 +237,10 @@ Normas:
         }
         "leer_correo" -> {
             val m = google.readMail(a.str("id")!!)
-            buildJsonObject { put("de", m.from); put("para", m.to); put("asunto", m.subject); put("texto", m.body.take(8000)) }
+            buildJsonObject {
+                put("de", m.from); put("para", m.to); put("asunto", m.subject); put("texto", m.body.take(8000))
+                if (m.attachments.isNotEmpty()) put("adjuntos", m.attachments.joinToString(", ") { it.name })
+            }
         }
         "crear_borrador" -> {
             google.createDraft(a.str("para").orEmpty(), a.str("asunto").orEmpty(), a.str("cuerpo").orEmpty())
@@ -376,9 +388,44 @@ Normas:
         }
         "guardar_nota_en_drive" -> {
             val n = store.note(a.str("id").orEmpty()) ?: throw Exception("No existe ninguna nota con ese id")
-            uploadNote(n)
-            actions += "☁️ Guardada en Drive: ${n.title}"
+            val proj = a.str("proyecto")?.takeIf { it.isNotBlank() }
+            val parent = proj?.let { projectFolder(it) ?: throw Exception("No encuentro ningún proyecto llamado «$it»") }
+            uploadNote(n, parent)
+            actions += "☁️ Guardada en Drive: ${n.title}" + (proj?.let { " (proyecto $it)" } ?: "")
             ok("Nota guardada en Drive")
+        }
+        "buscar_en_drive" -> {
+            val files = google.listDrive(parent = null, query = a.str("texto").orEmpty())
+            buildJsonObject {
+                put("total", files.size)
+                putJsonArray("archivos") { files.take(12).forEach { f -> add(buildJsonObject { put("id", f.id); put("nombre", f.name); put("carpeta", f.isFolder); put("compartido", f.shared); f.link?.let { put("enlace", it) } }) } }
+            }
+        }
+        "crear_proyecto" -> {
+            val name = a.str("nombre").orEmpty().ifBlank { throw Exception("Falta el nombre del proyecto") }
+            val invites = a.strings("invitados")?.filter { "@" in it } ?: emptyList()
+            if (invites.isNotEmpty() && !confirm("¿Crear el proyecto y compartirlo?", "Proyecto «$name»\nSe invitará (con permiso de edición) a:\n" + invites.joinToString("\n"))) throw Exception("El usuario ha cancelado")
+            val folder = google.createFolder(name, google.folder("Proyectos"))
+            google.createDocWithText("Notas del proyecto", "$name\n\nObjetivo:\n\nTareas:\n- \n\nNotas:\n", folder.id)
+            val failed = invites.filter { mail -> runCatching { google.share(folder.id, mail, "writer", "Te invito al proyecto «$name» en Drive.") }.isFailure }
+            actions += "📁 Proyecto creado: $name" + if (invites.isNotEmpty()) " · compartido con ${invites.size - failed.size}" else ""
+            ok("Proyecto creado" + if (failed.isNotEmpty()) ", pero no se pudo compartir con: ${failed.joinToString()}" else "", buildJsonObject { put("id", folder.id); folder.link?.let { put("enlace", it) } })
+        }
+        "compartir_en_drive" -> {
+            val mail = a.str("correo").orEmpty()
+            if ("@" !in mail) throw Exception("Falta un correo válido")
+            val role = if (a.str("rol")?.lowercase()?.startsWith("l") == true) "reader" else "writer"
+            if (!confirm("¿Compartir en Drive?", "«${a.str("nombre") ?: "Archivo"}» con $mail (${if (role == "writer") "puede editar" else "solo ver"})")) throw Exception("El usuario ha cancelado")
+            google.share(a.str("id").orEmpty(), mail, role)
+            actions += "🤝 Compartido con $mail: ${a.str("nombre") ?: ""}"
+            ok("Compartido")
+        }
+        "crear_documento_drive" -> {
+            val proj = a.str("proyecto")?.takeIf { it.isNotBlank() }
+            val parent = proj?.let { projectFolder(it) ?: throw Exception("No encuentro ningún proyecto llamado «$it»") } ?: google.folder(null)
+            val f = google.createDocWithText(a.str("nombre").orEmpty().ifBlank { "Documento" }, a.str("contenido").orEmpty(), parent)
+            actions += "📄 Documento creado en Drive: ${f.name}"
+            ok("Documento creado", buildJsonObject { put("id", f.id); f.link?.let { put("enlace", it) } })
         }
         "listar_drive" -> {
             val sub = a.str("carpeta")?.trim()?.takeIf { it.isNotBlank() }
@@ -407,6 +454,10 @@ Normas:
         "grabar_nota_voz" -> { nav += Nav.Record; ok("Abriendo la grabadora") }
         else -> throw Exception("Herramienta desconocida: $name")
     }
+
+    /** Id de la carpeta de un proyecto por su nombre (o null si no existe). */
+    private suspend fun projectFolder(name: String): String? =
+        google.listDrive(parent = google.folder("Proyectos")).firstOrNull { it.isFolder && it.name.equals(name.trim(), true) }?.id
 
     private fun describe(z: ZonedDateTime, allDay: Boolean) =
         z.format(DateTimeFormatter.ofPattern(if (allDay) "EEE d MMM" else "EEE d MMM, HH:mm", Util.ES))

@@ -110,14 +110,11 @@ fun NotesScreen() {
     val open = ui.openNoteId
     if (open != null) { NoteEditor(open) { ui.openNoteId = null }; return }
     Column(Modifier.fillMaxSize()) {
-        PixelBar(
-            title = { Text("NOTAS") },
-            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Color.White) } },
-        )
-        TabRow(selectedTabIndex = sub, containerColor = MaterialTheme.colorScheme.background) {
-            listOf("Notas", "Tareas", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { ui.notesSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) }) }
+        PixelBar(title = { Text("NOTAS Y AGENDA") })
+        androidx.compose.material3.ScrollableTabRow(selectedTabIndex = sub, edgePadding = 8.dp, containerColor = MaterialTheme.colorScheme.background) {
+            listOf("Notas", "Tareas", "Agenda", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { ui.notesSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) }) }
         }
-        when (sub) { 0 -> NotesList(); 1 -> TasksList(); else -> TemplatesList() }
+        when (sub) { 0 -> NotesList(); 1 -> TasksList(); 2 -> AgendaScreen(); else -> TemplatesList() }
     }
 }
 

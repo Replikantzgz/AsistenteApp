@@ -34,7 +34,13 @@ Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y ab
 - **Tareas** con fecha límite y **plantillas** de texto reutilizables en correos.
 - **Correo**: Gmail (recibidos, sin leer, enviados, borradores, búsqueda), leer, responder, redactar, papelera, guardar un correo como nota.
 - **Contactos** de Google: buscar, crear, eliminar, llamar o escribir.
-- **Drive**: carpeta `Alfred` con subcarpetas `Notas`, `Escaneos` y `Facturas`; subida automática de escaneos y copia de seguridad.
+- **Drive** (pestaña propia): explora tu Drive, busca, sube archivos, crea carpetas, documentos y hojas de Google, y **comparte proyectos con otra persona** (editor o lector) para trabajar a la vez. «Compartido conmigo» y «Proyectos». Además, la carpeta `Alfred` con `Notas`, `Escaneos`, `Facturas` y `Adjuntos`, subida automática de escaneos y copia de seguridad. Necesita el permiso de Drive completo (`docs/PROMPT_CHROME_ACTUALIZAR_DRIVE.md`).
+- **Agenda**: dentro de la pestaña Notas (Notas · Tareas · Agenda · Plantillas).
+- **Búsqueda global** (lupa del asistente): notas, tareas, plantillas, agenda, correo, contactos y Drive a la vez.
+- **Correo con adjuntos**: ver, abrir, guardar en nota o en Drive los adjuntos recibidos, y adjuntar archivos al enviar.
+- **Voz**: modo «Conversar» (escucha, responde hablando y vuelve a escuchar) y lectura de respuestas en voz alta.
+- **Compartir con el asistente** desde otra app: resumir, crear tareas, preguntar o guardar como nota.
+- **Resumen del día** cada mañana (citas, tareas y correos sin leer) y **widget** de inicio con atajos a nota de voz y asistente.
 
 ## Configuración (una sola vez)
 

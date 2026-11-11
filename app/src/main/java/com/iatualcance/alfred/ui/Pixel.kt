@@ -85,7 +85,7 @@ fun Modifier.texture(): Modifier {
 // --------------------------------------------------------------------------- Barra inferior
 private data class NavItem(val tab: Tab, val label: String, @DrawableRes val art: Int)
 
-private val sideLeft = listOf(NavItem(Tab.MAIL, "CORREO", R.drawable.art_correo), NavItem(Tab.AGENDA, "AGENDA", R.drawable.art_agenda))
+private val sideLeft = listOf(NavItem(Tab.MAIL, "CORREO", R.drawable.art_correo), NavItem(Tab.DRIVE, "DRIVE", R.drawable.art_drive))
 private val sideRight = listOf(NavItem(Tab.NOTES, "NOTAS", R.drawable.art_notas), NavItem(Tab.CONTACTS, "CONTACTOS", R.drawable.art_contactos))
 private val BarShape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
 

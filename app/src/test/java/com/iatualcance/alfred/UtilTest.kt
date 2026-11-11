@@ -52,3 +52,41 @@ class UtilTest {
         assertEquals("Hola ñ", Util.decodeB64Url(Base64.getUrlEncoder().encodeToString("Hola ñ".toByteArray())))
     }
 }
+
+class MimeAttachmentTest {
+    private fun raw(files: List<MailFile>) = String(Util.rawMessage("ana@x.com", "Informe", "Hola\nAdjunto el informe", null, files), Charsets.UTF_8)
+
+    @Test fun withoutFilesIsPlainText() {
+        val r = raw(emptyList())
+        assertTrue(r.contains("Content-Type: text/plain; charset=UTF-8")); assertTrue(!r.contains("multipart"))
+    }
+
+    @Test fun attachmentsRoundTrip() {
+        val pdf = ByteArray(5000) { (it * 7).toByte() }
+        val r = raw(listOf(MailFile("Informe ñ.pdf", "application/pdf", pdf)))
+        assertTrue(r.contains("multipart/mixed; boundary="))
+        val boundary = Regex("boundary=\"([^\"]+)\"").find(r)!!.groupValues[1]
+        val parts = r.split("--$boundary").drop(1).filter { !it.startsWith("--") }
+        assertEquals(2, parts.size)
+        val text = parts[0].substringAfter("\r\n\r\n").trim()
+        assertEquals("Hola\nAdjunto el informe", String(java.util.Base64.getMimeDecoder().decode(text)))
+        val a = parts[1]
+        assertTrue(a.contains("Content-Type: application/pdf; name=\"Informe _.pdf\""))
+        assertTrue(a.contains("filename*=UTF-8''Informe%20%C3%B1.pdf"))
+        assertTrue(pdf.contentEquals(java.util.Base64.getMimeDecoder().decode(a.substringAfter("\r\n\r\n").trim())))
+        assertTrue(r.trimEnd().endsWith("--$boundary--"))
+    }
+
+    @Test fun jsonRawPathStillWorks() {
+        val raw = String(java.util.Base64.getUrlDecoder().decode(Util.mimeMessage("a@b.c", "Hola", "x")))
+        assertTrue(raw.startsWith("To: a@b.c\r\nSubject: Hola\r\n"))
+    }
+}
+
+class SpeechTextTest {
+    @Test fun stripsEmojiMarkdownAndLinks() {
+        assertEquals("Evento creado: Cita C43 Listo", com.iatualcance.alfred.voice.SpeechText.clean("📅 Evento creado: **Cita C43**\n\n✅ Listo"))
+        assertEquals("Mira un enlace ahora", com.iatualcance.alfred.voice.SpeechText.clean("Mira https://example.com/x?y=1 ahora"))
+        assertEquals("", com.iatualcance.alfred.voice.SpeechText.clean("🙂 ✅ 📝"))
+    }
+}

@@ -20,7 +20,7 @@ Vas a configurar desde cero, en Google Cloud Console y en Google AI Studio, todo
 | Estado de publicación | **En pruebas (Testing)** — no lo pases a producción |
 | Correo de asistencia, de contacto y usuario de prueba | el correo de la cuenta de Google con la que está iniciada la sesión en este navegador |
 
-Permisos (scopes) que hay que añadir, exactamente estos seis:
+Permisos (scopes) que hay que añadir, exactamente estos seis (el de Drive es el completo, `drive`, no `drive.file`):
 
 ```
 https://www.googleapis.com/auth/userinfo.email
@@ -28,7 +28,7 @@ https://www.googleapis.com/auth/userinfo.profile
 https://www.googleapis.com/auth/calendar.events
 https://www.googleapis.com/auth/gmail.modify
 https://www.googleapis.com/auth/contacts
-https://www.googleapis.com/auth/drive.file
+https://www.googleapis.com/auth/drive
 ```
 
 ## Reglas
@@ -76,7 +76,7 @@ Comprobación: en `https://console.cloud.google.com/apis/dashboard` deben aparec
 2. Pulsa **Añadir o quitar permisos**.
 3. En el cuadro "Añadir permisos manualmente" (al final del panel) pega los seis permisos de la lista de arriba, uno por línea o separados por comas, y pulsa **Añadir a la tabla**. Asegúrate de que los seis quedan marcados y pulsa **Actualizar**.
 4. Pulsa **Guardar** al final de la página.
-5. Comprobación: `calendar.events` y `contacts` deben aparecer como permisos sensibles, `gmail.modify` como restringido y `drive.file`, `userinfo.email`, `userinfo.profile` como no sensibles. Los seis deben estar en la lista.
+5. Comprobación: `calendar.events` y `contacts` deben aparecer como permisos sensibles, `gmail.modify` como restringido y `userinfo.email` y `userinfo.profile` como no sensibles y `drive` como restringido. Los seis deben estar en la lista.
 
 ## Paso 6 — Cliente OAuth de Android
 

@@ -52,6 +52,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.AttachFile
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -93,6 +95,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     /** Se pone a true cuando se agota la cuota gratis; AppRoot abre la pantalla Premium. */
     var needsPremium by mutableStateOf(false)
 
+    init { sv.voice.onText = { send(it, null) } }
+
     fun send(text: String, image: Uri?) {
         if (busy || (text.isBlank() && image == null)) return
         val history = sv.store.chat.value.filter { !it.error }.map { it.fromUser to it.text }
@@ -103,7 +107,9 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 val img = image?.let { uri ->
                     withContext(Dispatchers.IO) {
                         val cr = getApplication<Application>().contentResolver
-                        cr.openInputStream(uri)!!.use { it.readBytes() } to (cr.getType(uri) ?: "image/jpeg")
+                        val bytes = cr.openInputStream(uri)!!.use { it.readBytes() }
+                        if (bytes.size > 14 * 1024 * 1024) throw Exception("El archivo pesa más de 14 MB y no puedo procesarlo. Prueba con uno más pequeño.")
+                        bytes to (cr.getType(uri) ?: "image/jpeg")
                     }
                 }
                 val reply = sv.metered { sv.assistant.ask(history, text, img) { title, detail ->
@@ -113,14 +119,18 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 } }
                 sv.store.addChat(ChatMsg(fromUser = false, text = reply.text, actions = reply.actions))
                 nav = reply.nav.lastOrNull()
+                if (sv.voice.active) sv.voice.speak(reply.text) { sv.voice.relisten() }
+                else if (sv.settings.speakReplies.value) sv.voice.speak(reply.text)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: QuotaExceeded) {
                 sv.store.addChat(ChatMsg(fromUser = false, text = e.message.orEmpty(), error = true))
+                sv.voice.stop()
                 needsPremium = true
             } catch (e: Exception) {
                 val msg = if (e is ConsentRequired) "Para esto necesito tu cuenta de Google. Conéctala en Ajustes (el engranaje de la pantalla de Alfred)." else (e.message ?: e.toString())
                 sv.store.addChat(ChatMsg(fromUser = false, text = msg, error = true))
+                sv.voice.stop()
             } finally {
                 busy = false
                 launch { runCatching { sv.refreshReminders(true) } }
@@ -151,6 +161,19 @@ fun ChatScreen(vm: ChatViewModel) {
     var image by rememberSaveable { mutableStateOf<Uri?>(null) }
     var askClear by rememberSaveable { mutableStateOf(false) }
     val list = rememberLazyListState()
+    val ctx = LocalContext.current
+    val voiceState by sv.voice.state.collectAsStateCompat()
+    val speak by sv.settings.speakReplies.collectAsStateCompat()
+    val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
+        if (ok) { if (sv.voice.available()) sv.voice.startConversation() else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
+        else ui.say("Sin permiso de micrófono no puedo escucharte. Actívalo en los ajustes del móvil.")
+    }
+    fun startConversation() {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            if (sv.voice.available()) sv.voice.startConversation() else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado")
+        } else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
+    }
+    androidx.compose.runtime.DisposableEffect(Unit) { onDispose { sv.voice.stop() } }
 
     LaunchedEffect(msgs.size, vm.busy) { if (msgs.isNotEmpty()) list.animateScrollToItem(msgs.size - 1 + if (vm.busy) 1 else 0) }
 
@@ -162,13 +185,15 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
+    LaunchedEffect(ui.chatDraft) { ui.chatDraft?.let { image = it.uri; input = it.text; ui.chatDraft = null } }
+
     fun send() { vm.send(input.trim(), image); input = ""; image = null }
 
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text("ALFRED") },
             actions = {
-                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Color.White) }
+                IconButton(onClick = { ui.overlay = "search" }) { Icon(Icons.Default.Search, "Buscar", tint = Color.White) }
                 IconButton(onClick = { ui.overlay = "settings" }) { Art(R.drawable.art_ajustes, 34.dp, "Ajustes") }
                 if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Color.White) }
             },
@@ -213,11 +238,27 @@ fun ChatScreen(vm: ChatViewModel) {
 
         // Atajos
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillChip("Conversar", { if (voiceState == com.iatualcance.alfred.voice.VoiceController.State.IDLE) startConversation() else sv.voice.stop() })
+            PillChip(if (speak) "Voz: sí" else "Voz: no", { sv.settings.setSpeakReplies(!speak); if (speak) sv.voice.stop() })
             quick.forEach { q -> PillChip(q.label, { vm.send(q.prompt, null) }, enabled = !vm.busy) }
+        }
+        if (voiceState != com.iatualcance.alfred.voice.VoiceController.State.IDLE) Row(
+            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp).card(borderColor = MaterialTheme.colorScheme.primary).padding(start = 16.dp, top = 6.dp, bottom = 6.dp, end = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+            Spacer(Modifier.width(10.dp))
+            Text(when (voiceState) { com.iatualcance.alfred.voice.VoiceController.State.LISTENING -> "Escuchando… habla ahora"; com.iatualcance.alfred.voice.VoiceController.State.THINKING -> "Pensando…"; else -> "Hablando…" },
+                style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            TextButton(onClick = { sv.voice.stop() }) { Text("TERMINAR", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
         }
         image?.let { uri ->
             Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(uri, null, Modifier.size(56.dp).clip(PxShape), contentScale = ContentScale.Crop)
+                val isImage = ctx.contentResolver.getType(uri)?.startsWith("image/") != false
+                if (isImage) AsyncImage(uri, null, Modifier.size(56.dp).clip(PxShape), contentScale = ContentScale.Crop)
+                else Row(Modifier.card(borderColor = SoftLine).padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AttachFile, null); Spacer(Modifier.width(6.dp)); Text("Archivo adjunto", style = MaterialTheme.typography.labelLarge)
+                }
                 IconButton(onClick = { image = null }) { Icon(Icons.Default.Close, "Quitar imagen") }
             }
         }

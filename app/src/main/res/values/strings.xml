@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Alfred</string>
+    <string name="widget_desc">Próximas citas y tareas, con acceso rápido a notas de voz.</string>
 </resources>

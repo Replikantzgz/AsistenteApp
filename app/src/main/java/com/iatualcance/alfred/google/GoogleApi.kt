@@ -1,6 +1,7 @@
 package com.iatualcance.alfred.google
 
 import com.iatualcance.alfred.Util
+import com.iatualcance.alfred.MailFile
 import com.iatualcance.alfred.data.Account
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -52,16 +53,31 @@ data class CalEvent(
     val description: String = "", val location: String = "", val attendees: List<String> = emptyList(), val link: String? = null,
 )
 
+data class MailAttachment(val id: String, val name: String, val mime: String, val size: Long)
+
 data class Mail(
     val id: String, val threadId: String, val from: String, val to: String, val subject: String,
     val snippet: String, val date: Long, val unread: Boolean, val body: String = "", val messageId: String? = null,
+    val attachments: List<MailAttachment> = emptyList(),
 )
 
 data class Contact(val resource: String, val name: String, val emails: List<String>, val phones: List<String>)
 
-data class DriveFile(val id: String, val name: String, val mime: String, val link: String?, val modified: String?) {
+data class DrivePerm(val id: String, val email: String, val name: String, val role: String, val type: String)
+
+data class DriveFile(
+    val id: String, val name: String, val mime: String, val link: String?, val modified: String?,
+    val shared: Boolean = false, val ownedByMe: Boolean = true, val owner: String? = null, val size: Long? = null,
+) {
     val isFolder get() = mime == FOLDER
-    companion object { const val FOLDER = "application/vnd.google-apps.folder" }
+    val isGoogleDoc get() = mime == DOC
+    val isSheet get() = mime == SHEET
+    companion object {
+        const val FOLDER = "application/vnd.google-apps.folder"
+        const val DOC = "application/vnd.google-apps.document"
+        const val SHEET = "application/vnd.google-apps.spreadsheet"
+        const val SLIDES = "application/vnd.google-apps.presentation"
+    }
 }
 
 /** Llamadas REST a Calendar, Gmail, Contactos (People) y Drive con el token del usuario. */
@@ -174,6 +190,12 @@ class GoogleApi(private val auth: GoogleAuth) {
         return null
     }
 
+    private fun collectAttachments(p: JsonObject, out: MutableList<MailAttachment>) {
+        val name = p.str("filename"); val body = p.obj("body"); val aid = body?.str("attachmentId")
+        if (!name.isNullOrBlank() && aid != null) out += MailAttachment(aid, name, p.str("mimeType").orEmpty(), body.str("size")?.toLongOrNull() ?: 0L)
+        p.arr("parts").forEach { collectAttachments(it.jsonObject, out) }
+    }
+
     private fun parseMail(j: JsonObject, full: Boolean): Mail {
         val p = j.obj("payload")
         val body = if (full && p != null) findPart(p, "text/plain") ?: findPart(p, "text/html")?.let { Util.htmlToText(it) } ?: "" else ""
@@ -182,6 +204,7 @@ class GoogleApi(private val auth: GoogleAuth) {
             subject = header(p, "Subject").ifBlank { "(Sin asunto)" }, snippet = Util.htmlToText(j.str("snippet").orEmpty()),
             date = j.str("internalDate")?.toLongOrNull() ?: 0L, unread = j.arr("labelIds").any { it.jsonPrimitive.content == "UNREAD" },
             body = body, messageId = header(p, "Message-ID").ifBlank { null },
+            attachments = if (full && p != null) mutableListOf<MailAttachment>().also { collectAttachments(p, it) } else emptyList(),
         )
     }
 
@@ -198,14 +221,30 @@ class GoogleApi(private val auth: GoogleAuth) {
 
     suspend fun readMail(id: String): Mail = parseMail(call("GET", "$gm/messages/$id", mapOf("format" to "full")), true)
 
-    suspend fun sendMail(to: String, subject: String, body: String, threadId: String? = null, inReplyTo: String? = null) {
+    private val gmUpload = "https://www.googleapis.com/upload/gmail/v1/users/me"
+
+    /** Envía con adjuntos por la subida multipart de Gmail (hasta ~35 MB). */
+    private suspend fun uploadRaw(path: String, raw: ByteArray, meta: JsonObject) {
+        val multi = MultipartBody.Builder().setType("multipart/related".toMediaType())
+            .addPart(meta.toString().toRequestBody(Http.JSON_TYPE)).addPart(raw.toRequestBody("message/rfc822".toMediaType())).build()
+        call("POST", "$gmUpload/$path", mapOf("uploadType" to "multipart"), rawBody = multi)
+    }
+
+    suspend fun sendMail(to: String, subject: String, body: String, threadId: String? = null, inReplyTo: String? = null, files: List<MailFile> = emptyList()) {
+        if (files.isNotEmpty()) { uploadRaw("messages/send", Util.rawMessage(to, subject, body, inReplyTo, files), buildJsonObject { threadId?.let { put("threadId", it) } }); return }
         call("POST", "$gm/messages/send", body = buildJsonObject {
             put("raw", Util.mimeMessage(to, subject, body, inReplyTo)); threadId?.let { put("threadId", it) }
         })
     }
 
-    suspend fun createDraft(to: String, subject: String, body: String) {
+    suspend fun createDraft(to: String, subject: String, body: String, files: List<MailFile> = emptyList()) {
+        if (files.isNotEmpty()) { uploadRaw("drafts", Util.rawMessage(to, subject, body, null, files), buildJsonObject { putJsonObject("message") {} }); return }
         call("POST", "$gm/drafts", body = buildJsonObject { putJsonObject("message") { put("raw", Util.mimeMessage(to, subject, body)) } })
+    }
+
+    suspend fun downloadAttachment(messageId: String, attachmentId: String): ByteArray {
+        val data = call("GET", "$gm/messages/$messageId/attachments/$attachmentId").str("data").orEmpty()
+        return java.util.Base64.getUrlDecoder().decode(data)
     }
 
     suspend fun markRead(id: String) {
@@ -251,10 +290,13 @@ class GoogleApi(private val auth: GoogleAuth) {
     // ------------------------------------------------------------ Drive
     private val dr = "https://www.googleapis.com/drive/v3/files"
     private val folderCache = mutableMapOf<String, String>()
-    private val fileFields = "id,name,mimeType,webViewLink,modifiedTime"
+    private val fileFields = "id,name,mimeType,webViewLink,modifiedTime,shared,ownedByMe,owners(displayName,emailAddress),size"
 
-    private fun parseFile(f: JsonObject) =
-        DriveFile(f.str("id").orEmpty(), f.str("name").orEmpty(), f.str("mimeType").orEmpty(), f.str("webViewLink"), f.str("modifiedTime"))
+    private fun parseFile(f: JsonObject) = DriveFile(
+        f.str("id").orEmpty(), f.str("name").orEmpty(), f.str("mimeType").orEmpty(), f.str("webViewLink"), f.str("modifiedTime"),
+        shared = f.str("shared") == "true", ownedByMe = f.str("ownedByMe") != "false",
+        owner = f.arr("owners").firstOrNull()?.jsonObject?.let { it.str("displayName") ?: it.str("emailAddress") }, size = f.str("size")?.toLongOrNull(),
+    )
 
     /** Carpeta "Alfred" en la raíz de Drive, o una subcarpeta suya ("Notas", "Escaneos", "Facturas"…). Se crea si no existe. */
     suspend fun folder(sub: String? = null): String {
@@ -280,9 +322,10 @@ class GoogleApi(private val auth: GoogleAuth) {
         )).arr("files").map { parseFile(it.jsonObject) }
 
     /** Sube un fichero. Si [existingId] no es nulo, sustituye su contenido en vez de crear otro. */
-    suspend fun upload(bytes: ByteArray, name: String, mime: String, parent: String, existingId: String? = null): DriveFile {
+    suspend fun upload(bytes: ByteArray, name: String, mime: String, parent: String, existingId: String? = null, convertTo: String? = null): DriveFile {
         val meta = buildJsonObject {
             put("name", name)
+            convertTo?.let { put("mimeType", it) }
             if (existingId == null) put("parents", buildJsonArray { add(JsonPrimitive(parent)) })
         }
         val type = runCatching { mime.toMediaType() }.getOrDefault("application/octet-stream".toMediaType())
@@ -300,6 +343,57 @@ class GoogleApi(private val auth: GoogleAuth) {
     }
 
     suspend fun deleteFile(id: String) { call("DELETE", "$dr/$id") }
+
+    // ---- Explorador de Drive (permiso completo) ----------------------------------------------------------------
+    private val driveAll = mapOf("supportsAllDrives" to "true", "includeItemsFromAllDrives" to "true")
+
+    /**
+     * Lista archivos de Drive. [parent] = carpeta ("root" para Mi unidad); con [sharedWithMe] lista lo que otros han compartido;
+     * con [query] busca por nombre en todo el Drive.
+     */
+    suspend fun listDrive(parent: String? = "root", query: String? = null, sharedWithMe: Boolean = false): List<DriveFile> {
+        val parts = mutableListOf("trashed = false")
+        if (sharedWithMe) parts += "sharedWithMe = true"
+        if (!query.isNullOrBlank()) parts += "name contains '${Util.escapeDriveQuery(query.trim())}'"
+        else if (!sharedWithMe && parent != null) parts += "'$parent' in parents"
+        return call("GET", dr, driveAll + mapOf(
+            "q" to parts.joinToString(" and "), "fields" to "files($fileFields)", "pageSize" to "200",
+            "orderBy" to if (query.isNullOrBlank()) "folder,name_natural" else "modifiedTime desc",
+        )).arr("files").map { parseFile(it.jsonObject) }
+    }
+
+    suspend fun createFolder(name: String, parent: String?): DriveFile = createDriveItem(name, DriveFile.FOLDER, parent)
+
+    /** Crea un documento, hoja o presentación de Google vacío. */
+    suspend fun createDriveItem(name: String, mime: String, parent: String?): DriveFile = parseFile(
+        call("POST", dr, driveAll + mapOf("fields" to fileFields), buildJsonObject {
+            put("name", name); put("mimeType", mime)
+            if (parent != null) put("parents", buildJsonArray { add(JsonPrimitive(parent)) })
+        })
+    )
+
+    /** Crea un documento de Google con texto inicial (se convierte al subirlo). */
+    suspend fun createDocWithText(name: String, text: String, parent: String): DriveFile =
+        upload(text.toByteArray(), name, "text/plain", parent, null, convertTo = DriveFile.DOC)
+
+    suspend fun trash(id: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("trashed", true) }) }
+
+    suspend fun rename(id: String, name: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("name", name) }) }
+
+    suspend fun permissions(id: String): List<DrivePerm> =
+        call("GET", "$dr/$id/permissions", driveAll + mapOf("fields" to "permissions(id,type,role,emailAddress,displayName)")).arr("permissions").map {
+            val p = it.jsonObject
+            DrivePerm(p.str("id").orEmpty(), p.str("emailAddress").orEmpty(), p.str("displayName") ?: p.str("emailAddress").orEmpty(), p.str("role").orEmpty(), p.str("type").orEmpty())
+        }
+
+    /** Comparte con una persona. [role]: "writer" (editor), "commenter" o "reader" (lector). Google le avisa por correo. */
+    suspend fun share(id: String, email: String, role: String, message: String? = null) {
+        call("POST", "$dr/$id/permissions", driveAll + mapOf("sendNotificationEmail" to "true", "emailMessage" to message), buildJsonObject {
+            put("type", "user"); put("role", role); put("emailAddress", email.trim())
+        })
+    }
+
+    suspend fun unshare(id: String, permissionId: String) { call("DELETE", "$dr/$id/permissions/$permissionId", driveAll) }
 
     fun forgetCache() = folderCache.clear()
 }

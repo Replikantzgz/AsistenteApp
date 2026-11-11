@@ -89,10 +89,10 @@ fun OverlayScreen(which: String) {
     BackHandler { ui.overlay = null }
     Column(Modifier.fillMaxSize()) {
         PixelBar(
-            title = { Text(when (which) { "drive" -> "DRIVE"; "premium" -> "PREMIUM"; else -> "AJUSTES" }) },
+            title = { Text(when (which) { "premium" -> "PREMIUM"; "search" -> "BUSCAR"; else -> "AJUSTES" }) },
             navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White) } },
         )
-        when (which) { "drive" -> DriveScreen(); "premium" -> PremiumScreen(); else -> SettingsScreen() }
+        when (which) { "premium" -> PremiumScreen(); "search" -> SearchScreen(); else -> SettingsScreen() }
     }
 }
 
@@ -115,6 +115,7 @@ fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.draw
     var error by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var q by rememberSaveable { mutableStateOf("") }
+    LaunchedEffect(ui.contactQuery) { if (ui.contactQuery.isNotBlank()) { q = ui.contactQuery; ui.contactQuery = "" } }
     var adding by remember { mutableStateOf(false) }
     var selected by remember { mutableStateOf<Contact?>(null) }
 
@@ -189,61 +190,6 @@ fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.draw
             },
             dismissButton = { TextButton(onClick = { adding = false }) { Text("Cancelar") } },
         )
-    }
-}
-
-// =============================================================== Drive
-@Composable
-private fun DriveScreen() = GoogleGate("tu carpeta de Drive", com.iatualcance.alfred.R.drawable.art_notas) {
-    val sv = LocalServices.current
-    val ui = LocalUi.current
-    val ctx = LocalContext.current
-    var path by remember { mutableStateOf(listOf<DriveFile>()) }   // subcarpetas abiertas
-    var files by remember { mutableStateOf<List<DriveFile>?>(null) }
-    var error by remember { mutableStateOf<String?>(null) }
-    var reload by remember { mutableIntStateOf(0) }
-    var toDelete by remember { mutableStateOf<DriveFile?>(null) }
-    if (path.isNotEmpty()) BackHandler { path = path.dropLast(1) }
-
-    LaunchedEffect(path, reload) {
-        files = null; error = null
-        try { files = sv.google.listFiles(path.lastOrNull()?.id ?: sv.google.folder(null)) }
-        catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { error = e.message ?: e.toString() }
-    }
-
-    Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Alfred" + path.joinToString("") { " / " + it.name }, Modifier.weight(1f), color = MaterialTheme.colorScheme.primary, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            IconButton(onClick = { ui.run("Haciendo copia de seguridad…") { sv.backupToDrive(); ui.say("Copia de notas, tareas y plantillas guardada en Drive"); reload++ } }) { Icon(Icons.Default.Backup, "Copia de seguridad") }
-            IconButton(onClick = { reload++ }) { Icon(Icons.Default.Refresh, "Actualizar") }
-        }
-        val list = files
-        when {
-            error != null -> ErrorBox(error!!) { reload++ }
-            list == null -> Loading()
-            list.isEmpty() -> Centered { Hint("Carpeta vacía.\nAquí aparecen las notas, escaneos y facturas que Alfred guarda en su Drive.") }
-            else -> LazyColumn {
-                items(list, key = { it.id }) { f ->
-                    Row(Modifier.fillMaxWidth().clickable { if (f.isFolder) path = path + f else f.link?.let { ctx.openUrl(it) } }.padding(horizontal = 16.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically) {
-                        Icon(if (f.isFolder) Icons.Default.Folder else Icons.AutoMirrored.Filled.InsertDriveFile, null,
-                            tint = if (f.isFolder) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary)
-                        Spacer(Modifier.width(14.dp))
-                        Column(Modifier.weight(1f)) {
-                            Text(f.name, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            f.modified?.let { Text(it.take(10), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        }
-                        if (!f.isFolder) IconButton(onClick = { toDelete = f }) { Icon(Icons.Default.Delete, "Eliminar", tint = MaterialTheme.colorScheme.onSurfaceVariant) }
-                        else f.link?.let { l -> IconButton(onClick = { ctx.openUrl(l) }) { Icon(Icons.AutoMirrored.Filled.OpenInNew, "Abrir en Drive", tint = MaterialTheme.colorScheme.onSurfaceVariant) } }
-                    }
-                }
-            }
-        }
-    }
-    toDelete?.let { f ->
-        Confirm("Eliminar de Drive", "«${f.name}» se eliminará de su Google Drive.", "Eliminar", { toDelete = null }) {
-            ui.run("Eliminando…") { sv.google.deleteFile(f.id); reload++ }
-        }
     }
 }
 
@@ -325,6 +271,12 @@ private fun SettingsScreen() {
             Hint("La clave se guarda cifrada solo en este móvil y se usa únicamente para hablar con Gemini.")
         }
 
+        // ------------------------------------------------------------------ Voz
+        Section("Voz") {
+            val speak by sv.settings.speakReplies.collectAsStateCompat()
+            SwitchRow("Leer las respuestas en voz alta", "El asistente te contesta hablando. También puedes usar «Conversar» en la pantalla del asistente para hablar sin tocar nada.", speak) { sv.settings.setSpeakReplies(it) }
+        }
+
         // ------------------------------------------------------------------ Notificaciones
         Section("Notificaciones") {
             val notifyEvents by sv.settings.notifyEvents.collectAsStateCompat()
@@ -345,6 +297,13 @@ private fun SettingsScreen() {
                 DropdownMenu(leadMenu, { leadMenu = false }) {
                     listOf(0, 5, 10, 15, 30, 60, 120).forEach { m -> DropdownMenuItem({ Text(if (m == 0) "A la hora exacta" else "$m minutos antes") }, { sv.settings.setLeadMin(m); leadMenu = false }) }
                 }
+            }
+            val summary by sv.settings.dailySummary.collectAsStateCompat()
+            val summaryMin by sv.settings.summaryMinutes.collectAsStateCompat()
+            SwitchRow("Resumen del día", "Cada mañana: tus citas, tareas y correos sin leer.", summary) { sv.settings.setDailySummary(it) }
+            if (summary) Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("Hora del resumen", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                TimeButton(java.time.LocalTime.of(summaryMin / 60, summaryMin % 60)) { sv.settings.setSummaryMinutes(it.hour * 60 + it.minute) }
             }
             SwitchRow("Avisar de las tareas", "A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", notifyTasks) { sv.settings.setNotifyTasks(it) }
             AppOutlinedButton(onClick = {

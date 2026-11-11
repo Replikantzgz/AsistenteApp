@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -67,12 +69,21 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
         onPauseOrDispose {}
     }
     LaunchedEffect(updateState) { (updateState as? UpdateState.Failed)?.let { ui.say(it.message); sv.updater.state.value = UpdateState.Idle } }
-    LaunchedEffect(routed) { routed?.let { ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(it)); route.value = null } }
+    LaunchedEffect(routed) {
+        val r = routed ?: return@LaunchedEffect
+        route.value = null
+        when (r) {
+            "grabar" -> ui.navigate(com.iatualcance.alfred.ai.Nav.Record)
+            "escanear" -> ui.navigate(com.iatualcance.alfred.ai.Nav.Scan)
+            "nota" -> ui.openNote(sv.store.upsertNote(com.iatualcance.alfred.data.Note()).id)
+            else -> ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(r))
+        }
+    }
 
     LaunchedEffect(incoming) {
         val i = incoming ?: return@LaunchedEffect
         shared.value = null
-        ui.run("Guardando en Alfred…") { handleShared(i, sv, ui) }
+        ui.shared = SharedDraft(i, IntentCompat.getParcelableExtra(i, Intent.EXTRA_STREAM, Uri::class.java), i.type.orEmpty(), i.getStringExtra(Intent.EXTRA_TEXT))
     }
     // Alfred (el asistente) manda a la interfaz: abrir pantallas, notas, redactar…
     LaunchedEffect(chat.needsPremium) { if (chat.needsPremium) { ui.overlay = "premium"; chat.needsPremium = false } }
@@ -89,7 +100,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
                     ui.overlay != null -> OverlayScreen(ui.overlay!!)
                     else -> when (ui.tab) {
                         Tab.CHAT -> ChatScreen(chat)
-                        Tab.AGENDA -> AgendaScreen()
+                        Tab.DRIVE -> DriveTab()
                         Tab.NOTES -> NotesScreen()
                         Tab.MAIL -> MailScreen()
                         Tab.CONTACTS -> ContactsTab()
@@ -98,6 +109,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
             }
         }
         ui.busy?.let { BusyDialog(it) }
+        ui.shared?.let { d -> ShareChoice(d, { ui.shared = null }, sv, ui, chat) }
         (updateState as? UpdateState.NeedsPermission)?.let { st ->
             AlertDialog(
                 onDismissRequest = { sv.updater.state.value = UpdateState.Idle },
@@ -149,4 +161,29 @@ private suspend fun handleShared(i: Intent, sv: Services, ui: AppUi) {
         else -> null
     }
     if (note != null) ui.openNote(note.id) else ui.say("No he podido leer el contenido compartido")
+}
+
+
+/** "Compartir con Alfred": preguntar qué hacer con el contenido recibido. */
+@Composable
+private fun ShareChoice(d: SharedDraft, onDismiss: () -> Unit, sv: Services, ui: AppUi, chat: ChatViewModel) {
+    val what = when {
+        d.mime.startsWith("image/") -> "una imagen"; d.mime.startsWith("audio/") || d.mime == "application/ogg" -> "un audio"
+        d.mime == "application/pdf" -> "un PDF"; else -> "un texto"
+    }
+    fun ask(prompt: String) { onDismiss(); ui.overlay = null; ui.tab = Tab.CHAT; chat.send(prompt + (d.text?.let { "\n\n$it" } ?: ""), d.uri) }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text("¿Qué hago con esto?", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Hint("Has compartido $what" + (d.text?.let { ": «" + it.take(90) + if (it.length > 90) "…»" else "»" } ?: "."))
+                if (!sv.hasAi) Hint("Para resumir o crear tareas hace falta la clave de Gemini (Ajustes).")
+                AppButton(onClick = { ask("Resume esto en pocas líneas, en español.") }, enabled = sv.hasAi, modifier = Modifier.fillMaxWidth()) { Text("Resumir") }
+                AppOutlinedButton(onClick = { ask("Extrae las tareas o compromisos de esto y crea una tarea por cada uno, con su fecha si la hay.") }, enabled = sv.hasAi, modifier = Modifier.fillMaxWidth()) { Text("Crear tareas") }
+                AppOutlinedButton(onClick = { onDismiss(); ui.overlay = null; ui.tab = Tab.CHAT; ui.chatDraft = ChatDraft(d.uri, d.text.orEmpty()) }, modifier = Modifier.fillMaxWidth()) { Text("Preguntar al asistente…") }
+                AppOutlinedButton(onClick = { onDismiss(); ui.run("Guardando en Alfred…") { handleShared(d.intent, sv, ui) } }, modifier = Modifier.fillMaxWidth()) { Text("Guardar como nota") }
+            }
+        },
+        confirmButton = {}, dismissButton = { TextButton(onClick = onDismiss) { Text("CANCELAR") } },
+    )
 }

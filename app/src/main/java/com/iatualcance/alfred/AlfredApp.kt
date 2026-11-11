@@ -57,8 +57,9 @@ class Services(private val app: Application) {
     val auth = GoogleAuth(app)
     val google = GoogleApi(auth)
     val gemini = Gemini(settings)
+    val voice = com.iatualcance.alfred.voice.VoiceController(app)
     val updater = com.iatualcance.alfred.update.Updater(app, com.iatualcance.alfred.google.Http.client)
-    val assistant = Assistant(gemini, google, store, settings, uploadNote = { uploadNote(it) }, backup = { backupToDrive() })
+    val assistant = Assistant(gemini, google, store, settings, uploadNote = { n, p -> uploadNote(n, p) }, backup = { backupToDrive() })
 
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
     private val reminders = com.iatualcance.alfred.notify.ReminderCenter(app)
@@ -69,7 +70,7 @@ class Services(private val app: Application) {
     fun start() {
         scope.launch { store.tasks.collectLatest { delay(400); refreshReminders(false) } }
         scope.launch {
-            combine(settings.notifyEvents, settings.notifyTasks, settings.leadMin, settings.account) { a, b, c, d -> listOf(a, b, c, d) }
+            combine(listOf(settings.notifyEvents, settings.notifyTasks, settings.leadMin, settings.account, settings.dailySummary, settings.summaryMinutes)) { it.toList() }
                 .drop(1).collectLatest { delay(400); refreshReminders(true) }
         }
     }
@@ -85,20 +86,20 @@ class Services(private val app: Application) {
             val plan = mutableListOf<com.iatualcance.alfred.notify.Reminder>()
             if (settings.notifyTasks.value) store.tasks.value.mapNotNullTo(plan) { com.iatualcance.alfred.notify.Plan.taskReminder(it, now, zone) }
             val wantEvents = settings.notifyEvents.value && hasGoogle
-            var fresh: List<com.iatualcance.alfred.notify.Reminder>? = null
-            if (wantEvents && (events || now - lastFull > 60_000)) {
-                fresh = runCatching {
-                    val from = java.time.ZonedDateTime.now(zone)
-                    google.listEvents(from, from.plusDays(14)).mapNotNull { com.iatualcance.alfred.notify.Plan.eventReminder(it, settings.leadMin.value, now) }
-                }.getOrNull()
-                if (fresh != null) lastFull = now
+            var fetched: List<com.iatualcance.alfred.google.CalEvent>? = null
+            if (hasGoogle && (events || now - lastFull > 60_000)) {
+                fetched = runCatching { val from = java.time.ZonedDateTime.now(zone); google.listEvents(from, from.plusDays(14)) }.getOrNull()
+                if (fetched != null) lastFull = now
             }
+            val fresh = if (wantEvents) fetched?.mapNotNull { com.iatualcance.alfred.notify.Plan.eventReminder(it, settings.leadMin.value, now) } else null
+            if (settings.dailySummary.value) plan += com.iatualcance.alfred.notify.Plan.dailyReminder(settings.summaryMinutes.value, now, zone)
             when {
                 !wantEvents -> {}
                 fresh != null -> plan += fresh
                 else -> plan += reminders.load().filter { it.id.startsWith("ev-") && it.at > now }   // sin conexión: se conservan
             }
             reminders.apply(plan.sortedBy { it.at })
+            updateWidget(fetched, now, zone)
         }
     }
 
@@ -125,6 +126,31 @@ class Services(private val app: Application) {
         return r
     }
 
+    /** Texto del widget: citas (de la última lectura del calendario) y tareas pendientes. */
+    private fun updateWidget(events: List<com.iatualcance.alfred.google.CalEvent>?, now: Long, zone: java.time.ZoneId) {
+        val prefs = app.getSharedPreferences("widget", android.content.Context.MODE_PRIVATE)
+        if (events != null) prefs.edit().putString("events", com.iatualcance.alfred.notify.Plan.widgetLines(events, emptyList(), now, zone).filter { it.startsWith("📅") }.joinToString("\n")).apply()
+        val ev = prefs.getString("events", "").orEmpty().lines().filter { it.isNotBlank() }
+        val tk = com.iatualcance.alfred.notify.Plan.widgetLines(emptyList(), store.tasks.value, now, zone).filter { it.startsWith("☐") }
+        prefs.edit().putString("text", (ev + tk).ifEmpty { listOf("Nada pendiente. ¡Buen día!") }.joinToString("\n")).apply()
+        com.iatualcance.alfred.widget.AlfredWidget.refresh(app)
+    }
+
+    /** Resumen de la mañana con los datos de ahora mismo. */
+    suspend fun buildSummary(): Pair<String, String> = withContext(Dispatchers.Default) {
+        val zone = java.time.ZoneId.systemDefault()
+        val now = java.time.ZonedDateTime.now(zone)
+        val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        val events = if (!hasGoogle) emptyList() else runCatching {
+            google.listEvents(now.toLocalDate().atStartOfDay(zone), now.toLocalDate().plusDays(1).atStartOfDay(zone))
+                .filter { it.allDay || it.end.isAfter(now) }.map { (if (it.allDay) "" else it.start.format(hm)) to it.title }
+        }.getOrDefault(emptyList())
+        val today = now.toLocalDate().toString()
+        val tasks = store.tasks.value.filter { !it.done && it.due != null && it.due <= today }.map { it.title }
+        val unread = if (!hasGoogle) 0 else runCatching { google.listMail("in:inbox is:unread", 20).size }.getOrDefault(0)
+        com.iatualcance.alfred.notify.Plan.summary(events, tasks, unread, settings.account.value?.name?.substringBefore(' '), now.hour)
+    }
+
     val hasAi get() = settings.apiKey.value.isNotBlank()
     val hasGoogle get() = settings.account.value != null
 
@@ -141,13 +167,13 @@ class Services(private val app: Application) {
     private suspend fun bytes(a: Attachment) = withContext(Dispatchers.IO) { store.fileOf(a).readBytes() }
 
     /** Sube la nota (texto + adjuntos) a la carpeta Alfred de Drive. Las facturas y los escaneos van a su subcarpeta. */
-    suspend fun uploadNote(note: Note): Note {
+    suspend fun uploadNote(note: Note, parentOverride: String? = null): Note {
         val sub = when {
             note.tags.any { it.equals("factura", true) } -> "Facturas"
             note.tags.any { it.equals("escaneo", true) } -> "Escaneos"
             else -> "Notas"
         }
-        val parent = google.folder(sub)
+        val parent = parentOverride ?: google.folder(sub)
         val base = Util.safeFileName(note.title.ifBlank { "Nota ${stamp()}" })
         val atts = note.attachments.map { a ->
             if (a.driveLink != null) a
@@ -223,6 +249,26 @@ class Services(private val app: Application) {
         reminders.apply(emptyList())
         updater.cleanup()
         wipe()
+    }
+
+    /** Descarga un adjunto de Gmail a la caché y devuelve el fichero. */
+    suspend fun mailAttachmentFile(messageId: String, a: com.iatualcance.alfred.google.MailAttachment): File {
+        val bytes = google.downloadAttachment(messageId, a.id)
+        return withContext(Dispatchers.IO) { File(File(app.cacheDir, "mail").apply { mkdirs() }, Util.safeFileName(a.name)).apply { writeBytes(bytes) } }
+    }
+
+    /** Guarda un adjunto de Gmail como adjunto de una nota nueva. */
+    suspend fun saveAttachmentToNote(messageId: String, a: com.iatualcance.alfred.google.MailAttachment, subject: String, from: String): Note {
+        val bytes = google.downloadAttachment(messageId, a.id)
+        val att = withContext(Dispatchers.IO) {
+            val f = store.newAttachmentFile(a.name.substringAfterLast('.', "bin").take(8)); f.writeBytes(bytes)
+            Attachment(fileName = f.name, mime = a.mime.ifBlank { "application/octet-stream" }, label = a.name)
+        }
+        return store.upsertNote(Note(title = "Adjunto: ${a.name}", content = "Del correo «$subject» de $from", tags = listOf("correo"), attachments = listOf(att)))
+    }
+
+    suspend fun saveAttachmentToDrive(messageId: String, a: com.iatualcance.alfred.google.MailAttachment) {
+        google.upload(google.downloadAttachment(messageId, a.id), a.name, a.mime.ifBlank { "application/octet-stream" }, google.folder("Adjuntos"))
     }
 
     fun wipe() { store.deleteEverything(); settings.clear() }

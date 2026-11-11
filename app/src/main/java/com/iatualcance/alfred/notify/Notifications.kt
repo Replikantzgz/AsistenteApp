@@ -84,7 +84,7 @@ class ReminderCenter(private val ctx: Context) {
         ctx, r.id.hashCode(),
         Intent(ctx, ReminderReceiver::class.java).setAction("alfred.REMINDER.${r.id}")
             .putExtra("id", r.id).putExtra("at", r.at).putExtra("title", r.title).putExtra("text", r.text)
-            .putExtra("route", r.route).putExtra("taskId", r.taskId),
+            .putExtra("route", r.route).putExtra("taskId", r.taskId).putExtra("kind", r.kind),
         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
     )
 
@@ -119,9 +119,11 @@ class ReminderReceiver : BroadcastReceiver() {
         val r = Reminder(
             id = i.getStringExtra("id") ?: return, at = i.getLongExtra("at", System.currentTimeMillis()),
             title = i.getStringExtra("title").orEmpty(), text = i.getStringExtra("text").orEmpty(),
-            route = i.getStringExtra("route") ?: "calendario", taskId = i.getStringExtra("taskId"),
+            route = i.getStringExtra("route") ?: "calendario", taskId = i.getStringExtra("taskId"), kind = i.getStringExtra("kind"),
         )
-        Notif.show(ctx, r)
+        // El resumen del día se prepara al sonar, con los datos de ese momento.
+        if (r.kind == "summary") androidx.work.WorkManager.getInstance(ctx).enqueue(androidx.work.OneTimeWorkRequestBuilder<SummaryWorker>().build())
+        else Notif.show(ctx, r)
         ReminderCenter(ctx).remove(r.id)
     }
 }
@@ -149,6 +151,17 @@ class TaskDoneReceiver : BroadcastReceiver() {
 class RefreshWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
     override suspend fun doWork(): Result {
         (applicationContext as AlfredApp).sv.refreshReminders(true)
+        return Result.success()
+    }
+}
+
+/** Prepara y muestra el resumen de la mañana, y programa el de mañana. */
+class SummaryWorker(ctx: Context, params: WorkerParameters) : CoroutineWorker(ctx, params) {
+    override suspend fun doWork(): Result {
+        val sv = (applicationContext as AlfredApp).sv
+        val (title, text) = sv.buildSummary()
+        Notif.show(applicationContext, Reminder("daily-show", System.currentTimeMillis(), title, text, "chat"))
+        sv.refreshReminders(true)
         return Result.success()
     }
 }
