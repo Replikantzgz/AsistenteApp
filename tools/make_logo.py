@@ -1,123 +1,102 @@
 #!/usr/bin/env python3
-"""Propuestas de logo de Alfred (pixel-art 48x48, ampliado x8 sin suavizar).
+"""Propuestas de logo de Alfred: pixel-art 32x32 sobre fondo claro, ampliado x8 sin suavizar.
 Uso: python3 tools/make_logo.py <carpeta_salida>"""
 from PIL import Image, ImageDraw
 import sys, os
 
-INK = "#1B1740"; NAVY2 = "#2B2760"; WHITE = "#FFFFFF"
-STEEL_L = "#EEF2FB"; STEEL = "#BCC7E0"; STEEL_D = "#7C89AD"; STEEL_DD = "#55618A"
-GOLD = "#F2B705"; GOLD_L = "#FFE27A"; GOLD_D = "#A66F00"
+INK = "#1B1740"; CREAM = "#FFF4D6"; CREAM_D = "#F1E2B5"; WHITE = "#FFFFFF"
+STEEL = "#D5DDEE"; STEEL_D = "#9AA7C7"
+GOLD = "#F2B705"; GOLD_L = "#FFE27A"; GOLD_D = "#B27A00"
 BLUE = "#2F6FE4"; BLUE_L = "#8DB6FF"; BLUE_D = "#1A3F94"
-CYAN = "#62E8FF"; CYAN_D = "#139AC0"; RED = "#E5484D"; RED_D = "#A32A31"
-N = 48; S = 8
+CYAN = "#62E8FF"; CYAN_D = "#139AC0"; PINK = "#FFB3B3"; RED = "#E5484D"; HAT = "#33307A"; HAT_L = "#6C66C4"
+N = 32; S = 8
 
 def new():
-    im = Image.new("RGBA", (N, N), INK); d = ImageDraw.Draw(im)
-    for y in range(1, N, 6):
-        for x in range(1 + (y // 6 % 2) * 3, N, 6): d.point((x, y), fill=NAVY2)
+    im = Image.new("RGBA", (N, N), CREAM); d = ImageDraw.Draw(im)
+    for y in range(2, N, 4):                                    # trama de puntos muy tenue
+        for x in range(2 + (y // 4 % 2) * 2, N, 4): d.point((x, y), fill=CREAM_D)
     return im, d
 
-def halo(d):
-    d.arc([3, 3, 44, 44], 90, 270, fill=GOLD, width=2)
-    d.arc([3, 3, 44, 44], 270, 90, fill=BLUE, width=2)
-    d.arc([5, 5, 42, 42], 100, 260, fill=GOLD_D, width=1)
-    d.arc([5, 5, 42, 42], 280, 80, fill=BLUE_D, width=1)
-
-def rect(d, x0, y0, x1, y1, fill, line=INK):
-    d.rectangle([x0, y0, x1, y1], fill=line); d.rectangle([x0 + 1, y0 + 1, x1 - 1, y1 - 1], fill=fill)
-
-def chamfer(d, x0, y0, x1, y1, fill, c=3, line=INK):
-    """Rectángulo con esquinas cortadas en diagonal (cabezas de robot más amables que un monitor)."""
+def chamfer(d, x0, y0, x1, y1, fill, c=2):
     pts = lambda i: [(x0 + c - i, y0 - i), (x1 - c + i, y0 - i), (x1 + i, y0 + c - i), (x1 + i, y1 - c + i),
                      (x1 - c + i, y1 + i), (x0 + c - i, y1 + i), (x0 - i, y1 - c + i), (x0 - i, y0 + c - i)]
-    d.polygon(pts(1), fill=line); d.polygon(pts(0), fill=fill)
+    d.polygon(pts(1), fill=INK); d.polygon(pts(0), fill=fill)
 
-def bowtie(d, cx, cy, c=GOLD, hi=GOLD_L, lo=GOLD_D):
-    d.polygon([(cx - 8, cy - 4), (cx - 1, cy), (cx - 8, cy + 4)], fill=c, outline=INK)
-    d.polygon([(cx + 8, cy - 4), (cx + 1, cy), (cx + 8, cy + 4)], fill=c, outline=INK)
-    d.line([(cx - 7, cy - 2), (cx - 3, cy - 1)], fill=hi); d.line([(cx + 7, cy - 2), (cx + 3, cy - 1)], fill=hi)
-    rect(d, cx - 2, cy - 2, cx + 2, cy + 2, lo)
-    d.point((cx, cy), fill=hi)
+def rect(d, x0, y0, x1, y1, fill):
+    d.rectangle([x0, y0, x1, y1], fill=INK); d.rectangle([x0 + 1, y0 + 1, x1 - 1, y1 - 1], fill=fill)
 
-def suit(d, top=33):
-    d.polygon([(7, 47), (9, top + 3), (17, top - 1), (31, top - 1), (39, top + 3), (41, 47)], fill=BLUE, outline=INK)
-    d.polygon([(18, top - 1), (30, top - 1), (24, 47)], fill=WHITE, outline=INK)
-    d.line([(16, top), (21, 44)], fill=BLUE_D); d.line([(32, top), (27, 44)], fill=BLUE_D)
-    d.line([(10, top + 4), (14, top + 2)], fill=BLUE_L)
-    # circuitos sutiles en la solapa
-    for (x, y) in ((12, 41), (36, 41)): d.point((x, y), fill=CYAN)
-    d.line([(12, 42), (12, 45)], fill=BLUE_L); d.line([(36, 42), (36, 45)], fill=BLUE_L)
-    d.rectangle([23, 41, 24, 42], fill=GOLD); d.rectangle([23, 45, 24, 46], fill=GOLD)
+def eye(d, x, y):
+    d.ellipse([x, y, x + 4, y + 4], fill=CYAN, outline=INK); d.point((x + 1, y + 1), fill=WHITE); d.point((x + 2, y + 2), fill=INK)
 
-def led(d, x, y, big=False):
-    if big:
-        d.rectangle([x - 1, y - 1, x + 2, y + 2], fill=CYAN_D); d.rectangle([x, y, x + 1, y + 1], fill=CYAN); d.point((x, y), fill=WHITE)
-    else:
-        d.rectangle([x, y, x + 1, y + 1], fill=CYAN); d.point((x, y), fill=WHITE)
+def bowtie(d, cx, cy, w=5, h=3, c=GOLD):
+    d.polygon([(cx - w - 1, cy - h), (cx, cy), (cx - w - 1, cy + h)], fill=c, outline=INK)
+    d.polygon([(cx + w + 1, cy - h), (cx, cy), (cx + w + 1, cy + h)], fill=c, outline=INK)
+    d.line([(cx - w, cy - h + 1), (cx - 2, cy - 1)], fill=GOLD_L); d.line([(cx + w, cy - h + 1), (cx + 2, cy - 1)], fill=GOLD_L)
+    rect(d, cx - 1, cy - 1, cx + 1, cy + 1, GOLD_D)
 
-# ----------------------------------------------------------------------------- A · Monóculo
-def concept_a():
-    im, d = new(); halo(d); suit(d, 34)
-    d.line([(24, 6), (24, 10)], fill=STEEL_DD); d.rectangle([23, 6, 23, 10], fill=INK); d.rectangle([25, 6, 25, 10], fill=INK)
-    d.ellipse([21, 2, 26, 7], fill=GOLD, outline=INK); d.point((23, 3), fill=GOLD_L)
-    rect(d, 21, 30, 27, 35, STEEL_D); d.line([(22, 32), (26, 32)], fill=STEEL_DD)
-    for x0 in (10, 36):                                                                # orejas
-        rect(d, x0, 17, x0 + 2, 24, GOLD); d.line([(x0 + 1, 19), (x0 + 1, 22)], fill=GOLD_D)
-    chamfer(d, 12, 9, 35, 31, STEEL, c=4)
-    d.line([(16, 10), (31, 10)], fill=STEEL_L); d.line([(13, 14), (13, 27)], fill=STEEL_L)
-    d.line([(34, 15), (34, 27)], fill=STEEL_D); d.line([(16, 30), (31, 30)], fill=STEEL_D)
-    d.line([(24, 11), (24, 13)], fill=STEEL_D)
-    rect(d, 15, 15, 32, 24, "#10102E")
-    led(d, 18, 18, big=True)
-    d.ellipse([24, 15, 31, 23], outline=GOLD, width=1); d.arc([24, 15, 31, 23], 200, 250, fill=GOLD_L, width=1)
-    led(d, 27, 18, big=True)
-    d.line([(31, 23), (33, 28), (33, 34)], fill=GOLD)
-    # bigote clásico, fino
-    d.line([(17, 27), (22, 27)], fill=INK); d.point((16, 26), fill=INK); d.point((23, 26), fill=INK)
-    d.line([(25, 27), (30, 27)], fill=INK); d.point((24, 26), fill=INK); d.point((31, 26), fill=INK)
-    d.line([(21, 28), (26, 28)], fill=STEEL_DD)
-    bowtie(d, 24, 37)
+def shoulders(d, top=24):
+    d.polygon([(3, 31), (4, top + 3), (10, top), (21, top), (27, top + 3), (28, 31)], fill=BLUE, outline=INK)
+    d.polygon([(12, top), (19, top), (15, 31)], fill=WHITE, outline=INK)
+    d.line([(6, top + 4), (9, top + 2)], fill=BLUE_L)
+
+def robot_head(d, top=6):
+    d.line([(15, top - 4), (15, top)], fill=INK); d.line([(16, top - 4), (16, top)], fill=INK)
+    d.ellipse([13, top - 6, 18, top - 1], fill=GOLD, outline=INK); d.point((14, top - 5), fill=GOLD_L)
+    for x in (3, 25): rect(d, x, top + 4, x + 3, top + 10, GOLD)                       # tornillos laterales
+    chamfer(d, 6, top, 25, top + 16, WHITE, 3)
+    d.line([(9, top + 15), (22, top + 15)], fill=STEEL_D); d.line([(24, top + 4), (24, top + 12)], fill=STEEL)
+    rect(d, 13, top + 17, 18, top + 19, STEEL_D)                                      # cuello
+
+# ----------------------------------------------------------------------------- 1 · Mayordomo
+def concept_1():
+    im, d = new(); shoulders(d, 25); robot_head(d, 6)
+    eye(d, 9, 11); eye(d, 18, 11)
+    d.line([(13, 18), (18, 18)], fill=INK); d.point((12, 17), fill=INK); d.point((19, 17), fill=INK)
+    d.rectangle([8, 16, 9, 17], fill=PINK); d.rectangle([22, 16, 23, 17], fill=PINK)
+    bowtie(d, 15, 26)
     return im
 
-# ----------------------------------------------------------------------------- B · Bombín
-def concept_b():
-    im, d = new(); halo(d); suit(d, 36)
-    rect(d, 21, 32, 27, 37, STEEL_D); d.line([(22, 34), (26, 34)], fill=STEEL_DD)
-    d.ellipse([11, 14, 36, 34], fill=STEEL, outline=INK)                               # cabeza
-    d.arc([13, 16, 34, 32], 170, 250, fill=STEEL_L, width=2); d.arc([13, 16, 34, 32], 340, 60, fill=STEEL_D, width=2)
-    # bombín: cúpula baja y redondeada, ala ancha, cinta dorada
-    HAT = "#3A3578"; HAT_L = "#6C66C4"
-    d.ellipse([13, 8, 34, 19], fill=INK); d.ellipse([14, 9, 33, 18], fill=HAT)
-    d.rectangle([14, 13, 33, 17], fill=HAT)
-    d.arc([15, 10, 31, 17], 200, 280, fill=HAT_L, width=2)
-    d.rectangle([14, 14, 33, 16], fill=GOLD); d.line([(15, 14), (32, 14)], fill=GOLD_L); d.line([(14, 16), (33, 16)], fill=GOLD_D)
-    d.rectangle([8, 17, 39, 19], fill=INK); d.line([(9, 17), (38, 17)], fill=HAT)      # ala
-    rect(d, 14, 21, 33, 27, "#10102E")                                                 # visor
-    led(d, 18, 23); led(d, 28, 23)
-    d.line([(21, 24), (25, 24)], fill=CYAN_D)
-    d.rectangle([13, 29, 14, 30], fill=RED_D); d.rectangle([33, 29, 34, 30], fill=RED_D)
-    d.line([(20, 30), (27, 30)], fill=INK); d.point((19, 29), fill=INK); d.point((28, 29), fill=INK)
-    bowtie(d, 24, 39)
+# ----------------------------------------------------------------------------- 2 · Pajarita con lente
+def concept_2():
+    im, d = new()
+    d.line([(15, 4), (15, 9)], fill=INK); d.line([(16, 4), (16, 9)], fill=INK)
+    d.ellipse([13, 1, 18, 6], fill=GOLD, outline=INK); d.point((14, 2), fill=GOLD_L)
+    d.polygon([(2, 9), (14, 17), (2, 26)], fill=GOLD, outline=INK)
+    d.polygon([(29, 9), (17, 17), (29, 26)], fill=GOLD, outline=INK)
+    d.line([(4, 12), (11, 16)], fill=GOLD_L); d.line([(27, 12), (20, 16)], fill=GOLD_L)
+    d.line([(4, 23), (11, 19)], fill=GOLD_D); d.line([(27, 23), (20, 19)], fill=GOLD_D)
+    for p in ((6, 15), (6, 20), (25, 15), (25, 20)): d.point(p, fill=INK)              # remaches
+    d.ellipse([10, 11, 21, 22], fill=INK)                                              # lente
+    d.ellipse([11, 12, 20, 21], fill=BLUE_D); d.ellipse([12, 13, 19, 20], fill=CYAN)
+    d.ellipse([14, 15, 17, 18], fill=INK); d.rectangle([12, 13, 13, 14], fill=WHITE)
     return im
 
-# ----------------------------------------------------------------------------- C · Monograma A
-def concept_c():
-    im, d = new(); halo(d)
-    left = [(21, 9), (27, 9), (20, 41), (13, 41)]; right = [(21, 9), (27, 9), (35, 41), (28, 41)]
-    for poly in (left, right): d.polygon(poly, fill=GOLD, outline=INK)
-    d.line([(22, 10), (14, 40)], fill=GOLD_L); d.line([(23, 10), (16, 40)], fill=GOLD_L)
-    d.line([(26, 12), (33, 40)], fill=GOLD_D); d.line([(25, 12), (31, 40)], fill=GOLD_D)
-    d.rectangle([21, 8, 27, 9], fill=INK)
-    # ojo robot en el vértice
-    d.ellipse([19, 12, 29, 22], fill=INK); d.ellipse([20, 13, 28, 21], fill="#10102E")
-    led(d, 23, 16, big=True); d.ellipse([19, 12, 29, 22], outline=GOLD_L, width=1)
-    # travesaño: pajarita azul
-    bowtie(d, 24, 33, c=BLUE, hi=BLUE_L, lo=BLUE_D)
-    d.line([(10, 44), (38, 44)], fill=GOLD_D); d.line([(14, 46), (34, 46)], fill=BLUE_D)
+# ----------------------------------------------------------------------------- 3 · Monóculo
+def concept_3():
+    im, d = new()
+    d.ellipse([3, 3, 25, 25], fill=GOLD, outline=INK); d.ellipse([6, 6, 22, 22], fill=INK)
+    d.arc([4, 4, 24, 24], 200, 250, fill=GOLD_L, width=1)
+    d.ellipse([7, 7, 21, 21], fill=CYAN); d.ellipse([9, 9, 19, 19], fill=CYAN_D); d.ellipse([11, 11, 17, 17], fill=INK)
+    d.ellipse([12, 12, 14, 14], fill=WHITE); d.point((16, 16), fill=CYAN)
+    d.rectangle([7, 8, 9, 9], fill=WHITE)
+    d.line([(22, 23), (25, 26), (26, 29)], fill=INK); d.line([(23, 23), (26, 26), (27, 29)], fill=GOLD)
+    d.rectangle([13, 0, 14, 2], fill=INK)
     return im
 
-def save(im, path, scale=S):
-    im.resize((im.width * scale, im.height * scale), Image.NEAREST).save(path)
+# ----------------------------------------------------------------------------- 4 · Bombín
+def concept_4():
+    im, d = new(); shoulders(d, 26); robot_head(d, 9)
+    rect(d, 9, 15, 22, 20, INK)                                                        # visor
+    d.rectangle([11, 16, 13, 18], fill=CYAN); d.rectangle([18, 16, 20, 18], fill=CYAN); d.point((11, 16), fill=WHITE); d.point((18, 16), fill=WHITE)
+    d.line([(14, 22), (17, 22)], fill=INK)
+    d.ellipse([8, 1, 23, 11], fill=INK); d.ellipse([9, 2, 22, 10], fill=HAT); d.rectangle([9, 6, 22, 10], fill=HAT)
+    d.arc([10, 3, 20, 9], 200, 280, fill=HAT_L, width=1)
+    d.rectangle([9, 7, 22, 8], fill=GOLD); d.line([(9, 8), (22, 8)], fill=GOLD_D)
+    d.rectangle([5, 10, 26, 11], fill=INK); d.line([(6, 10), (25, 10)], fill=HAT)
+    bowtie(d, 15, 27, w=4, h=2)
+    return im
+
+CONCEPTS = [("1", "Mayordomo", concept_1), ("2", "Pajarita-lente", concept_2), ("3", "Monoculo", concept_3), ("4", "Bombin", concept_4)]
 
 def masked(im, shape, size):
     big = im.resize((size, size), Image.NEAREST)
@@ -129,17 +108,16 @@ def masked(im, shape, size):
 if __name__ == "__main__":
     out = sys.argv[1] if len(sys.argv) > 1 else "."
     os.makedirs(out, exist_ok=True)
-    concepts = [("A", "Monoculo", concept_a()), ("B", "Bombin", concept_b())]
-    for k, _, im in concepts: save(im, os.path.join(out, f"logo_{k}.png"))
-    # hoja de contacto: grande + círculo + cuadrado redondeado + tamaño real de lanzador
-    W = 2 * 420 + 40; H = 700
-    sheet = Image.new("RGB", (W, H), "#F6F1E6"); d = ImageDraw.Draw(sheet)
-    for i, (k, name, im) in enumerate(concepts):
-        x = 20 + i * 420
-        sheet.paste(im.resize((384, 384), Image.NEAREST), (x, 20))
-        sheet.paste(masked(im, "circle", 150), (x, 420), masked(im, "circle", 150))
-        sheet.paste(masked(im, "squircle", 150), (x + 170, 420), masked(im, "squircle", 150))
-        sm = masked(im, "circle", 48); sheet.paste(sm, (x + 340, 450), sm)
-        sm2 = masked(im, "circle", 96); sheet.paste(sm2, (x + 300, 520), sm2)
-        d.text((x, 590), f"{k} · {name}", fill=INK)
+    cw = 296
+    sheet = Image.new("RGB", (len(CONCEPTS) * cw + 20, 560), "#FFFFFF"); d = ImageDraw.Draw(sheet)
+    for i, (k, name, f) in enumerate(CONCEPTS):
+        im = f(); im.resize((256, 256), Image.NEAREST).save(os.path.join(out, f"logo_{k}.png")); im.resize((N * S, N * S), Image.NEAREST).save(os.path.join(out, f"logo_{k}_grande.png"))
+        x = 20 + i * cw
+        big = im.resize((256, 256), Image.NEAREST); sheet.paste(big, (x, 16))
+        d.rectangle([x - 1, 15, x + 256, 272], outline=INK)
+        c = masked(im, "circle", 112); sheet.paste(c, (x, 300), c)
+        q = masked(im, "squircle", 112); sheet.paste(q, (x + 128, 300), q)
+        s1 = masked(im, "circle", 48); sheet.paste(s1, (x, 430), s1)
+        s2 = masked(im, "circle", 72); sheet.paste(s2, (x + 64, 430), s2)
+        d.text((x, 500), f"{k} - {name}", fill=INK)
     sheet.save(os.path.join(out, "logos_hoja.png"))
