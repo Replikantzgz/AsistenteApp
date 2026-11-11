@@ -60,6 +60,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -115,6 +116,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 sv.store.addChat(ChatMsg(fromUser = false, text = msg, error = true))
             } finally {
                 busy = false
+                launch { runCatching { sv.refreshReminders(true) } }
             }
         }
     }
@@ -159,9 +161,9 @@ fun ChatScreen(vm: ChatViewModel) {
         PixelBar(
             title = { Text("ALFRED") },
             actions = {
-                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Gold) }
-                IconButton(onClick = { ui.overlay = "settings" }) { Icon(Icons.Default.Settings, "Ajustes", tint = Gold) }
-                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Gold) }
+                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Ink) }
+                IconButton(onClick = { ui.overlay = "settings" }) { Icon(Icons.Default.Settings, "Ajustes", tint = Ink) }
+                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Ink) }
             },
         )
 
@@ -174,9 +176,9 @@ fun ChatScreen(vm: ChatViewModel) {
 
         if (msgs.isEmpty()) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.size(104.dp).background(NavyHigh, PxShape).pxBorder(Gold), contentAlignment = Alignment.Center) { PixelSprite(Sprites.ALFRED, 84.dp) }
+                Box(Modifier.size(112.dp).background(Ink, PxShape).pxBorder(Color(0xFFF2B705)), contentAlignment = Alignment.Center) { PixelIcon(R.drawable.px_alfred, 92.dp) }
                 VSpace(16)
-                Text("¿EN QUÉ PUEDO AYUDARLE?", style = MaterialTheme.typography.titleSmall, color = Gold, textAlign = TextAlign.Center)
+                Text("¿EN QUÉ PUEDO AYUDARLE?", style = MaterialTheme.typography.titleSmall, color = Ink, textAlign = TextAlign.Center)
                 VSpace(8)
                 Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídamelo escribiendo o con el micrófono.")
                 VSpace(12)
@@ -233,7 +235,7 @@ private fun Bubble(m: ChatMsg) {
     val shape = CutCornerShape(8.dp)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
         if (!m.fromUser) {
-            Box(Modifier.size(34.dp).background(NavyHigh, PxShape).pxBorder(Gold), contentAlignment = Alignment.Center) { PixelSprite(Sprites.ALFRED, 26.dp) }
+            Box(Modifier.size(38.dp).background(Ink, PxShape).pxBorder(Color(0xFFF2B705)), contentAlignment = Alignment.Center) { PixelIcon(R.drawable.px_alfred, 34.dp) }
             Spacer(Modifier.width(8.dp))
         }
         Column(

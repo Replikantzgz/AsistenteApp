@@ -86,7 +86,7 @@ fun OverlayScreen(which: String) {
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text(if (which == "drive") "DRIVE" else "AJUSTES") },
-            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Gold) } },
+            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Ink) } },
         )
         if (which == "drive") DriveScreen() else SettingsScreen()
     }
@@ -306,6 +306,44 @@ private fun SettingsScreen() {
                 }
             }
             Hint("La clave se guarda cifrada solo en este móvil y se usa únicamente para hablar con Gemini.")
+        }
+        Section("Notificaciones") {
+            val notifyEvents by sv.settings.notifyEvents.collectAsStateCompat()
+            val notifyTasks by sv.settings.notifyTasks.collectAsStateCompat()
+            val lead by sv.settings.leadMin.collectAsStateCompat()
+            var leadMenu by remember { mutableStateOf(false) }
+            var allowed by remember { mutableStateOf(com.iatualcance.alfred.notify.Notif.canPost(ctx)) }
+            androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { allowed = com.iatualcance.alfred.notify.Notif.canPost(ctx); onPauseOrDispose {} }
+            if (!allowed) {
+                Hint("Las notificaciones están desactivadas para Alfred, así que no sonará ningún aviso.")
+                Button(onClick = {
+                    ctx.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }) { Text("Permitir notificaciones") }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Avisar de las citas")
+                    Text("Notificación antes de cada evento de Google Calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(notifyEvents, { sv.settings.setNotifyEvents(it) })
+            }
+            if (notifyEvents) Box {
+                OutlinedButton(onClick = { leadMenu = true }) { Text(if (lead == 0) "Avisar a la hora exacta" else "Avisar $lead min antes") }
+                DropdownMenu(leadMenu, { leadMenu = false }) {
+                    listOf(0, 5, 10, 15, 30, 60, 120).forEach { m -> DropdownMenuItem({ Text(if (m == 0) "A la hora exacta" else "$m minutos antes") }, { sv.settings.setLeadMin(m); leadMenu = false }) }
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Avisar de las tareas")
+                    Text("A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(notifyTasks, { sv.settings.setNotifyTasks(it) })
+            }
+            OutlinedButton(onClick = {
+                com.iatualcance.alfred.notify.Notif.show(ctx, com.iatualcance.alfred.notify.Reminder("test", System.currentTimeMillis(), "Alfred", "Así sonarán tus avisos.", "chat"))
+                if (!allowed) ui.say("Activa primero las notificaciones")
+            }) { Text("Enviar notificación de prueba") }
         }
         Section("Drive") {
             Row(verticalAlignment = Alignment.CenterVertically) {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.AudioFile
 import androidx.compose.material.icons.filled.CloudDone
@@ -111,7 +112,7 @@ fun NotesScreen() {
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text("NOTAS") },
-            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Gold) } },
+            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Ink) } },
         )
         TabRow(selectedTabIndex = sub, containerColor = MaterialTheme.colorScheme.background) {
             listOf("Notas", "Tareas", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { ui.notesSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) }) }
@@ -353,16 +354,25 @@ private fun TasksList() {
     val tasks by sv.store.tasks.collectAsStateCompat()
     var text by rememberSaveable { mutableStateOf("") }
     var due by rememberSaveable { mutableStateOf<String?>(null) }
+    var time by rememberSaveable { mutableStateOf<String?>(null) }   // HH:mm
     var pickDue by remember { mutableStateOf(false) }
+    var pickTime by remember { mutableStateOf(false) }
     val today = LocalDate.now().toString()
 
-    fun add() { if (text.isNotBlank()) { sv.store.upsertTask(Task(title = text.trim(), due = due)); text = ""; due = null } }
+    fun add() {
+        if (text.isBlank()) return
+        val day = due ?: if (time != null) LocalDate.now().toString() else null
+        val remind = time?.let { runCatching { LocalDate.parse(day).atTime(java.time.LocalTime.parse(it)).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() }.getOrNull() }
+        sv.store.upsertTask(Task(title = text.trim(), due = day, remindAt = remind))
+        text = ""; due = null; time = null
+    }
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
             OutlinedTextField(text, { text = it }, Modifier.weight(1f), singleLine = true, shape = PxShape,
-                placeholder = { Text(if (due == null) "Nueva tarea" else "Nueva tarea para el $due") })
+                placeholder = { Text(if (due == null && time == null) "Nueva tarea" else "Aviso: " + listOfNotNull(due, time).joinToString(" ")) })
             IconButton(onClick = { pickDue = true }) { Icon(Icons.Default.Event, "Fecha límite", tint = if (due != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) }
+            IconButton(onClick = { pickTime = true }) { Icon(Icons.Default.Alarm, "Hora del aviso", tint = if (time != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) }
             IconButton(onClick = ::add) { Icon(Icons.Default.Add, "Añadir tarea") }
         }
         if (tasks.isEmpty()) Centered { Hint("Sin tareas. Escriba una arriba o dígale a Alfred «recuérdame…».") }
@@ -373,7 +383,8 @@ private fun TasksList() {
                     Column(Modifier.weight(1f)) {
                         Text(t.title, textDecoration = if (t.done) TextDecoration.LineThrough else null,
                             color = if (t.done) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface)
-                        val meta = listOfNotNull(t.due?.let { if (it == today) "Hoy" else it }, t.priority.takeIf { it != "media" }?.let { "Prioridad $it" })
+                        val hour = t.remindAt?.let { java.time.Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalTime().toString().take(5) }
+                        val meta = listOfNotNull(t.due?.let { (if (it == today) "Hoy" else it) + (hour?.let { h -> " $h" } ?: "") }, t.priority.takeIf { it != "media" }?.let { "Prioridad $it" })
                         if (meta.isNotEmpty()) Text(meta.joinToString(" · "), style = MaterialTheme.typography.labelSmall,
                             color = if (!t.done && t.due != null && t.due < today) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
                     }
@@ -381,6 +392,15 @@ private fun TasksList() {
                 }
             }
         }
+    }
+    if (pickTime) {
+        val st = androidx.compose.material3.rememberTimePickerState(java.time.LocalTime.now().plusHours(1).hour, 0, true)
+        AlertDialog(
+            onDismissRequest = { pickTime = false },
+            confirmButton = { TextButton(onClick = { time = "%02d:%02d".format(st.hour, st.minute); pickTime = false }) { Text("Aceptar") } },
+            dismissButton = { TextButton(onClick = { time = null; pickTime = false }) { Text("Sin hora") } },
+            text = { androidx.compose.material3.TimePicker(st) },
+        )
     }
     if (pickDue) {
         val st = rememberDatePickerState(initialSelectedDateMillis = LocalDate.now().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())

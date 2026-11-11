@@ -12,6 +12,12 @@ import com.iatualcance.alfred.google.GoogleApi
 import com.iatualcance.alfred.google.GoogleAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.withLock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -20,6 +26,24 @@ class AlfredApp : Application() {
     override fun onCreate() {
         super.onCreate()
         sv = Services(this)
+        com.iatualcance.alfred.notify.Notif.ensureChannel(this)
+        scheduleRefresh()
+        sv.start()
+    }
+
+    /** Lectura periódica del calendario para programar avisos aunque la app no se abra. */
+    fun scheduleRefresh() {
+        val wm = androidx.work.WorkManager.getInstance(this)
+        wm.enqueueUniquePeriodicWork(
+            "refresh-reminders", androidx.work.ExistingPeriodicWorkPolicy.KEEP,
+            androidx.work.PeriodicWorkRequestBuilder<com.iatualcance.alfred.notify.RefreshWorker>(3, java.util.concurrent.TimeUnit.HOURS)
+                .setConstraints(androidx.work.Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build()).build(),
+        )
+        wm.enqueueUniqueWork(
+            "refresh-reminders-now", androidx.work.ExistingWorkPolicy.REPLACE,
+            androidx.work.OneTimeWorkRequestBuilder<com.iatualcance.alfred.notify.RefreshWorker>()
+                .setConstraints(androidx.work.Constraints.Builder().setRequiredNetworkType(androidx.work.NetworkType.CONNECTED).build()).build(),
+        )
     }
 }
 
@@ -31,6 +55,48 @@ class Services(private val app: Application) {
     val google = GoogleApi(auth)
     val gemini = Gemini(settings)
     val assistant = Assistant(gemini, google, store, settings, uploadNote = { uploadNote(it) }, backup = { backupToDrive() })
+
+    private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
+    private val reminders = com.iatualcance.alfred.notify.ReminderCenter(app)
+    private val remindersLock = kotlinx.coroutines.sync.Mutex()
+    @Volatile private var lastFull = 0L
+
+    /** Vigila las tareas y los ajustes de avisos para reprogramar al instante. */
+    fun start() {
+        scope.launch { store.tasks.collectLatest { delay(400); refreshReminders(false) } }
+        scope.launch {
+            combine(settings.notifyEvents, settings.notifyTasks, settings.leadMin, settings.account) { a, b, c, d -> listOf(a, b, c, d) }
+                .drop(1).collectLatest { delay(400); refreshReminders(true) }
+        }
+    }
+
+    /**
+     * Recalcula y programa todos los avisos: tareas (siempre) y citas de Calendar de los próximos 14 días.
+     * Si no se puede leer el calendario (sin conexión), se conservan los avisos de citas que ya había.
+     */
+    suspend fun refreshReminders(events: Boolean = true) = withContext(Dispatchers.Default) {
+        remindersLock.withLock {
+            val now = System.currentTimeMillis()
+            val zone = java.time.ZoneId.systemDefault()
+            val plan = mutableListOf<com.iatualcance.alfred.notify.Reminder>()
+            if (settings.notifyTasks.value) store.tasks.value.mapNotNullTo(plan) { com.iatualcance.alfred.notify.Plan.taskReminder(it, now, zone) }
+            val wantEvents = settings.notifyEvents.value && hasGoogle
+            var fresh: List<com.iatualcance.alfred.notify.Reminder>? = null
+            if (wantEvents && (events || now - lastFull > 60_000)) {
+                fresh = runCatching {
+                    val from = java.time.ZonedDateTime.now(zone)
+                    google.listEvents(from, from.plusDays(14)).mapNotNull { com.iatualcance.alfred.notify.Plan.eventReminder(it, settings.leadMin.value, now) }
+                }.getOrNull()
+                if (fresh != null) lastFull = now
+            }
+            when {
+                !wantEvents -> {}
+                fresh != null -> plan += fresh
+                else -> plan += reminders.load().filter { it.id.startsWith("ev-") && it.at > now }   // sin conexión: se conservan
+            }
+            reminders.apply(plan.sortedBy { it.at })
+        }
+    }
 
     val hasAi get() = settings.apiKey.value.isNotBlank()
     val hasGoogle get() = settings.account.value != null

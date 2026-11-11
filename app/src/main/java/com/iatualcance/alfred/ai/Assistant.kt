@@ -65,7 +65,7 @@ Normas:
 - Las fechas van en hora local con formato AAAA-MM-DDTHH:MM. Calcula tú las fechas relativas ("mañana", "el viernes") a partir de la fecha actual. Si no dicen hora para una cita, pregunta o usa una razonable y dilo.
 - Antes de modificar o eliminar un evento, o de responder a un correo, búscalo primero para obtener su id.
 - Para enviar un correo necesitas una dirección: si solo te dan un nombre, búscalo en contactos. Si el usuario pide "redactar" o "preparar", crea un borrador; envía solo si pide enviar.
-- Las tareas y recordatorios sencillos van como tarea; la información para guardar va como nota.
+- Las tareas y recordatorios van como tarea (el móvil avisa con una notificación): si piden una hora, usa `recordatorio`; si solo dan el día, usa `fecha_limite` (avisa a las 9:00). Las citas del calendario avisan solas unos minutos antes. La información para guardar va como nota.
 - No inventes datos (direcciones, teléfonos, importes). Si falta algo imprescindible, pregunta.
 - Respuestas cortas, sin markdown recargado.
 """.trim()
@@ -122,8 +122,9 @@ Normas:
         add(fn("crear_nota", "Guarda una nota.", mapOf(
             "titulo" to s("Título"), "contenido" to s("Contenido"), "etiquetas" to list("Etiquetas")), listOf("titulo")))
         add(fn("buscar_notas", "Busca en las notas guardadas. Con texto vacío devuelve las más recientes.", mapOf("texto" to s("Texto a buscar"))))
-        add(fn("crear_tarea", "Crea una tarea o recordatorio.", mapOf(
+        add(fn("crear_tarea", "Crea una tarea o recordatorio. Si tiene fecha, el móvil enviará una notificación (a las 9:00 si no se indica hora).", mapOf(
             "titulo" to s("Qué hay que hacer"), "fecha_limite" to s("Fecha límite AAAA-MM-DD (opcional)"),
+            "recordatorio" to s("Momento exacto del aviso, AAAA-MM-DDTHH:MM (opcional). Úsalo cuando pidan una hora concreta: «recuérdame a las 18:00»"),
             "prioridad" to s("alta, media o baja")), listOf("titulo")))
         add(fn("listar_tareas", "Lista las tareas pendientes y hechas."))
         add(fn("completar_tarea", "Marca una tarea como hecha.", mapOf("id" to s("Id de la tarea")), listOf("id")))
@@ -139,6 +140,7 @@ Normas:
         add(fn("eliminar_nota", "Elimina una nota del móvil (se pedirá confirmación).", mapOf("id" to s("Id de la nota"), "titulo" to s("Título, para confirmar")), listOf("id")))
         add(fn("modificar_tarea", "Cambia una tarea: título, fecha límite, prioridad o si está hecha.", mapOf(
             "id" to s("Id de la tarea"), "titulo" to s("Nuevo título"), "fecha_limite" to s("AAAA-MM-DD, o vacío para quitarla"),
+            "recordatorio" to s("Momento exacto del aviso AAAA-MM-DDTHH:MM, o vacío para quitarlo"),
             "prioridad" to s("alta, media o baja"), "hecha" to b("true si está hecha, false si vuelve a estar pendiente")), listOf("id")))
         add(fn("eliminar_tarea", "Elimina una tarea.", mapOf("id" to s("Id de la tarea")), listOf("id")))
         add(fn("eliminar_plantilla", "Elimina una plantilla por su nombre.", mapOf("nombre" to s("Nombre de la plantilla")), listOf("nombre")))
@@ -286,15 +288,16 @@ Normas:
         "crear_tarea" -> {
             val prio = a.str("prioridad")?.lowercase()?.takeIf { it in listOf("alta", "media", "baja") } ?: "media"
             val due = a.str("fecha_limite")?.take(10)?.takeIf { runCatching { LocalDate.parse(it) }.isSuccess }
-            val t = Task(title = a.str("titulo")!!, due = due, priority = prio)
+            val remind = a.str("recordatorio")?.takeIf { it.isNotBlank() }?.let { Util.parseDateTime(it) }
+            val t = Task(title = a.str("titulo")!!, due = due ?: remind?.toLocalDate()?.toString(), priority = prio, remindAt = remind?.toInstant()?.toEpochMilli())
             store.upsertTask(t)
-            actions += "✅ Tarea creada: ${t.title}"
+            actions += "✅ Tarea creada: ${t.title}" + (remind?.let { " · aviso ${it.format(DateTimeFormatter.ofPattern("d MMM HH:mm", Util.ES))}" } ?: "")
             ok("Tarea creada", buildJsonObject { put("id", t.id) })
         }
         "listar_tareas" -> buildJsonObject {
             putJsonArray("tareas") {
                 store.tasks.value.forEach { t ->
-                    add(buildJsonObject { put("id", t.id); put("titulo", t.title); put("hecha", t.done); put("prioridad", t.priority); t.due?.let { put("fecha_limite", it) } })
+                    add(buildJsonObject { put("id", t.id); put("titulo", t.title); put("hecha", t.done); put("prioridad", t.priority); t.due?.let { put("fecha_limite", it) }; t.remindAt?.let { put("aviso", java.time.Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(fmt)) } })
                 }
             }
         }
@@ -337,8 +340,10 @@ Normas:
         "modificar_tarea" -> {
             val t = store.tasks.value.firstOrNull { it.id == a.str("id") } ?: throw Exception("No existe ninguna tarea con ese id")
             val due = if (a.containsKey("fecha_limite")) a.str("fecha_limite")?.take(10)?.takeIf { runCatching { LocalDate.parse(it) }.isSuccess } else t.due
+            val remind = if (a.containsKey("recordatorio")) a.str("recordatorio")?.takeIf { it.isNotBlank() }?.let { Util.parseDateTime(it) } else null
             store.upsertTask(t.copy(
-                title = a.str("titulo") ?: t.title, due = due,
+                title = a.str("titulo") ?: t.title, due = due ?: remind?.toLocalDate()?.toString(),
+                remindAt = if (a.containsKey("recordatorio")) remind?.toInstant()?.toEpochMilli() else t.remindAt,
                 priority = a.str("prioridad")?.lowercase()?.takeIf { it in listOf("alta", "media", "baja") } ?: t.priority,
                 done = a.str("hecha")?.let { it == "true" } ?: t.done,
             ))

@@ -33,6 +33,7 @@ data class Task(
     val title: String,
     val done: Boolean = false,
     val due: String? = null,       // yyyy-MM-dd
+    val remindAt: Long? = null,    // momento exacto del aviso (ms); sin él, avisa a las 9:00 del día límite
     val priority: String = "media", // alta | media | baja
     val createdAt: Long = System.currentTimeMillis(),
 )

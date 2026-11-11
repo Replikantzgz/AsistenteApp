@@ -4,9 +4,16 @@ App nativa (Kotlin + Jetpack Compose). Sin servidor: todo ocurre entre el móvil
 
 ## Interfaz
 
-Estilo retro de 16 bits pero legible: iconos pixel-art con etiqueta, marcos duros y títulos en fuente pixel. Barra inferior con cinco botones: **Correo · Agenda · ALFRED (centro, grande) · Notas · Contactos**. Drive y Ajustes están arriba, en la pantalla de Alfred.
+Estilo retro de 16 bits sobre papel crema (tema claro): iconos pixel-art de 32×32 con etiqueta (se regeneran con `python3 tools/make_icons.py`), marcos duros y títulos en fuente pixel. Barra inferior con cinco botones: **Correo · Agenda · ALFRED (centro, grande) · Notas · Contactos**. Drive y Ajustes están arriba, en la pantalla de Alfred.
 
 **Alfred controla el resto de la app.** Además de actuar sobre Calendar, Gmail, Contactos, notas, tareas, plantillas y Drive (crear, editar y borrar), puede cambiar de pantalla («abre mis tareas»), abrir una nota, dejar un correo redactado para que lo revises, abrir el escáner o la grabadora y situar la agenda en un mes. Envíos y borrados piden confirmación.
+
+## Notificaciones
+
+- **Tareas**: avisan a la hora que indiques; si solo tienen fecha, a las 9:00. La notificación tiene botón «Hecho».
+- **Citas de Google Calendar**: aviso 0–120 min antes (por defecto 15); las de todo el día, a las 8:00.
+- Funcionan con la app cerrada (AlarmManager) y se reprograman al reiniciar el móvil; cada 3 h se vuelve a leer el calendario de los próximos 14 días. Ajustes → Notificaciones.
+- Alfred también las crea: «recuérdame mañana a las 18:00 llamar a Ana».
 
 ## Qué hace
 

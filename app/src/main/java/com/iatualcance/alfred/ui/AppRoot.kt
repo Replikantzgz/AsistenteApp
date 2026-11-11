@@ -35,13 +35,22 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 
 @Composable
-fun AppRoot(shared: MutableStateFlow<Intent?>) {
+fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>) {
     val sv = LocalServices.current
     val scope = rememberCoroutineScope()
     val snack = remember { SnackbarHostState() }
     val ui = remember { AppUi(snack, scope) }
     val chat: ChatViewModel = viewModel()
     val incoming by shared.collectAsState()
+    val routed by route.collectAsState()
+    val ctx = androidx.compose.ui.platform.LocalContext.current
+    val notifPermission = androidx.activity.compose.rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.RequestPermission()) {}
+    LaunchedEffect(Unit) {
+        if (android.os.Build.VERSION.SDK_INT >= 33 &&
+            androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+    }
+    LaunchedEffect(routed) { routed?.let { ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(it)); route.value = null } }
 
     LaunchedEffect(incoming) {
         val i = incoming ?: return@LaunchedEffect

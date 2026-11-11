@@ -140,9 +140,10 @@ fun AgendaScreen() = GoogleGate("tu calendario") {
                 if (ev == null) sv.google.createEvent(f.title.ifBlank { "(Sin título)" }, s, en, f.allDay, f.description, f.location, guests)
                 else sv.google.updateEvent(ev.id, f.title, s, en, f.allDay, f.description, f.location, guests)
                 reload++
+                runCatching { sv.refreshReminders(true) }
             }
         },
-        onDelete = { ev -> editing = null; ui.run("Eliminando…") { sv.google.deleteEvent(ev.id); reload++ } },
+        onDelete = { ev -> editing = null; ui.run("Eliminando…") { sv.google.deleteEvent(ev.id); reload++; runCatching { sv.refreshReminders(true) } } },
     )
 }
 

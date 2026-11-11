@@ -30,7 +30,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
-import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -60,20 +60,22 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
-val Gold = Color(0xFFD9B54A)
-val Navy = Color(0xFF0D0A25)
-val NavySurface = Color(0xFF17143A)
-val NavyHigh = Color(0xFF221E4D)
-val Blue = Color(0xFF5B9BFF)
+// Tema claro: papel crema, tinta azul marino y dorado.
+val Paper = Color(0xFFF6F1E6)
+val Surf = Color(0xFFFFFFFF)
+val SurfHigh = Color(0xFFEFE7D3)
+val Ink = Color(0xFF1B1740)
+val Gold = Color(0xFFB07A00)
+val Blue = Color(0xFF2F6FE4)
 
-private val Colors = darkColorScheme(
-    primary = Gold, onPrimary = Color(0xFF231A00), primaryContainer = Color(0xFF4A3C0C), onPrimaryContainer = Color(0xFFFFE9A6),
-    secondary = Blue, onSecondary = Color(0xFF001B3F), secondaryContainer = Color(0xFF1D3466), onSecondaryContainer = Color(0xFFD7E3FF),
-    tertiary = Blue, background = Navy, onBackground = Color(0xFFE9E7F5), surface = Navy, onSurface = Color(0xFFE9E7F5),
-    surfaceVariant = NavyHigh, onSurfaceVariant = Color(0xFFB9B6D3), surfaceContainer = NavySurface, surfaceContainerLow = NavySurface,
-    surfaceContainerHigh = NavyHigh, surfaceContainerHighest = Color(0xFF2B2760), surfaceContainerLowest = Color(0xFF090720),
-    outline = Color(0xFF6E6A94), outlineVariant = Color(0xFF39356A), error = Color(0xFFFF8A80), onError = Color(0xFF3B0907),
-    errorContainer = Color(0xFF5C1512), onErrorContainer = Color(0xFFFFDAD6),
+private val Colors = lightColorScheme(
+    primary = Color(0xFF9A6A00), onPrimary = Color.White, primaryContainer = Color(0xFFFFE7A3), onPrimaryContainer = Color(0xFF3B2A00),
+    secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFD9E5FF), onSecondaryContainer = Color(0xFF0A2A66),
+    tertiary = Color(0xFF2EAD6B), background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
+    surfaceVariant = SurfHigh, onSurfaceVariant = Color(0xFF5A5680), surfaceTint = Color.Transparent,
+    surfaceContainer = Surf, surfaceContainerLow = Surf, surfaceContainerHigh = Surf, surfaceContainerHighest = SurfHigh, surfaceContainerLowest = Surf,
+    outline = Color(0xFF7A7699), outlineVariant = Color(0xFFCFC6AE), error = Color(0xFFB3261E), onError = Color.White,
+    errorContainer = Color(0xFFFBDAD6), onErrorContainer = Color(0xFF5C1512),
 )
 
 private val PixelFont = FontFamily(Font(R.font.pressstart2p))

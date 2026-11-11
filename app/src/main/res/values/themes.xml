@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="navy">#0D0A25</color>
-    <style name="Theme.Alfred" parent="android:Theme.Material.NoActionBar">
-        <item name="android:windowBackground">@color/navy</item>
+    <color name="paper">#F6F1E6</color>
+    <color name="ink">#1B1740</color>
+    <style name="Theme.Alfred" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">@color/paper</item>
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLightStatusBar">true</item>
     </style>
 </resources>

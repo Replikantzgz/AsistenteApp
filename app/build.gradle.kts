@@ -15,8 +15,8 @@ android {
         applicationId = "com.iatualcance.alfred"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 3
+        versionName = "1.2.0"
     }
 
     // La firma no está en el repositorio. Se lee de keystore.properties (local, ignorado por git)
@@ -85,6 +85,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("androidx.work:work-runtime-ktx:2.9.1")
 
     // Inicio de sesión y permisos de Google (Calendar, Gmail, Contactos, Drive)
     implementation("com.google.android.gms:play-services-auth:21.5.1")

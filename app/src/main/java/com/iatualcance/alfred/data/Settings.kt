@@ -25,6 +25,9 @@ class Settings(ctx: Context) {
     val apiKey = MutableStateFlow(p.getString("gemini", null)?.let { Crypto.decrypt(it) } ?: "")
     val model = MutableStateFlow(p.getString("model", DEFAULT_MODEL) ?: DEFAULT_MODEL)
     val driveAuto = MutableStateFlow(p.getBoolean("driveAuto", true))
+    val notifyEvents = MutableStateFlow(p.getBoolean("notifyEvents", true))
+    val notifyTasks = MutableStateFlow(p.getBoolean("notifyTasks", true))
+    val leadMin = MutableStateFlow(p.getInt("leadMin", 15))
 
     fun setAccount(a: Account?) {
         account.value = a
@@ -41,6 +44,9 @@ class Settings(ctx: Context) {
 
     fun setModel(m: String) { model.value = m; p.edit().putString("model", m).apply() }
     fun setDriveAuto(v: Boolean) { driveAuto.value = v; p.edit().putBoolean("driveAuto", v).apply() }
+    fun setNotifyEvents(v: Boolean) { notifyEvents.value = v; p.edit().putBoolean("notifyEvents", v).apply() }
+    fun setNotifyTasks(v: Boolean) { notifyTasks.value = v; p.edit().putBoolean("notifyTasks", v).apply() }
+    fun setLeadMin(v: Int) { leadMin.value = v; p.edit().putInt("leadMin", v).apply() }
     fun clear() { p.edit().clear().apply(); account.value = null; apiKey.value = ""; model.value = DEFAULT_MODEL }
 }
 

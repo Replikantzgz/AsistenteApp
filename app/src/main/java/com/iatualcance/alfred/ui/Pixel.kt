@@ -1,6 +1,11 @@
 package com.iatualcance.alfred.ui
 
-import androidx.compose.foundation.Canvas
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.res.imageResource
+import com.iatualcance.alfred.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -37,121 +42,23 @@ import androidx.compose.ui.unit.sp
 
 /** Forma "pixel": esquinas cortadas en escalón, sin curvas. */
 val PxShape = CutCornerShape(6.dp)
-val PxLine = Color(0xFF4A4590)
-val GoldDark = Color(0xFF8A6D12)
+val PxLine = Color(0xFF3A3566)
 
 /** Borde duro de 2 dp, como los marcos de un juego de 16 bits. */
 fun Modifier.pxBorder(color: Color = PxLine) = this.border(2.dp, color, PxShape)
 
-// --------------------------------------------------------------------------- Sprites
-private val PALETTE = mapOf(
-    'k' to Color(0xFF0D0A25), 'w' to Color(0xFFF1EFFF), 'g' to Color(0xFFD9B54A), 'y' to Color(0xFFFFE0B0),
-    'b' to Color(0xFF5B9BFF), 'r' to Color(0xFFE5534B), 'd' to Color(0xFF8A6D12), 'n' to Color(0xFF2B2760),
-    'e' to Color(0xFF3FBF7F),
-)
-
-object Sprites {
-    val MAIL = listOf(
-        "............",
-        "kkkkkkkkkkkk",
-        "kwwwwwwwwwwk",
-        "kkwwwwwwwwkk",
-        "kwkwwwwwwkwk",
-        "kwwkwwwwkwwk",
-        "kwwwkkkkwwwk",
-        "kwwwwwwwwwwk",
-        "kwwwwwwwwwwk",
-        "kkkkkkkkkkkk",
-        "............",
-        "............",
-    )
-    val CALENDAR = listOf(
-        "..k......k..",
-        ".kkkkkkkkkk.",
-        ".krrrrrrrrk.",
-        ".krrrrrrrrk.",
-        ".kkkkkkkkkk.",
-        ".kwwwwwwwwk.",
-        ".kwbwwbwwwk.",
-        ".kwwwwwwwwk.",
-        ".kwbwwgggwk.",
-        ".kwwwwwwwwk.",
-        ".kkkkkkkkkk.",
-        "............",
-    )
-    val NOTES = listOf(
-        ".kkkkkkk....",
-        ".kwwwwwkk...",
-        ".kwwwwwkwk..",
-        ".kwwwwwkkkk.",
-        ".kwbbbbwwwk.",
-        ".kwwwwwwwwk.",
-        ".kwbbbbbwwk.",
-        ".kwwwwwwwwk.",
-        ".kwbbbwwwwk.",
-        ".kwwwwwwwwk.",
-        ".kkkkkkkkkk.",
-        "............",
-    )
-    val CONTACTS = listOf(
-        "............",
-        "....kkkk....",
-        "...kyyyyk...",
-        "...kyyyyk...",
-        "...kyyyyk...",
-        "....kkkk....",
-        "..kkkkkkkk..",
-        ".kbbbbbbbbk.",
-        ".kbbbbbbbbk.",
-        ".kbbbbbbbbk.",
-        ".kkkkkkkkkk.",
-        "............",
-    )
-    val ALFRED = listOf(
-        "................",
-        ".....kkkkkk.....",
-        "....kggggggk....",
-        "...kggggggggk...",
-        "...kyyyyyyyyk...",
-        "...kykkyykkyk...",
-        "...kyyyyyyyyk...",
-        "...kyykkkkyyk...",
-        "....kyyyyyyk....",
-        ".....kkkkkk.....",
-        "...kwrrwwrrwk...",
-        "..kkwrrrrrrwkk..",
-        ".kbbkwwrrwwkbbk.",
-        ".kbbbkwwwwkbbbk.",
-        ".kbbbbkwwkbbbbk.",
-        ".kkkkkkkkkkkkkk.",
-    )
-}
-
+// --------------------------------------------------------------------------- Iconos
+/** Icono pixel-art (PNG de 32x32 ampliado sin suavizar, generado con tools/make_icons.py). */
 @Composable
-fun PixelSprite(rows: List<String>, size: Dp, modifier: Modifier = Modifier, description: String? = null) {
-    val h = rows.size
-    val w = rows.maxOf { it.length }
-    Canvas(
-        modifier.size(size).then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
-    ) {
-        val cell = minOf(this.size.width / w, this.size.height / h)
-        val ox = (this.size.width - cell * w) / 2
-        val oy = (this.size.height - cell * h) / 2
-        rows.forEachIndexed { y, row ->
-            row.forEachIndexed { x, ch ->
-                PALETTE[ch]?.let { c ->
-                    drawRect(c, Offset(ox + x * cell, oy + y * cell), Size(cell + 0.6f, cell + 0.6f))
-                }
-            }
-        }
-    }
+fun PixelIcon(@DrawableRes id: Int, size: Dp, description: String? = null, modifier: Modifier = Modifier) {
+    Image(ImageBitmap.imageResource(id), description, modifier.size(size), filterQuality = FilterQuality.None)
 }
 
 // --------------------------------------------------------------------------- Barra inferior
-private data class NavItem(val tab: Tab, val label: String, val sprite: List<String>)
+private data class NavItem(val tab: Tab, val label: String, @DrawableRes val icon: Int)
 
-private val sideLeft = listOf(NavItem(Tab.MAIL, "CORREO", Sprites.MAIL), NavItem(Tab.AGENDA, "AGENDA", Sprites.CALENDAR))
-private val sideRight = listOf(NavItem(Tab.NOTES, "NOTAS", Sprites.NOTES), NavItem(Tab.CONTACTS, "CONTACTOS", Sprites.CONTACTS))
+private val sideLeft = listOf(NavItem(Tab.MAIL, "CORREO", R.drawable.px_mail), NavItem(Tab.AGENDA, "AGENDA", R.drawable.px_calendar))
+private val sideRight = listOf(NavItem(Tab.NOTES, "NOTAS", R.drawable.px_notes), NavItem(Tab.CONTACTS, "CONTACTOS", R.drawable.px_contacts))
 
 /**
  * Cinco iconos: Correo · Agenda · ALFRED (grande, centro) · Notas · Contactos.
@@ -159,12 +66,12 @@ private val sideRight = listOf(NavItem(Tab.NOTES, "NOTAS", Sprites.NOTES), NavIt
  */
 @Composable
 fun PixelNavBar(selected: Tab, onSelect: (Tab) -> Unit) {
-    Box(Modifier.fillMaxWidth().background(Color.Transparent).navigationBarsPadding().height(92.dp)) {
+    Box(Modifier.fillMaxWidth().navigationBarsPadding().height(96.dp)) {
         // Barra
-        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(64.dp).background(NavySurface)) {
-            Box(Modifier.fillMaxWidth().height(3.dp).background(GoldDark))
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(66.dp).background(Surf)) {
+            Box(Modifier.fillMaxWidth().height(3.dp).background(Ink))
         }
-        Row(Modifier.fillMaxWidth().height(92.dp)) {
+        Row(Modifier.fillMaxWidth().height(96.dp)) {
             sideLeft.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
             CenterItem(selected == Tab.CHAT) { onSelect(Tab.CHAT) }
             sideRight.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
@@ -175,17 +82,17 @@ fun PixelNavBar(selected: Tab, onSelect: (Tab) -> Unit) {
 @Composable
 private fun RowScope.SideItem(item: NavItem, active: Boolean, onClick: () -> Unit) {
     Column(
-        Modifier.weight(1f).height(92.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick).padding(top = 30.dp, bottom = 4.dp),
+        Modifier.weight(1f).height(96.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick).padding(top = 32.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.size(38.dp).background(if (active) Color(0xFF4A3C0C) else NavyHigh, PxShape)
-                .border(2.dp, if (active) Gold else PxLine, PxShape),
+            Modifier.size(42.dp).background(if (active) Color(0xFFFFE27A) else SurfHigh, PxShape)
+                .border(2.dp, Ink, PxShape),
             contentAlignment = Alignment.Center,
-        ) { PixelSprite(item.sprite, 26.dp, description = item.label) }
+        ) { PixelIcon(item.icon, 34.dp, item.label) }
         Text(
             item.label, fontSize = 9.sp, fontWeight = FontWeight.Bold, maxLines = 1, textAlign = TextAlign.Center,
-            color = if (active) Gold else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp),
+            color = if (active) Ink else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(top = 3.dp),
         )
     }
 }
@@ -193,15 +100,15 @@ private fun RowScope.SideItem(item: NavItem, active: Boolean, onClick: () -> Uni
 @Composable
 private fun RowScope.CenterItem(active: Boolean, onClick: () -> Unit) {
     Column(
-        Modifier.weight(1.25f).height(92.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick),
+        Modifier.weight(1.25f).height(96.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
-            Modifier.padding(top = 2.dp).size(66.dp).background(if (active) Gold else Color(0xFF2B2760), CutCornerShape(10.dp))
-                .border(3.dp, if (active) Color(0xFFFFE9A6) else Gold, CutCornerShape(10.dp)),
+            Modifier.padding(top = 2.dp).size(70.dp).background(Ink, CutCornerShape(10.dp))
+                .border(4.dp, if (active) Color(0xFFFFE27A) else Color(0xFFF2B705), CutCornerShape(10.dp)),
             contentAlignment = Alignment.Center,
-        ) { PixelSprite(Sprites.ALFRED, 52.dp, description = "Alfred, asistente") }
-        Text("ALFRED", fontSize = 10.sp, fontWeight = FontWeight.Bold, color = Gold, modifier = Modifier.padding(top = 2.dp))
+        ) { PixelIcon(R.drawable.px_alfred, 60.dp, "Alfred, asistente") }
+        Text("ALFRED", fontSize = 11.sp, fontWeight = FontWeight.ExtraBold, color = Ink, modifier = Modifier.padding(top = 2.dp))
     }
 }
 
@@ -213,17 +120,18 @@ fun PixelBar(
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Column(Modifier.fillMaxWidth().background(NavySurface).statusBarsPadding()) {
+    Column(Modifier.fillMaxWidth().background(Surf).statusBarsPadding()) {
         Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             navigationIcon()
             Box(Modifier.weight(1f).padding(start = 8.dp)) {
-                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Gold) {
+                androidx.compose.runtime.CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Ink) {
                     androidx.compose.material3.ProvideTextStyle(MaterialTheme.typography.titleLarge) { title() }
                 }
             }
             actions()
         }
-        Box(Modifier.fillMaxWidth().height(3.dp).background(GoldDark))
+        Box(Modifier.fillMaxWidth().height(4.dp).background(Color(0xFFF2B705)))
+        Box(Modifier.fillMaxWidth().height(2.dp).background(Ink))
     }
 }
 
@@ -231,7 +139,7 @@ fun PixelBar(
 fun Modifier.pixelGrid(): Modifier = this.drawBehind {
     val step = 24.dp.toPx()
     val dot = 2.dp.toPx()
-    val c = Color(0x14FFFFFF)
+    val c = Color(0x141B1740)
     var y = 0f
     while (y < size.height) {
         var x = 0f
