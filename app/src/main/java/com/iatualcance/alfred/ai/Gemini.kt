@@ -7,6 +7,7 @@ import com.iatualcance.alfred.google.arr
 import com.iatualcance.alfred.google.obj
 import com.iatualcance.alfred.google.str
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -22,11 +23,13 @@ import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 
 /** Cliente REST de la API de Gemini (Google AI Studio). La clave la pone el usuario en Ajustes. */
+class GeminiError(val code: Int, message: String) : Exception(message)
+
 class Gemini(private val settings: Settings) {
     private val base = "https://generativelanguage.googleapis.com/v1beta"
 
     private fun key() = settings.apiKey.value.ifBlank {
-        throw Exception("Falta la clave de Gemini. Añádela en Más → Ajustes.")
+        throw Exception("Falta la clave de Gemini. Añádela en Ajustes (el engranaje de la pantalla de Alfred).")
     }
 
     private suspend fun http(req: Request): JsonObject = withContext(Dispatchers.IO) {
@@ -35,10 +38,11 @@ class Gemini(private val settings: Settings) {
             val j = runCatching { Http.json.parseToJsonElement(text).jsonObject }.getOrNull()
             if (!resp.isSuccessful) {
                 val msg = j?.obj("error")?.str("message") ?: text.take(200)
-                throw Exception(when (resp.code) {
+                throw GeminiError(resp.code, when (resp.code) {
                     400, 403 -> if ("API key" in msg) "La clave de Gemini no es válida. Revísala en Ajustes." else "Gemini: $msg"
                     404 -> "El modelo «${settings.model.value}» no existe o no está disponible. Elige otro en Ajustes."
                     429 -> "Has alcanzado el límite de uso de Gemini. Espera un momento y vuelve a intentarlo."
+                    500, 502, 503, 504 -> "Gemini está saturado en este momento (error ${resp.code}). Lo he reintentado varias veces; vuelve a probar en un minuto."
                     else -> "Gemini (${resp.code}): $msg"
                 })
             }
@@ -57,9 +61,10 @@ class Gemini(private val settings: Settings) {
                 if (jsonOut) put("responseMimeType", "application/json")
             }
         }
-        val req = Request.Builder().url("$base/models/${settings.model.value}:generateContent")
-            .header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build()
-        val j = http(req)
+        val j = withRetry { model ->
+            http(Request.Builder().url("$base/models/$model:generateContent")
+                .header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build())
+        }
         val cand = j.arr("candidates").firstOrNull()?.jsonObject
         val content = cand?.obj("content")
         if (content == null || content.arr("parts").isEmpty()) {
@@ -67,6 +72,28 @@ class Gemini(private val settings: Settings) {
             throw Exception("Gemini no devolvió respuesta ($why).")
         }
         return content
+    }
+
+    /**
+     * Gemini devuelve 503/429 cuando está saturado, y suele ser cosa de segundos. Se reintenta con espera creciente
+     * y, si el modelo elegido sigue saturado, se prueba con uno más ligero antes de rendirse.
+     */
+    private suspend fun <T> withRetry(call: suspend (model: String) -> T): T {
+        val chosen = settings.model.value
+        val models = listOf(chosen, FALLBACK).distinct()
+        var last: GeminiError? = null
+        for ((mi, model) in models.withIndex()) {
+            for (attempt in 0 until (if (mi == 0) 3 else 2)) {
+                try {
+                    return call(model)
+                } catch (e: GeminiError) {
+                    if (e.code !in RETRYABLE) { if (mi > 0 && e.code == 404) break else throw e }
+                    last = e
+                    delay(1200L * (attempt + 1))
+                }
+            }
+        }
+        throw last ?: Exception("Gemini no responde")
     }
 
     suspend fun listModels(): List<String> {
@@ -92,6 +119,9 @@ class Gemini(private val settings: Settings) {
     ).trim()
 
     companion object {
+        private val RETRYABLE = setOf(429, 500, 502, 503, 504)
+        private const val FALLBACK = "gemini-flash-lite-latest"
+
         fun textPart(t: String) = buildJsonObject { put("text", t) }
 
         fun userContent(text: String, bytes: ByteArray? = null, mime: String? = null) = buildJsonObject {

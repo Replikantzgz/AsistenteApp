@@ -112,7 +112,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                val msg = if (e is ConsentRequired) "Para esto necesito tu cuenta de Google. Conéctala en Más → Ajustes." else (e.message ?: e.toString())
+                val msg = if (e is ConsentRequired) "Para esto necesito tu cuenta de Google. Conéctala en Ajustes (el engranaje de la pantalla de Alfred)." else (e.message ?: e.toString())
                 sv.store.addChat(ChatMsg(fromUser = false, text = msg, error = true))
             } finally {
                 busy = false

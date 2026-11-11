@@ -268,7 +268,7 @@ private fun NoteEditor(id: String, onClose: () -> Unit) {
                     Icon(if (note.pinned) Icons.Filled.PushPin else Icons.Outlined.PushPin, "Fijar", tint = if (note.pinned) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
                 }
                 IconButton(onClick = {
-                    if (!sv.hasGoogle) ui.say("Conecta tu cuenta de Google en Más → Ajustes para guardar en Drive")
+                    if (!sv.hasGoogle) ui.say("Conecta tu cuenta de Google en Ajustes (engranaje de la pantalla de Alfred) para guardar en Drive")
                     else ui.run("Guardando en Drive…") { load(sv.uploadNote(persist(false))); ui.say("Guardado en Drive, carpeta Alfred") }
                 }) { Icon(if (note.driveFileId != null) Icons.Default.CloudDone else Icons.Default.CloudUpload, "Guardar en Drive") }
                 IconButton(onClick = { ctx.shareText(listOf(title, content).filter { it.isNotBlank() }.joinToString("\n\n")) }) { Icon(Icons.Default.Share, "Compartir") }
