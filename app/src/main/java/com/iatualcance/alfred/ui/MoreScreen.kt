@@ -63,6 +63,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
@@ -88,7 +89,7 @@ fun OverlayScreen(which: String) {
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text(when (which) { "drive" -> "DRIVE"; "premium" -> "PREMIUM"; else -> "AJUSTES" }) },
-            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Ink) } },
+            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White) } },
         )
         when (which) { "drive" -> DriveScreen(); "premium" -> PremiumScreen(); else -> SettingsScreen() }
     }
@@ -105,7 +106,7 @@ fun ContactsTab() {
 
 // =============================================================== Contactos
 @Composable
-fun ContactsScreen() = GoogleGate("tus contactos") {
+fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.drawable.art_contactos) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     val ctx = LocalContext.current
@@ -131,7 +132,7 @@ fun ContactsScreen() = GoogleGate("tus contactos") {
                 list == null -> Loading()
                 else -> {
                     val shown = list.filter { c -> q.isBlank() || q.lowercase().let { it in c.name.lowercase() || c.emails.any { e -> it in e.lowercase() } || c.phones.any { p -> it in p } } }
-                    if (shown.isEmpty()) Centered { Hint("Sin contactos.") }
+                    if (shown.isEmpty()) ArtHint(com.iatualcance.alfred.R.drawable.art_contactos, "Sin contactos.")
                     else LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
                         items(shown, key = { it.resource }) { c ->
                             Column(Modifier.fillMaxWidth().clickable { selected = c }.padding(horizontal = 20.dp, vertical = 10.dp)) {
@@ -192,7 +193,7 @@ fun ContactsScreen() = GoogleGate("tus contactos") {
 
 // =============================================================== Drive
 @Composable
-private fun DriveScreen() = GoogleGate("tu carpeta de Drive") {
+private fun DriveScreen() = GoogleGate("tu carpeta de Drive", com.iatualcance.alfred.R.drawable.art_notas) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     val ctx = LocalContext.current
@@ -398,7 +399,7 @@ private fun PremiumScreen() {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = PxShape, modifier = Modifier.fillMaxWidth().pxBorder(Ink)) {
             Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                PixelIcon(com.iatualcance.alfred.R.drawable.px_alfred, 72.dp)
+                Art(com.iatualcance.alfred.R.drawable.art_pikachu, 84.dp)
                 Text(if (data != null) "PREMIUM ACTIVO" else "ALFRED PREMIUM", style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
                 if (data != null) Text(data.x?.let { "Válido hasta $it" } ?: "De por vida · ${data.e}", style = MaterialTheme.typography.bodySmall)
             }

@@ -69,7 +69,7 @@ private fun mailDate(ms: Long): String {
 }
 
 @Composable
-fun MailScreen() = GoogleGate("tu correo") {
+fun MailScreen() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawable.art_correo) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     var filter by rememberSaveable { mutableIntStateOf(0) }
@@ -106,7 +106,7 @@ fun MailScreen() = GoogleGate("tu correo") {
                 when {
                     error != null -> ErrorBox(error!!) { reload++ }
                     list == null -> Loading()
-                    list.isEmpty() -> Centered { Hint("No hay correos.") }
+                    list.isEmpty() -> ArtHint(com.iatualcance.alfred.R.drawable.art_correo, "No hay correos.")
                     else -> LazyColumn(contentPadding = PaddingValues(bottom = 88.dp)) {
                         items(list, key = { it.id }) { m ->
                             Column(Modifier.fillMaxWidth().clickable { openId = m.id }.padding(horizontal = 16.dp, vertical = 10.dp)) {

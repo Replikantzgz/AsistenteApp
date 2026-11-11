@@ -112,7 +112,7 @@ fun NotesScreen() {
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text("NOTAS") },
-            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Ink) } },
+            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Color.White) } },
         )
         TabRow(selectedTabIndex = sub, containerColor = MaterialTheme.colorScheme.background) {
             listOf("Notas", "Tareas", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { ui.notesSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) }) }
@@ -158,9 +158,7 @@ private fun NotesList() {
                 IconButton(onClick = { pickAudio.launch("audio/*") }) { Icon(Icons.Default.AudioFile, "Transcribir un audio") }
             }
             val shown = (if (q.isBlank()) notes else sv.store.searchNotes(q)).sortedWith(compareByDescending<Note> { it.pinned }.thenByDescending { it.updatedAt })
-            if (shown.isEmpty()) Centered {
-                Hint(if (q.isBlank()) "Aún no hay notas.\nCree una con +, escanee un ticket, grabe una nota de voz o comparta algo con Alfred desde otra app." else "Sin resultados.")
-            } else LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (shown.isEmpty()) ArtHint(com.iatualcance.alfred.R.drawable.art_notas, if (q.isBlank()) "Aún no hay notas.\nCrea una con +, escanea un ticket, graba una nota de voz o comparte algo con la app desde otra." else "Sin resultados.") else LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(shown, key = { it.id }) { n -> NoteCard(n) { ui.openNoteId = n.id } }
             }
         }
@@ -375,7 +373,7 @@ private fun TasksList() {
             IconButton(onClick = { pickTime = true }) { Icon(Icons.Default.Alarm, "Hora del aviso", tint = if (time != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) }
             IconButton(onClick = ::add) { Icon(Icons.Default.Add, "Añadir tarea") }
         }
-        if (tasks.isEmpty()) Centered { Hint("Sin tareas. Escriba una arriba o dígale a Alfred «recuérdame…».") }
+        if (tasks.isEmpty()) ArtHint(com.iatualcance.alfred.R.drawable.art_notas, "Sin tareas. Escribe una arriba o dile al asistente «recuérdame…».")
         else LazyColumn(contentPadding = PaddingValues(8.dp)) {
             items(tasks.sortedWith(compareBy<Task> { it.done }.thenBy { it.due ?: "9999" }.thenByDescending { it.createdAt }), key = { it.id }) { t ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -422,7 +420,7 @@ private fun TemplatesList() {
     var editing by remember { mutableStateOf<Template?>(null) }
 
     Box(Modifier.fillMaxSize()) {
-        if (templates.isEmpty()) Centered { Hint("Las plantillas son textos que repite a menudo (respuestas, presupuestos, firmas).\nCree una con + y úsela en correos con un toque.") }
+        if (templates.isEmpty()) ArtHint(com.iatualcance.alfred.R.drawable.art_notas, "Las plantillas son textos que repites a menudo (respuestas, presupuestos, firmas).\nCrea una con + y úsala en correos con un toque.")
         else LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(templates, key = { it.id }) { t ->
                 Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth().clickable { editing = t }) {

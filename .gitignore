@@ -11,3 +11,4 @@ keystore.properties
 *.jks
 *.pem
 alfred_license_private*
+__pycache__/

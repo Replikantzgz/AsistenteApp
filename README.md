@@ -4,7 +4,11 @@ App nativa (Kotlin + Jetpack Compose). Sin servidor: todo ocurre entre el móvil
 
 ## Interfaz
 
-Estilo retro de 16 bits sobre papel crema (tema claro): iconos pixel-art de 32×32 con etiqueta (se regeneran con `python3 tools/make_icons.py`), marcos duros y títulos en fuente pixel. Barra inferior con cinco botones: **Correo · Agenda · ALFRED (centro, grande) · Notas · Contactos**. Drive y Ajustes están arriba, en la pantalla de Alfred.
+Aspecto de Game Boy Color con tema Pokémon, sobre fondo claro: cabecera roja de Pokédex con su lente azul, cuadros blancos con borde grueso, títulos en fuente pixel e ilustraciones propias del proyecto. Barra inferior: **Correo (Dragonite) · Agenda (Blastoise) · ASISTENTE (Pikachu, centro, grande) · Notas (Psyduck) · Contactos (Lapras)**. Ajustes (los engranajes) y Drive están en la cabecera del asistente. El icono de la app es la Pokéball con Pikachu.
+
+Las ilustraciones se procesan con `python3 tools/process_art.py <7 imágenes>` (recorta, quita el fondo y genera los recursos).
+
+**Aviso**: los personajes son de Nintendo / Game Freak / The Pokémon Company. Vale para uso personal y APK propio; **no se pueden publicar en Google Play ni distribuir públicamente** sin permiso, porque infringirían marca y derechos de autor.
 
 **Alfred controla el resto de la app.** Además de actuar sobre Calendar, Gmail, Contactos, notas, tareas, plantillas y Drive (crear, editar y borrar), puede cambiar de pantalla («abre mis tareas»), abrir una nota, dejar un correo redactado para que lo revises, abrir el escáner o la grabadora y situar la agenda en un mes. Envíos y borrados piden confirmación.
 

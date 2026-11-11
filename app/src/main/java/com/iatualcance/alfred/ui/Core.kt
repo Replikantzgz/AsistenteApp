@@ -31,7 +31,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.lightColorScheme
-import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -60,21 +60,23 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
-// Tema claro: papel crema, tinta azul marino y dorado.
-val Paper = Color(0xFFF6F1E6)
+// Tema claro de inspiración Pokémon GBC: blanco, rojo Pokédex, azul y amarillo.
+val Paper = Color(0xFFF6F3EA)
 val Surf = Color(0xFFFFFFFF)
-val SurfHigh = Color(0xFFEFE7D3)
-val Ink = Color(0xFF1B1740)
+val SurfHigh = Color(0xFFEDE9DC)
+val Ink = Color(0xFF1F1D2B)
+val Red = Color(0xFFE63B2E)
+val Yellow = Color(0xFFFFCB05)
+val Blue = Color(0xFF3B5BDB)
 val Gold = Color(0xFFB07A00)
-val Blue = Color(0xFF2F6FE4)
 
 private val Colors = lightColorScheme(
-    primary = Color(0xFF9A6A00), onPrimary = Color.White, primaryContainer = Color(0xFFFFE7A3), onPrimaryContainer = Color(0xFF3B2A00),
-    secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFD9E5FF), onSecondaryContainer = Color(0xFF0A2A66),
-    tertiary = Color(0xFF2EAD6B), background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
-    surfaceVariant = SurfHigh, onSurfaceVariant = Color(0xFF5A5680), surfaceTint = Color.Transparent,
+    primary = Color(0xFFD7301F), onPrimary = Color.White, primaryContainer = Color(0xFFFFF0A8), onPrimaryContainer = Color(0xFF3B2A00),
+    secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFDCE4FF), onSecondaryContainer = Color(0xFF0E1F66),
+    tertiary = Color(0xFF2F9E57), background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
+    surfaceVariant = SurfHigh, onSurfaceVariant = Color(0xFF5A5870), surfaceTint = Color.Transparent,
     surfaceContainer = Surf, surfaceContainerLow = Surf, surfaceContainerHigh = Surf, surfaceContainerHighest = SurfHigh, surfaceContainerLowest = Surf,
-    outline = Color(0xFF7A7699), outlineVariant = Color(0xFFCFC6AE), error = Color(0xFFB3261E), onError = Color.White,
+    outline = Color(0xFF7A7890), outlineVariant = Color(0xFFCFCABB), error = Color(0xFFB3261E), onError = Color.White,
     errorContainer = Color(0xFFFBDAD6), onErrorContainer = Color(0xFF5C1512),
 )
 
@@ -89,8 +91,8 @@ private val Type = Typography().let { t ->
 }
 
 private val Pixel = Shapes(
-    extraSmall = CutCornerShape(3.dp), small = CutCornerShape(4.dp), medium = CutCornerShape(6.dp),
-    large = CutCornerShape(8.dp), extraLarge = CutCornerShape(10.dp),
+    extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(6.dp), medium = RoundedCornerShape(8.dp),
+    large = RoundedCornerShape(10.dp), extraLarge = RoundedCornerShape(12.dp),
 )
 
 @Composable
@@ -209,14 +211,19 @@ fun ErrorBox(msg: String, onRetry: () -> Unit) = Centered {
     Button(onClick = onRetry) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Reintentar") }
 }
 
+/** Pantalla vacía con la ilustración de la sección. */
+@Composable
+fun ArtHint(@androidx.annotation.DrawableRes art: Int, text: String) = Centered { Art(art, 132.dp); Hint(text) }
+
 /** Muestra el contenido solo si hay cuenta de Google conectada; si no, el botón para conectarla. */
 @Composable
-fun GoogleGate(what: String, content: @Composable () -> Unit) {
+fun GoogleGate(what: String, @androidx.annotation.DrawableRes art: Int = com.iatualcance.alfred.R.drawable.art_pikachu, content: @Composable () -> Unit) {
     val sv = LocalServices.current
     val account by sv.settings.account.collectAsStateCompat()
     val connect = rememberGoogleConnect()
     if (account != null) content() else Centered {
-        Text("Conecta tu cuenta de Google", style = MaterialTheme.typography.titleMedium)
+        Art(art, 132.dp)
+        Text("Conecta tu cuenta de Google", style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
         Hint("Para ver y gestionar $what necesito acceso a tu cuenta de Google.")
         Button(onClick = connect) { Text("Conectar con Google") }
     }

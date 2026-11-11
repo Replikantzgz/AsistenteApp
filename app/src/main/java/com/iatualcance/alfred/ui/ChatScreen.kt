@@ -12,7 +12,8 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
-import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Settings
@@ -168,9 +169,9 @@ fun ChatScreen(vm: ChatViewModel) {
         PixelBar(
             title = { Text("ALFRED") },
             actions = {
-                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Ink) }
-                IconButton(onClick = { ui.overlay = "settings" }) { Icon(Icons.Default.Settings, "Ajustes", tint = Ink) }
-                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Ink) }
+                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Color.White) }
+                IconButton(onClick = { ui.overlay = "settings" }) { Art(R.drawable.art_ajustes, 34.dp, "Ajustes") }
+                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Color.White) }
             },
         )
 
@@ -185,18 +186,18 @@ fun ChatScreen(vm: ChatViewModel) {
         }
         if (key.isBlank()) Surface(
             color = MaterialTheme.colorScheme.primaryContainer, shape = PxShape,
-            modifier = Modifier.padding(12.dp).fillMaxWidth().pxBorder(Gold).clickable { ui.overlay = "settings" },
+            modifier = Modifier.padding(12.dp).fillMaxWidth().pxBorder(Ink).clickable { ui.overlay = "settings" },
         ) {
             Text("Falta la clave de Gemini para hablar con Alfred. Toca aquí y añádela en Ajustes.", Modifier.padding(14.dp))
         }
 
         if (msgs.isEmpty()) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Box(Modifier.size(112.dp).background(Ink, PxShape).pxBorder(Color(0xFFF2B705)), contentAlignment = Alignment.Center) { PixelIcon(R.drawable.px_alfred, 92.dp) }
+                Art(R.drawable.art_pikachu, 150.dp, "Asistente")
                 VSpace(16)
-                Text("¿EN QUÉ PUEDO AYUDARLE?", style = MaterialTheme.typography.titleSmall, color = Ink, textAlign = TextAlign.Center)
+                Text("¿EN QUÉ TE AYUDO?", style = MaterialTheme.typography.titleSmall, color = Ink, textAlign = TextAlign.Center)
                 VSpace(8)
-                Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídamelo escribiendo o con el micrófono.")
+                Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídemelo escribiendo o con el micrófono.")
                 VSpace(12)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     suggestions.forEach { s -> AssistChip(onClick = { input = s }, label = { Text(s) }, shape = PxShape) }
@@ -248,15 +249,15 @@ fun ChatScreen(vm: ChatViewModel) {
 @Composable
 private fun Bubble(m: ChatMsg) {
     val cs = MaterialTheme.colorScheme
-    val shape = CutCornerShape(8.dp)
+    val shape = RoundedCornerShape(12.dp)
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
         if (!m.fromUser) {
-            Box(Modifier.size(38.dp).background(Ink, PxShape).pxBorder(Color(0xFFF2B705)), contentAlignment = Alignment.Center) { PixelIcon(R.drawable.px_alfred, 34.dp) }
+            Box(Modifier.size(40.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) { Art(R.drawable.art_pikachu, 34.dp) }
             Spacer(Modifier.width(8.dp))
         }
         Column(
             Modifier.widthIn(max = 300.dp).background(when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> cs.surfaceContainerHigh }, shape)
-                .border(2.dp, when { m.error -> cs.error; m.fromUser -> Blue; else -> PxLine }, shape)
+                .border(3.dp, when { m.error -> cs.error; m.fromUser -> Blue; else -> Ink }, shape)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = cs.primary, modifier = Modifier.padding(bottom = 4.dp)) }

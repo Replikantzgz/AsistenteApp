@@ -66,7 +66,7 @@ private val hm = DateTimeFormatter.ofPattern("HH:mm")
 private val shortDate = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Util.ES)
 
 @Composable
-fun AgendaScreen() = GoogleGate("tu calendario") {
+fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawable.art_agenda) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     var month by remember { mutableStateOf(YearMonth.now()) }
@@ -101,7 +101,7 @@ fun AgendaScreen() = GoogleGate("tu calendario") {
             when {
                 error != null -> ErrorBox(error!!) { reload++ }
                 evs == null -> Loading()
-                evs.isEmpty() -> Centered { Hint("No hay eventos este mes.\nPulse + para crear uno o pídaselo a Alfred.") }
+                evs.isEmpty() -> ArtHint(com.iatualcance.alfred.R.drawable.art_agenda, "No hay eventos este mes.\nPulsa + para crear uno o pídeselo al asistente.")
                 else -> {
                     val today = LocalDate.now()
                     // En el mes actual se ocultan los días ya pasados.
