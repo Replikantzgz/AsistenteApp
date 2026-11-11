@@ -7,20 +7,19 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.automirrored.filled.StickyNote2
-import androidx.compose.material.icons.filled.CalendarMonth
-import androidx.compose.material.icons.filled.Mail
-import androidx.compose.material.icons.filled.MoreHoriz
-import androidx.compose.material3.Icon
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.TextButton
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -41,6 +40,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>) {
     val scope = rememberCoroutineScope()
     val snack = remember { SnackbarHostState() }
     val ui = remember { AppUi(snack, scope) }
+    val chat: ChatViewModel = viewModel()
     val incoming by shared.collectAsState()
 
     LaunchedEffect(incoming) {
@@ -48,38 +48,37 @@ fun AppRoot(shared: MutableStateFlow<Intent?>) {
         shared.value = null
         ui.run("Guardando en Alfred…") { handleShared(i, sv, ui) }
     }
+    // Alfred (el asistente) manda a la interfaz: abrir pantallas, notas, redactar…
+    LaunchedEffect(chat.nav) { chat.nav?.let { ui.navigate(it); chat.nav = null } }
 
     CompositionLocalProvider(LocalUi provides ui) {
         Scaffold(
-            snackbarHost = { SnackbarHost(snack) },
-            bottomBar = {
-                NavigationBar {
-                    listOf(
-                        Triple(Tab.CHAT, "Alfred", Icons.AutoMirrored.Filled.Chat),
-                        Triple(Tab.AGENDA, "Agenda", Icons.Default.CalendarMonth),
-                        Triple(Tab.NOTES, "Notas", Icons.AutoMirrored.Filled.StickyNote2),
-                        Triple(Tab.MAIL, "Correo", Icons.Default.Mail),
-                        Triple(Tab.MORE, "Más", Icons.Default.MoreHoriz),
-                    ).forEach { (t, label, icon) ->
-                        NavigationBarItem(
-                            selected = ui.tab == t, onClick = { ui.tab = t },
-                            icon = { Icon(icon, label) }, label = { Text(label, maxLines = 1) },
-                        )
-                    }
-                }
-            },
+            containerColor = MaterialTheme.colorScheme.background,
+            snackbarHost = { SnackbarHost(snack, Modifier.padding(bottom = 4.dp)) },
+            bottomBar = { PixelNavBar(ui.tab) { ui.overlay = null; ui.tab = it } },
         ) { pad ->
-            Box(Modifier.fillMaxSize().padding(pad).consumeWindowInsets(pad).imePadding()) {
-                when (ui.tab) {
-                    Tab.CHAT -> ChatScreen()
-                    Tab.AGENDA -> AgendaScreen()
-                    Tab.NOTES -> NotesScreen()
-                    Tab.MAIL -> MailScreen()
-                    Tab.MORE -> MoreScreen()
+            Box(Modifier.fillMaxSize().pixelGrid().padding(pad).consumeWindowInsets(pad).imePadding()) {
+                when {
+                    ui.overlay != null -> OverlayScreen(ui.overlay!!)
+                    else -> when (ui.tab) {
+                        Tab.CHAT -> ChatScreen(chat)
+                        Tab.AGENDA -> AgendaScreen()
+                        Tab.NOTES -> NotesScreen()
+                        Tab.MAIL -> MailScreen()
+                        Tab.CONTACTS -> ContactsTab()
+                    }
                 }
             }
         }
         ui.busy?.let { BusyDialog(it) }
+        chat.pending?.let { p ->
+            AlertDialog(
+                onDismissRequest = { p.answer.complete(false) }, title = { Text(p.title, style = MaterialTheme.typography.titleSmall) },
+                text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(p.detail.take(1500)) } },
+                confirmButton = { TextButton(onClick = { p.answer.complete(true) }) { Text("SÍ") } },
+                dismissButton = { TextButton(onClick = { p.answer.complete(false) }) { Text("CANCELAR") } },
+            )
+        }
     }
 }
 

@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -37,7 +36,6 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -78,6 +76,8 @@ fun AgendaScreen() = GoogleGate("tu calendario") {
     var editing by remember { mutableStateOf<CalEvent?>(null) }
     var creating by remember { mutableStateOf(false) }
 
+    LaunchedEffect(ui.calendarDate) { ui.calendarDate?.let { month = YearMonth.from(it); ui.calendarDate = null } }
+
     LaunchedEffect(month, reload) {
         events = null; error = null
         val zone = ZoneId.systemDefault()
@@ -88,8 +88,8 @@ fun AgendaScreen() = GoogleGate("tu calendario") {
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            TopAppBar(
-                title = { Text(month.format(monthFmt).replaceFirstChar { it.uppercase() }) },
+            PixelBar(
+                title = { Text(month.format(monthFmt).uppercase(), maxLines = 1) },
                 actions = {
                     IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Mes anterior") }
                     IconButton(onClick = { month = YearMonth.now() }) { Icon(Icons.Default.Today, "Hoy") }
@@ -148,11 +148,11 @@ fun AgendaScreen() = GoogleGate("tu calendario") {
 
 @Composable
 private fun EventRow(e: CalEvent, onClick: () -> Unit) = Surface(
-    color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(14.dp),
-    modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
+    color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape,
+    modifier = Modifier.pxBorder().fillMaxWidth().clickable(onClick = onClick),
 ) {
     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.width(4.dp).height(38.dp).background(MaterialTheme.colorScheme.primary, RoundedCornerShape(2.dp)))
+        Box(Modifier.width(4.dp).height(38.dp).background(MaterialTheme.colorScheme.primary, PxShape))
         Spacer(Modifier.width(12.dp))
         Column(Modifier.weight(1f)) {
             Text(e.title, fontWeight = FontWeight.Medium, maxLines = 2, overflow = TextOverflow.Ellipsis)

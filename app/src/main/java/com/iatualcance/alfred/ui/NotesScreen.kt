@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -35,6 +34,7 @@ import androidx.compose.material.icons.filled.CloudUpload
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DocumentScanner
 import androidx.compose.material.icons.filled.Event
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -61,7 +61,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -106,12 +105,16 @@ fun Context.copyText(text: String) {
 @Composable
 fun NotesScreen() {
     val ui = LocalUi.current
-    var sub by rememberSaveable { mutableIntStateOf(0) }
+    val sub = ui.notesSub
     val open = ui.openNoteId
     if (open != null) { NoteEditor(open) { ui.openNoteId = null }; return }
     Column(Modifier.fillMaxSize()) {
+        PixelBar(
+            title = { Text("NOTAS") },
+            actions = { IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Gold) } },
+        )
         TabRow(selectedTabIndex = sub, containerColor = MaterialTheme.colorScheme.background) {
-            listOf("Notas", "Tareas", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { sub = i }, text = { Text(t) }) }
+            listOf("Notas", "Tareas", "Plantillas").forEachIndexed { i, t -> Tab(sub == i, { ui.notesSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) }) }
         }
         when (sub) { 0 -> NotesList(); 1 -> TasksList(); else -> TemplatesList() }
     }
@@ -139,11 +142,16 @@ private fun NotesList() {
         }
     }
 
+    androidx.compose.runtime.LaunchedEffect(ui.pending) {
+        when (ui.pending) { "scan" -> scan(); "record" -> record() }
+        ui.pending = null
+    }
+
     Box(Modifier.fillMaxSize()) {
         Column {
             Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(q, { q = it }, Modifier.weight(1f), placeholder = { Text("Buscar notas") }, singleLine = true,
-                    leadingIcon = { Icon(Icons.Default.Search, null) }, shape = RoundedCornerShape(24.dp))
+                    leadingIcon = { Icon(Icons.Default.Search, null) }, shape = PxShape)
                 IconButton(onClick = scan) { Icon(Icons.Default.DocumentScanner, "Escanear documento") }
                 IconButton(onClick = record) { Icon(Icons.Default.Mic, "Nota de voz") }
                 IconButton(onClick = { pickAudio.launch("audio/*") }) { Icon(Icons.Default.AudioFile, "Transcribir un audio") }
@@ -164,7 +172,7 @@ private fun NotesList() {
 @Composable
 private fun NoteCard(n: Note, onClick: () -> Unit) {
     val sv = LocalServices.current
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(12.dp)) {
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -183,7 +191,7 @@ private fun NoteCard(n: Note, onClick: () -> Unit) {
             }
             n.attachments.firstOrNull { it.mime.startsWith("image/") }?.let {
                 Spacer(Modifier.width(10.dp))
-                AsyncImage(sv.store.fileOf(it), null, Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                AsyncImage(sv.store.fileOf(it), null, Modifier.size(56.dp).clip(PxShape), contentScale = ContentScale.Crop)
             }
         }
     }
@@ -251,7 +259,7 @@ private fun NoteEditor(id: String, onClose: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
+        PixelBar(
             title = {},
             navigationIcon = { IconButton(onClick = ::close) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
             actions = {
@@ -271,8 +279,8 @@ private fun NoteEditor(id: String, onClose: () -> Unit) {
                 focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
             )
-            TextField(title, { title = it }, Modifier.fillMaxWidth(), placeholder = { Text("Título", style = MaterialTheme.typography.titleLarge) },
-                textStyle = MaterialTheme.typography.titleLarge, colors = bare)
+            TextField(title, { title = it }, Modifier.fillMaxWidth(), placeholder = { Text("Título", style = MaterialTheme.typography.headlineSmall) },
+                textStyle = MaterialTheme.typography.headlineSmall, colors = bare)
             if (note.attachments.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 note.attachments.forEach { a ->
                     AttachmentTile(a,
@@ -321,7 +329,7 @@ private fun AttachmentTile(a: Attachment, onRemove: () -> Unit, onTranscribe: ()
     val isImage = a.mime.startsWith("image/")
     val isAudio = a.mime.startsWith("audio/") || a.mime == "application/ogg"
     Box {
-        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = RoundedCornerShape(12.dp), modifier = Modifier.size(104.dp).clickable { menu = true }) {
+        Surface(color = MaterialTheme.colorScheme.surfaceContainerHigh, shape = PxShape, modifier = Modifier.pxBorder().size(104.dp).clickable { menu = true }) {
             if (isImage) AsyncImage(file, a.label, contentScale = ContentScale.Crop)
             else Column(Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                 if (isAudio) PlayButton(file) else Icon(if (a.mime == "application/pdf") Icons.Default.PictureAsPdf else Icons.Default.AttachFile, null, Modifier.size(36.dp), tint = MaterialTheme.colorScheme.primary)
@@ -352,7 +360,7 @@ private fun TasksList() {
 
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedTextField(text, { text = it }, Modifier.weight(1f), singleLine = true, shape = RoundedCornerShape(24.dp),
+            OutlinedTextField(text, { text = it }, Modifier.weight(1f), singleLine = true, shape = PxShape,
                 placeholder = { Text(if (due == null) "Nueva tarea" else "Nueva tarea para el $due") })
             IconButton(onClick = { pickDue = true }) { Icon(Icons.Default.Event, "Fecha límite", tint = if (due != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface) }
             IconButton(onClick = ::add) { Icon(Icons.Default.Add, "Añadir tarea") }
@@ -397,7 +405,7 @@ private fun TemplatesList() {
         if (templates.isEmpty()) Centered { Hint("Las plantillas son textos que repite a menudo (respuestas, presupuestos, firmas).\nCree una con + y úsela en correos con un toque.") }
         else LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 12.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(templates, key = { it.id }) { t ->
-                Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(14.dp), modifier = Modifier.fillMaxWidth().clickable { editing = t }) {
+                Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth().clickable { editing = t }) {
                     Column(Modifier.padding(12.dp)) {
                         Text(t.name, fontWeight = FontWeight.SemiBold)
                         Text(t.content, maxLines = 3, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

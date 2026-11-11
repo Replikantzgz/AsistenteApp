@@ -10,6 +10,13 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.border
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -27,8 +34,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
@@ -47,7 +52,6 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -64,7 +68,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.iatualcance.alfred.AlfredApp
 import com.iatualcance.alfred.R
@@ -82,6 +85,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val sv = (app as AlfredApp).sv
     var busy by mutableStateOf(false); private set
     var pending by mutableStateOf<PendingConfirm?>(null)
+    /** Orden de navegación que Alfred ha dado; la consume AppRoot. */
+    var nav by mutableStateOf<com.iatualcance.alfred.ai.Nav?>(null)
 
     fun send(text: String, image: Uri?) {
         if (busy || (text.isBlank() && image == null)) return
@@ -102,6 +107,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                     try { d.await() } finally { pending = null }
                 }
                 sv.store.addChat(ChatMsg(fromUser = false, text = reply.text, actions = reply.actions))
+                nav = reply.nav.lastOrNull()
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -116,14 +122,20 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 
 private val suggestions = listOf(
     "¿Qué tengo en la agenda esta semana?", "Resume mis correos sin leer", "Recuérdame llamar al dentista mañana",
-    "Crea una reunión el viernes a las 10", "Guarda una nota con la lista de la compra",
+    "Crea una reunión el viernes a las 10", "Redáctame un correo para…", "Abre mis notas",
+)
+
+private data class Quick(val label: String, val prompt: String)
+private val quick = listOf(
+    Quick("Hoy", "¿Qué tengo hoy en la agenda?"), Quick("Sin leer", "Resume mis correos sin leer"),
+    Quick("Tareas", "Abre mis tareas"), Quick("Escanear", "Abre el escáner de documentos"),
+    Quick("Nota", "Quiero crear una nota"), Quick("Drive", "Abre Drive"),
 )
 
 @Composable
-fun ChatScreen(vm: ChatViewModel = viewModel()) {
+fun ChatScreen(vm: ChatViewModel) {
     val sv = LocalServices.current
     val ui = LocalUi.current
-    val ctx = LocalContext.current
     val msgs by sv.store.chat.collectAsStateCompat()
     val key by sv.settings.apiKey.collectAsStateCompat()
     var input by rememberSaveable { mutableStateOf("") }
@@ -137,41 +149,42 @@ fun ChatScreen(vm: ChatViewModel = viewModel()) {
     val speech = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { res ->
         if (res.resultCode == Activity.RESULT_OK) {
             val said = res.data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)?.firstOrNull()
-            if (!said.isNullOrBlank()) input = (input.trim() + " " + said).trim()
+            if (!said.isNullOrBlank()) vm.send(said.trim(), null)
         }
     }
 
     fun send() { vm.send(input.trim(), image); input = ""; image = null }
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Image(painterResource(R.drawable.logo), null, Modifier.size(36.dp).clip(CircleShape))
-                    Spacer(Modifier.width(10.dp)); Text("Alfred", fontWeight = FontWeight.SemiBold)
-                }
+        PixelBar(
+            title = { Text("ALFRED") },
+            actions = {
+                IconButton(onClick = { ui.overlay = "drive" }) { Icon(Icons.Default.Folder, "Drive", tint = Gold) }
+                IconButton(onClick = { ui.overlay = "settings" }) { Icon(Icons.Default.Settings, "Ajustes", tint = Gold) }
+                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Gold) }
             },
-            actions = { if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación") } },
         )
 
         if (key.isBlank()) Surface(
-            color = MaterialTheme.colorScheme.primaryContainer, shape = RoundedCornerShape(12.dp),
-            modifier = Modifier.padding(12.dp).fillMaxWidth().clickable { ui.moreScreen = "settings"; ui.tab = Tab.MORE },
+            color = MaterialTheme.colorScheme.primaryContainer, shape = PxShape,
+            modifier = Modifier.padding(12.dp).fillMaxWidth().pxBorder(Gold).clickable { ui.overlay = "settings" },
         ) {
-            Text("Para hablar con Alfred falta la clave de Gemini. Toca aquí para añadirla en Ajustes.", Modifier.padding(14.dp))
+            Text("Falta la clave de Gemini para hablar con Alfred. Toca aquí y añádela en Ajustes.", Modifier.padding(14.dp))
         }
 
         if (msgs.isEmpty()) {
-            Column(Modifier.weight(1f).fillMaxWidth().padding(24.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Image(painterResource(R.drawable.logo), null, Modifier.size(120.dp).clip(CircleShape))
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
+                Box(Modifier.size(104.dp).background(NavyHigh, PxShape).pxBorder(Gold), contentAlignment = Alignment.Center) { PixelSprite(Sprites.ALFRED, 84.dp) }
                 VSpace(16)
-                Text("¿En qué puedo ayudarle?", style = MaterialTheme.typography.titleLarge)
+                Text("¿EN QUÉ PUEDO AYUDARLE?", style = MaterialTheme.typography.titleSmall, color = Gold, textAlign = TextAlign.Center)
                 VSpace(8)
-                Hint("Agenda, correo, contactos, notas y tareas. Escriba o use el micrófono.")
-                VSpace(16)
-                suggestions.forEach { s -> AssistChip(onClick = { input = s }, label = { Text(s) }) }
+                Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídamelo escribiendo o con el micrófono.")
+                VSpace(12)
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    suggestions.forEach { s -> AssistChip(onClick = { input = s }, label = { Text(s) }, shape = PxShape) }
+                }
             }
-        } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             items(msgs, key = { it.id }) { Bubble(it) }
             if (vm.busy) item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
@@ -180,51 +193,52 @@ fun ChatScreen(vm: ChatViewModel = viewModel()) {
             }
         }
 
+        // Atajos
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            quick.forEach { q -> AssistChip(onClick = { vm.send(q.prompt, null) }, enabled = !vm.busy, label = { Text(q.label, fontWeight = FontWeight.Bold) }, shape = PxShape) }
+        }
         image?.let { uri ->
             Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                AsyncImage(uri, null, Modifier.size(56.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+                AsyncImage(uri, null, Modifier.size(56.dp).clip(PxShape), contentScale = ContentScale.Crop)
                 IconButton(onClick = { image = null }) { Icon(Icons.Default.Close, "Quitar imagen") }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(8.dp), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom) {
             IconButton(onClick = { pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                 Icon(Icons.Default.Image, "Adjuntar imagen")
             }
             OutlinedTextField(
                 value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f),
-                placeholder = { Text("Escriba a Alfred…") }, maxLines = 5, shape = RoundedCornerShape(24.dp),
+                placeholder = { Text("Escriba a Alfred…") }, maxLines = 5, shape = PxShape,
             )
-            if (input.isBlank() && image == null) IconButton(onClick = {
+            Spacer(Modifier.width(4.dp))
+            if (input.isBlank() && image == null) FilledIconButton(onClick = {
                 try {
                     speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                         .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                         .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
                         .putExtra(RecognizerIntent.EXTRA_PROMPT, "Dígame"))
                 } catch (_: Exception) { ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
-            }) { Icon(Icons.Default.Mic, "Hablar") }
-            else FilledIconButton(onClick = ::send, enabled = !vm.busy) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
+            }, shape = PxShape) { Icon(Icons.Default.Mic, "Hablar") }
+            else FilledIconButton(onClick = ::send, enabled = !vm.busy, shape = PxShape) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
         }
     }
 
-    vm.pending?.let { p ->
-        AlertDialog(
-            onDismissRequest = { p.answer.complete(false) }, title = { Text(p.title) },
-            text = { Column(Modifier.verticalScroll(rememberScrollState())) { Text(p.detail.take(1500)) } },
-            confirmButton = { TextButton(onClick = { p.answer.complete(true) }) { Text("Sí") } },
-            dismissButton = { TextButton(onClick = { p.answer.complete(false) }) { Text("Cancelar") } },
-        )
-    }
     if (askClear) Confirm("Borrar conversación", "Se borrará el historial del chat. Tus notas y tareas no se tocan.", "Borrar", { askClear = false }) { sv.store.clearChat() }
 }
 
 @Composable
 private fun Bubble(m: ChatMsg) {
     val cs = MaterialTheme.colorScheme
-    Box(Modifier.fillMaxWidth(), contentAlignment = if (m.fromUser) Alignment.CenterEnd else Alignment.CenterStart) {
+    val shape = CutCornerShape(8.dp)
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
+        if (!m.fromUser) {
+            Box(Modifier.size(34.dp).background(NavyHigh, PxShape).pxBorder(Gold), contentAlignment = Alignment.Center) { PixelSprite(Sprites.ALFRED, 26.dp) }
+            Spacer(Modifier.width(8.dp))
+        }
         Column(
-            Modifier.widthIn(max = 320.dp)
-                .clip(RoundedCornerShape(18.dp, 18.dp, if (m.fromUser) 4.dp else 18.dp, if (m.fromUser) 18.dp else 4.dp))
-                .background(when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> cs.surfaceContainerHigh })
+            Modifier.widthIn(max = 300.dp).background(when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> cs.surfaceContainerHigh }, shape)
+                .border(2.dp, when { m.error -> cs.error; m.fromUser -> Blue; else -> PxLine }, shape)
                 .padding(horizontal = 14.dp, vertical = 10.dp),
         ) {
             m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = cs.primary, modifier = Modifier.padding(bottom = 4.dp)) }

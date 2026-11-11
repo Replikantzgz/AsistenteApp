@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -39,7 +38,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -94,9 +92,10 @@ fun MailScreen() = GoogleGate("tu correo") {
         openId != null -> ReadMail(openId!!, onClose = { openId = null }, onChanged = { reload++ })
         else -> Box(Modifier.fillMaxSize()) {
             Column {
+                PixelBar(title = { Text("CORREO") })
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(search, { search = it }, Modifier.weight(1f), placeholder = { Text("Buscar en el correo") }, singleLine = true,
-                        leadingIcon = { Icon(Icons.Default.Search, null) }, shape = RoundedCornerShape(24.dp),
+                        leadingIcon = { Icon(Icons.Default.Search, null) }, shape = PxShape,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = { query = search.trim() }))
                     IconButton(onClick = { query = search.trim(); reload++ }) { Icon(Icons.Default.Refresh, "Actualizar") }
                 }
@@ -151,7 +150,7 @@ private fun ReadMail(id: String, onClose: () -> Unit, onChanged: () -> Unit) {
 
     Column(Modifier.fillMaxSize()) {
         val m = mail
-        TopAppBar(
+        PixelBar(
             title = {}, navigationIcon = { IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
             actions = {
                 if (m != null) {
@@ -173,7 +172,7 @@ private fun ReadMail(id: String, onClose: () -> Unit, onChanged: () -> Unit) {
             m == null -> Loading()
             else -> SelectionContainer {
                 Column(Modifier.verticalScroll(rememberScrollState()).padding(16.dp)) {
-                    Text(m.subject, style = MaterialTheme.typography.titleLarge)
+                    Text(m.subject, style = MaterialTheme.typography.headlineSmall)
                     VSpace(6)
                     Text("De: ${m.from}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("Para: ${m.to}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -204,7 +203,7 @@ private fun ComposeMail(initial: MailDraft, onClose: () -> Unit, onSent: () -> U
     BackHandler(onBack = onClose)
 
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(
+        PixelBar(
             title = { Text(if (reply != null) "Responder" else "Redactar") },
             navigationIcon = { IconButton(onClick = onClose) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
             actions = {

@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -54,7 +52,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -81,50 +78,32 @@ import com.iatualcance.alfred.google.Contact
 import com.iatualcance.alfred.google.DriveFile
 import kotlinx.coroutines.launch
 
+/** Drive y Ajustes, a pantalla completa por encima de las pestañas. */
 @Composable
-fun MoreScreen() {
+fun OverlayScreen(which: String) {
     val ui = LocalUi.current
-    val sv = LocalServices.current
-    val scan = rememberScanner { files -> ui.run("Analizando el documento…") { ui.openNote(sv.documentToNote(files).id) } }
-    if (ui.moreScreen != "menu") BackHandler { ui.moreScreen = "menu" }
-    when (ui.moreScreen) {
-        "contacts" -> Sub("Contactos") { ContactsScreen() }
-        "drive" -> Sub("Drive · carpeta Alfred") { DriveScreen() }
-        "settings" -> Sub("Ajustes") { SettingsScreen() }
-        else -> Column(Modifier.fillMaxSize()) {
-            TopAppBar(title = { Text("Más") })
-            MenuRow(Icons.Default.DocumentScanner, "Escanear documento", "Tickets, facturas y papeles: se guardan como nota y en Drive", scan)
-            MenuRow(Icons.Default.Contacts, "Contactos", "Sus contactos de Google") { ui.moreScreen = "contacts" }
-            MenuRow(Icons.Default.Folder, "Drive", "Archivos guardados por Alfred y copia de seguridad") { ui.moreScreen = "drive" }
-            MenuRow(Icons.Default.Settings, "Ajustes", "Cuenta de Google, clave de Gemini y datos") { ui.moreScreen = "settings" }
-        }
-    }
-}
-
-@Composable
-private fun Sub(title: String, content: @Composable () -> Unit) {
-    val ui = LocalUi.current
+    BackHandler { ui.overlay = null }
     Column(Modifier.fillMaxSize()) {
-        TopAppBar(title = { Text(title) }, navigationIcon = { IconButton(onClick = { ui.moreScreen = "menu" }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } })
-        content()
+        PixelBar(
+            title = { Text(if (which == "drive") "DRIVE" else "AJUSTES") },
+            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Gold) } },
+        )
+        if (which == "drive") DriveScreen() else SettingsScreen()
     }
 }
 
+/** Pestaña de contactos. */
 @Composable
-private fun MenuRow(icon: ImageVector, title: String, sub: String, onClick: () -> Unit) =
-    Row(Modifier.fillMaxWidth().clickable(onClick = onClick).padding(horizontal = 20.dp, vertical = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, null, tint = MaterialTheme.colorScheme.primary)
-        Spacer(Modifier.width(18.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, fontWeight = FontWeight.Medium)
-            Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+fun ContactsTab() {
+    Column(Modifier.fillMaxSize()) {
+        PixelBar(title = { Text("CONTACTOS") })
+        ContactsScreen()
     }
+}
 
 // =============================================================== Contactos
 @Composable
-private fun ContactsScreen() = GoogleGate("tus contactos") {
+fun ContactsScreen() = GoogleGate("tus contactos") {
     val sv = LocalServices.current
     val ui = LocalUi.current
     val ctx = LocalContext.current
@@ -143,7 +122,7 @@ private fun ContactsScreen() = GoogleGate("tus contactos") {
     Box(Modifier.fillMaxSize()) {
         Column {
             OutlinedTextField(q, { q = it }, Modifier.fillMaxWidth().padding(horizontal = 12.dp), placeholder = { Text("Buscar contactos") }, singleLine = true,
-                leadingIcon = { Icon(Icons.Default.Search, null) }, shape = RoundedCornerShape(24.dp))
+                leadingIcon = { Icon(Icons.Default.Search, null) }, shape = PxShape)
             val list = all
             when {
                 error != null -> ErrorBox(error!!) { reload++ }
@@ -290,7 +269,7 @@ private fun SettingsScreen() {
                 Button(onClick = connect) { Text("Conectar con Google") }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (a.photo != null) { AsyncImage(a.photo, null, Modifier.size(44.dp).clip(CircleShape)); Spacer(Modifier.width(12.dp)) }
+                    if (a.photo != null) { AsyncImage(a.photo, null, Modifier.size(44.dp).clip(PxShape)); Spacer(Modifier.width(12.dp)) }
                     Column(Modifier.weight(1f)) { Text(a.name, fontWeight = FontWeight.Medium); Text(a.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -350,7 +329,7 @@ private fun SettingsScreen() {
 
 @Composable
 private fun Section(title: String, content: @Composable () -> Unit) =
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = RoundedCornerShape(16.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
             content()

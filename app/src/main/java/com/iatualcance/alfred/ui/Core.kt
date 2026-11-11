@@ -28,11 +28,20 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Shapes
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
+import com.iatualcance.alfred.R
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -67,10 +76,26 @@ private val Colors = darkColorScheme(
     errorContainer = Color(0xFF5C1512), onErrorContainer = Color(0xFFFFDAD6),
 )
 
-@Composable
-fun AlfredTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = Colors, content = content)
+private val PixelFont = FontFamily(Font(R.font.pressstart2p))
 
-enum class Tab { CHAT, AGENDA, NOTES, MAIL, MORE }
+private val Type = Typography().let { t ->
+    t.copy(
+        titleLarge = t.titleLarge.copy(fontFamily = PixelFont, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal),
+        titleMedium = t.titleMedium.copy(fontFamily = PixelFont, fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.Normal),
+        titleSmall = t.titleSmall.copy(fontFamily = PixelFont, fontSize = 10.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal),
+    )
+}
+
+private val Pixel = Shapes(
+    extraSmall = CutCornerShape(3.dp), small = CutCornerShape(4.dp), medium = CutCornerShape(6.dp),
+    large = CutCornerShape(8.dp), extraLarge = CutCornerShape(10.dp),
+)
+
+@Composable
+fun AlfredTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = Colors, typography = Type, shapes = Pixel, content = content)
+
+/** Orden de la barra inferior: Correo · Agenda · ALFRED · Notas · Contactos. */
+enum class Tab { MAIL, AGENDA, CHAT, NOTES, CONTACTS }
 
 data class MailDraft(val to: String = "", val subject: String = "", val body: String = "")
 
@@ -80,7 +105,13 @@ class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
     var busy by mutableStateOf<String?>(null)
     var openNoteId by mutableStateOf<String?>(null)
     var compose by mutableStateOf<MailDraft?>(null)
-    var moreScreen by mutableStateOf("menu")
+    /** Pantalla a pantalla completa por encima de las pestañas: "settings" o "drive". */
+    var overlay by mutableStateOf<String?>(null)
+    /** Subpestaña de Notas: 0 notas, 1 tareas, 2 plantillas. */
+    var notesSub by mutableIntStateOf(0)
+    var calendarDate by mutableStateOf<java.time.LocalDate?>(null)
+    /** Acción pendiente que ejecuta la pantalla de Notas al abrirse: "scan" o "record". */
+    var pending by mutableStateOf<String?>(null)
 
     fun say(msg: String) { scope.launch { snack.currentSnackbarData?.dismiss(); snack.showSnackbar(msg) } }
 
@@ -94,8 +125,33 @@ class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
         }
     }
 
-    fun openNote(id: String) { openNoteId = id; tab = Tab.NOTES }
-    fun composeMail(d: MailDraft) { compose = d; tab = Tab.MAIL }
+    fun openNote(id: String) { overlay = null; notesSub = 0; openNoteId = id; tab = Tab.NOTES }
+    fun composeMail(d: MailDraft) { overlay = null; compose = d; tab = Tab.MAIL }
+
+    /** Lo que Alfred (el asistente) le pide a la interfaz. */
+    fun navigate(n: com.iatualcance.alfred.ai.Nav) {
+        when (n) {
+            is com.iatualcance.alfred.ai.Nav.Screen -> {
+                overlay = null
+                when (n.name) {
+                    "correo" -> { compose = null; tab = Tab.MAIL }
+                    "calendario" -> tab = Tab.AGENDA
+                    "chat" -> tab = Tab.CHAT
+                    "contactos" -> tab = Tab.CONTACTS
+                    "notas" -> { openNoteId = null; notesSub = 0; tab = Tab.NOTES }
+                    "tareas" -> { openNoteId = null; notesSub = 1; tab = Tab.NOTES }
+                    "plantillas" -> { openNoteId = null; notesSub = 2; tab = Tab.NOTES }
+                    "drive" -> overlay = "drive"
+                    "ajustes" -> overlay = "settings"
+                }
+            }
+            is com.iatualcance.alfred.ai.Nav.Note -> openNote(n.id)
+            is com.iatualcance.alfred.ai.Nav.Compose -> composeMail(MailDraft(n.to, n.subject, n.body))
+            is com.iatualcance.alfred.ai.Nav.Calendar -> { overlay = null; calendarDate = n.date; tab = Tab.AGENDA }
+            com.iatualcance.alfred.ai.Nav.Scan -> { overlay = null; openNoteId = null; notesSub = 0; pending = "scan"; tab = Tab.NOTES }
+            com.iatualcance.alfred.ai.Nav.Record -> { overlay = null; openNoteId = null; notesSub = 0; pending = "record"; tab = Tab.NOTES }
+        }
+    }
 }
 
 val LocalUi = compositionLocalOf<AppUi> { error("sin AppUi") }

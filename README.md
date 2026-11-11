@@ -2,6 +2,12 @@
 
 App nativa (Kotlin + Jetpack Compose). Sin servidor: todo ocurre entre el móvil, la cuenta de Google del usuario y Gemini.
 
+## Interfaz
+
+Estilo retro de 16 bits pero legible: iconos pixel-art con etiqueta, marcos duros y títulos en fuente pixel. Barra inferior con cinco botones: **Correo · Agenda · ALFRED (centro, grande) · Notas · Contactos**. Drive y Ajustes están arriba, en la pantalla de Alfred.
+
+**Alfred controla el resto de la app.** Además de actuar sobre Calendar, Gmail, Contactos, notas, tareas, plantillas y Drive (crear, editar y borrar), puede cambiar de pantalla («abre mis tareas»), abrir una nota, dejar un correo redactado para que lo revises, abrir el escáner o la grabadora y situar la agenda en un mes. Envíos y borrados piden confirmación.
+
 ## Qué hace
 
 - **Chat con Alfred** (texto, voz e imágenes). Gemini con herramientas reales: crea, modifica y borra eventos, busca y lee correos, redacta borradores, envía correos (con confirmación), busca y crea contactos, y gestiona notas, tareas y plantillas.

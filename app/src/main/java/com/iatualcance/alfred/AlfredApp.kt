@@ -30,7 +30,7 @@ class Services(private val app: Application) {
     val auth = GoogleAuth(app)
     val google = GoogleApi(auth)
     val gemini = Gemini(settings)
-    val assistant = Assistant(gemini, google, store, settings)
+    val assistant = Assistant(gemini, google, store, settings, uploadNote = { uploadNote(it) }, backup = { backupToDrive() })
 
     val hasAi get() = settings.apiKey.value.isNotBlank()
     val hasGoogle get() = settings.account.value != null

@@ -25,7 +25,17 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
-data class Reply(val text: String, val actions: List<String>)
+/** Órdenes que el asistente da a la interfaz (abrir pantallas, abrir una nota, redactar…). */
+sealed interface Nav {
+    data class Screen(val name: String) : Nav
+    data class Note(val id: String) : Nav
+    data class Compose(val to: String, val subject: String, val body: String) : Nav
+    data class Calendar(val date: LocalDate) : Nav
+    data object Scan : Nav
+    data object Record : Nav
+}
+
+data class Reply(val text: String, val actions: List<String>, val nav: List<Nav> = emptyList())
 
 /**
  * El "cerebro" de Alfred: le pasa a Gemini las herramientas disponibles, ejecuta las que pida
@@ -34,6 +44,7 @@ data class Reply(val text: String, val actions: List<String>)
  */
 class Assistant(
     private val gemini: Gemini, private val google: GoogleApi, private val store: Store, private val settings: Settings,
+    private val uploadNote: suspend (Note) -> Note, private val backup: suspend () -> String,
 ) {
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
 
@@ -45,7 +56,10 @@ Eres Alfred, un asistente personal al estilo de un mayordomo moderno: educado, b
 Fecha y hora actuales: ${now.format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy, HH:mm", Util.ES))} (zona ${now.zone.id}). Hoy es ${now.toLocalDate()}.
 Usuario: ${acc?.name ?: "sin cuenta de Google conectada"}${acc?.let { " <${it.email}>" } ?: ""}.
 
+Eres el CENTRO DE MANDO de la app: el usuario te habla a ti y tú manejas todo lo demás. La app tiene cinco pantallas (Correo, Agenda, tú, Notas —con Tareas y Plantillas— y Contactos) más Drive y Ajustes. Puedes hacer por herramientas todo lo que el usuario puede hacer tocando la pantalla: ver, crear, editar y borrar en cada sección, abrir pantallas, dejarle un correo redactado para que lo revise, abrir el escáner o la grabadora.
+
 Normas:
+- Si el usuario pide "abre", "ve a", "enséñame", "muéstrame" una sección o un elemento, usa las herramientas abrir_*: tras tu respuesta la app cambiará a esa pantalla. Si solo pide información (qué tengo mañana), respóndela tú sin cambiar de pantalla.
 - Usa las herramientas para actuar de verdad; nunca digas que has hecho algo si no has llamado a la herramienta y ha respondido bien. Si una herramienta devuelve un error, explícalo con claridad.
 - Puedes encadenar varias herramientas en una misma petición (por ejemplo, buscar un contacto y después enviarle un correo o invitarle a un evento).
 - Las fechas van en hora local con formato AAAA-MM-DDTHH:MM. Calcula tú las fechas relativas ("mañana", "el viernes") a partir de la fecha actual. Si no dicen hora para una cita, pregunta o usa una razonable y dilo.
@@ -115,6 +129,37 @@ Normas:
         add(fn("completar_tarea", "Marca una tarea como hecha.", mapOf("id" to s("Id de la tarea")), listOf("id")))
         add(fn("guardar_plantilla", "Guarda una plantilla de texto reutilizable.", mapOf("nombre" to s("Nombre"), "contenido" to s("Texto")), listOf("nombre", "contenido")))
         add(fn("listar_plantillas", "Lista las plantillas de texto guardadas."))
+
+        // --- editar y borrar
+        add(fn("leer_nota", "Devuelve el texto completo de una nota.", mapOf("id" to s("Id de la nota")), listOf("id")))
+        add(fn("modificar_nota", "Cambia una nota. Indica solo lo que cambia. Con 'anadir_al_contenido' se añade texto al final sin borrar lo existente.", mapOf(
+            "id" to s("Id de la nota"), "titulo" to s("Nuevo título"), "contenido" to s("Nuevo contenido completo (sustituye al anterior)"),
+            "anadir_al_contenido" to s("Texto que se añade al final"), "etiquetas" to list("Nuevas etiquetas (sustituyen a las anteriores)"),
+            "fijada" to b("Fijar o desfijar")), listOf("id")))
+        add(fn("eliminar_nota", "Elimina una nota del móvil (se pedirá confirmación).", mapOf("id" to s("Id de la nota"), "titulo" to s("Título, para confirmar")), listOf("id")))
+        add(fn("modificar_tarea", "Cambia una tarea: título, fecha límite, prioridad o si está hecha.", mapOf(
+            "id" to s("Id de la tarea"), "titulo" to s("Nuevo título"), "fecha_limite" to s("AAAA-MM-DD, o vacío para quitarla"),
+            "prioridad" to s("alta, media o baja"), "hecha" to b("true si está hecha, false si vuelve a estar pendiente")), listOf("id")))
+        add(fn("eliminar_tarea", "Elimina una tarea.", mapOf("id" to s("Id de la tarea")), listOf("id")))
+        add(fn("eliminar_plantilla", "Elimina una plantilla por su nombre.", mapOf("nombre" to s("Nombre de la plantilla")), listOf("nombre")))
+        add(fn("eliminar_contacto", "Elimina un contacto de Google (se pedirá confirmación). El id sale de buscar_contactos.", mapOf(
+            "id" to s("Id del contacto"), "nombre" to s("Nombre, para confirmar")), listOf("id")))
+        add(fn("papelera_correo", "Mueve un correo a la papelera de Gmail (se pedirá confirmación).", mapOf("id" to s("Id del correo"), "asunto" to s("Asunto, para confirmar")), listOf("id")))
+
+        // --- Drive
+        add(fn("guardar_nota_en_drive", "Sube una nota (y sus adjuntos) a la carpeta Alfred de Google Drive.", mapOf("id" to s("Id de la nota")), listOf("id")))
+        add(fn("listar_drive", "Lista los archivos de la carpeta Alfred de Drive o de una subcarpeta.", mapOf("carpeta" to s("Notas, Escaneos o Facturas. Vacío para la carpeta principal"))))
+        add(fn("copia_seguridad_drive", "Guarda en Drive una copia de seguridad de notas, tareas y plantillas."))
+
+        // --- interfaz
+        add(fn("abrir_pantalla", "Cambia la app a una pantalla. Úsala cuando el usuario pida ver o abrir una sección.", mapOf(
+            "pantalla" to s("correo, calendario, notas, tareas, plantillas, contactos, drive, ajustes o chat")), listOf("pantalla")))
+        add(fn("abrir_nota", "Abre una nota en el editor.", mapOf("id" to s("Id de la nota")), listOf("id")))
+        add(fn("abrir_redactar_correo", "Abre la pantalla de redactar con el correo ya escrito para que el usuario lo revise y lo envíe él.", mapOf(
+            "para" to s("Correo del destinatario"), "asunto" to s("Asunto"), "cuerpo" to s("Texto")), listOf("asunto", "cuerpo")))
+        add(fn("abrir_calendario", "Abre la agenda en el mes de una fecha.", mapOf("fecha" to s("AAAA-MM-DD")), listOf("fecha")))
+        add(fn("abrir_escaner", "Abre el escáner de documentos (tickets, facturas, papeles)."))
+        add(fn("grabar_nota_voz", "Abre la grabadora: graba y transcribe una nota de voz."))
     }
 
     // ---------------------------------------------------------------- Ejecución
@@ -123,7 +168,7 @@ Normas:
     private fun when_(s: String?) = s?.takeIf { it.isNotBlank() }?.let { Util.parseDateTime(it) }
     private fun ok(msg: String, extra: JsonObject? = null): JsonElement = buildJsonObject { put("ok", true); put("mensaje", msg); extra?.let { put("datos", it) } }
 
-    private suspend fun run(name: String, a: JsonObject, actions: MutableList<String>, confirm: suspend (String, String) -> Boolean): JsonElement = when (name) {
+    private suspend fun run(name: String, a: JsonObject, actions: MutableList<String>, nav: MutableList<Nav>, confirm: suspend (String, String) -> Boolean): JsonElement = when (name) {
         "crear_evento" -> {
             val start = when_(a.str("inicio")) ?: throw Exception("Falta la fecha de inicio")
             val allDay = a.bool("todo_el_dia") || (a.str("inicio")?.trim()?.length ?: 0) <= 10
@@ -267,6 +312,94 @@ Normas:
         "listar_plantillas" -> buildJsonObject {
             putJsonArray("plantillas") { store.templates.value.forEach { add(buildJsonObject { put("nombre", it.name); put("contenido", it.content) }) } }
         }
+        "leer_nota" -> {
+            val n = store.note(a.str("id").orEmpty()) ?: throw Exception("No existe ninguna nota con ese id")
+            buildJsonObject { put("titulo", n.title); put("contenido", n.content); put("etiquetas", n.tags.joinToString(", ")); put("adjuntos", n.attachments.size) }
+        }
+        "modificar_nota" -> {
+            val n = store.note(a.str("id").orEmpty()) ?: throw Exception("No existe ninguna nota con ese id")
+            var content = a.str("contenido") ?: n.content
+            a.str("anadir_al_contenido")?.takeIf { it.isNotBlank() }?.let { content = (content.trimEnd() + "\n" + it).trim() }
+            val up = store.upsertNote(n.copy(
+                title = a.str("titulo") ?: n.title, content = content, tags = a.strings("etiquetas") ?: n.tags,
+                pinned = a.str("fijada")?.let { it == "true" } ?: n.pinned,
+            ))
+            actions += "📝 Nota actualizada: ${up.title}"
+            ok("Nota actualizada")
+        }
+        "eliminar_nota" -> {
+            val n = store.note(a.str("id").orEmpty()) ?: throw Exception("No existe ninguna nota con ese id")
+            if (!confirm("¿Eliminar esta nota?", n.title.ifBlank { a.str("titulo") ?: "Nota sin título" })) throw Exception("El usuario ha cancelado la eliminación")
+            store.deleteNote(n.id)
+            actions += "🗑️ Nota eliminada: ${n.title}"
+            ok("Nota eliminada")
+        }
+        "modificar_tarea" -> {
+            val t = store.tasks.value.firstOrNull { it.id == a.str("id") } ?: throw Exception("No existe ninguna tarea con ese id")
+            val due = if (a.containsKey("fecha_limite")) a.str("fecha_limite")?.take(10)?.takeIf { runCatching { LocalDate.parse(it) }.isSuccess } else t.due
+            store.upsertTask(t.copy(
+                title = a.str("titulo") ?: t.title, due = due,
+                priority = a.str("prioridad")?.lowercase()?.takeIf { it in listOf("alta", "media", "baja") } ?: t.priority,
+                done = a.str("hecha")?.let { it == "true" } ?: t.done,
+            ))
+            actions += "✅ Tarea actualizada: ${a.str("titulo") ?: t.title}"
+            ok("Tarea actualizada")
+        }
+        "eliminar_tarea" -> {
+            val t = store.tasks.value.firstOrNull { it.id == a.str("id") } ?: throw Exception("No existe ninguna tarea con ese id")
+            store.deleteTask(t.id)
+            actions += "🗑️ Tarea eliminada: ${t.title}"
+            ok("Tarea eliminada")
+        }
+        "eliminar_plantilla" -> {
+            val t = store.templates.value.firstOrNull { it.name.equals(a.str("nombre"), true) } ?: throw Exception("No existe ninguna plantilla con ese nombre")
+            store.deleteTemplate(t.id)
+            actions += "🗑️ Plantilla eliminada: ${t.name}"
+            ok("Plantilla eliminada")
+        }
+        "eliminar_contacto" -> {
+            if (!confirm("¿Eliminar este contacto?", a.str("nombre") ?: "Contacto de Google")) throw Exception("El usuario ha cancelado la eliminación")
+            google.deleteContact(a.str("id").orEmpty())
+            actions += "🗑️ Contacto eliminado: ${a.str("nombre") ?: ""}"
+            ok("Contacto eliminado")
+        }
+        "papelera_correo" -> {
+            if (!confirm("¿Mover a la papelera?", a.str("asunto") ?: "Correo de Gmail")) throw Exception("El usuario ha cancelado la acción")
+            google.trashMail(a.str("id").orEmpty())
+            actions += "🗑️ Correo movido a la papelera"
+            ok("Correo en la papelera")
+        }
+        "guardar_nota_en_drive" -> {
+            val n = store.note(a.str("id").orEmpty()) ?: throw Exception("No existe ninguna nota con ese id")
+            uploadNote(n)
+            actions += "☁️ Guardada en Drive: ${n.title}"
+            ok("Nota guardada en Drive")
+        }
+        "listar_drive" -> {
+            val sub = a.str("carpeta")?.trim()?.takeIf { it.isNotBlank() }
+            val files = google.listFiles(google.folder(sub))
+            buildJsonObject {
+                put("total", files.size)
+                putJsonArray("archivos") { files.take(40).forEach { f -> add(buildJsonObject { put("nombre", f.name); put("carpeta", f.isFolder); f.link?.let { put("enlace", it) } }) } }
+            }
+        }
+        "copia_seguridad_drive" -> { backup(); actions += "☁️ Copia de seguridad guardada en Drive"; ok("Copia de seguridad guardada") }
+
+        "abrir_pantalla" -> {
+            val p = a.str("pantalla").orEmpty().lowercase().trim()
+            val name = mapOf("correo" to "correo", "gmail" to "correo", "email" to "correo", "calendario" to "calendario", "agenda" to "calendario",
+                "notas" to "notas", "tareas" to "tareas", "plantillas" to "plantillas", "contactos" to "contactos", "drive" to "drive",
+                "ajustes" to "ajustes", "configuracion" to "ajustes", "configuración" to "ajustes", "chat" to "chat")[p] ?: throw Exception("Pantalla desconocida: $p")
+            nav += Nav.Screen(name); ok("Abriendo $name")
+        }
+        "abrir_nota" -> {
+            if (store.note(a.str("id").orEmpty()) == null) throw Exception("No existe ninguna nota con ese id")
+            nav += Nav.Note(a.str("id")!!); ok("Abriendo la nota")
+        }
+        "abrir_redactar_correo" -> { nav += Nav.Compose(a.str("para").orEmpty(), a.str("asunto").orEmpty(), a.str("cuerpo").orEmpty()); ok("Correo preparado en la pantalla de redactar") }
+        "abrir_calendario" -> { nav += Nav.Calendar(LocalDate.parse((a.str("fecha") ?: throw Exception("Falta la fecha")).take(10))); ok("Abriendo la agenda") }
+        "abrir_escaner" -> { nav += Nav.Scan; ok("Abriendo el escáner") }
+        "grabar_nota_voz" -> { nav += Nav.Record; ok("Abriendo la grabadora") }
         else -> throw Exception("Herramienta desconocida: $name")
     }
 
@@ -289,15 +422,16 @@ Normas:
         contents += Gemini.userContent(text.ifBlank { "Mira esta imagen." }, image?.first, image?.second)
 
         val actions = mutableListOf<String>()
+        val nav = mutableListOf<Nav>()
         val sys = system()
         repeat(8) {
             val content = gemini.generate(contents, sys, tools)
             val calls = Gemini.functionCalls(content)
-            if (calls.isEmpty()) return Reply(Gemini.textOf(content).ifBlank { "Hecho." }, actions)
+            if (calls.isEmpty()) return Reply(Gemini.textOf(content).ifBlank { "Hecho." }, actions, nav.takeLast(1))
             contents += JsonObject(content + ("role" to JsonPrimitive("model")))
             val responses = calls.map { c ->
                 val result = try {
-                    run(c.str("name").orEmpty(), c.obj("args") ?: JsonObject(emptyMap()), actions, confirm)
+                    run(c.str("name").orEmpty(), c.obj("args") ?: JsonObject(emptyMap()), actions, nav, confirm)
                 } catch (e: kotlinx.coroutines.CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -307,7 +441,7 @@ Normas:
             }
             contents += buildJsonObject { put("role", "user"); put("parts", JsonArray(responses)) }
         }
-        return Reply("He hecho varias acciones pero no he podido terminar la petición. Revisa el resultado, por favor.", actions)
+        return Reply("He hecho varias acciones pero no he podido terminar la petición. Revisa el resultado, por favor.", actions, nav.takeLast(1))
     }
 
     /** Extrae los datos de un ticket o factura escaneado. Devuelve un texto listo para la nota. */
