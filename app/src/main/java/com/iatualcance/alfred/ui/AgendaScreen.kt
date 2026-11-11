@@ -47,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -122,7 +123,7 @@ fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawab
                 }
             }
         }
-        FloatingActionButton(onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo evento") }
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo evento") }
     }
 
     if (creating || editing != null) EventDialog(
@@ -217,7 +218,7 @@ private fun EventDialog(event: CalEvent?, defaultDay: LocalDate, onDismiss: () -
 @Composable
 fun DateButton(date: LocalDate, modifier: Modifier = Modifier, onPick: (LocalDate) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { open = true }, modifier = modifier, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(date.format(shortDate), maxLines = 1) }
+    AppOutlinedButton(onClick = { open = true }, modifier = modifier, contentPadding = PaddingValues(horizontal = 10.dp)) { Text(date.format(shortDate), maxLines = 1) }
     if (open) {
         val st = rememberDatePickerState(initialSelectedDateMillis = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
         DatePickerDialog(
@@ -235,7 +236,7 @@ fun DateButton(date: LocalDate, modifier: Modifier = Modifier, onPick: (LocalDat
 @Composable
 fun TimeButton(time: LocalTime, onPick: (LocalTime) -> Unit) {
     var open by remember { mutableStateOf(false) }
-    OutlinedButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 14.dp)) { Text(time.format(hm)) }
+    AppOutlinedButton(onClick = { open = true }, contentPadding = PaddingValues(horizontal = 14.dp)) { Text(time.format(hm)) }
     if (open) {
         val st = rememberTimePickerState(time.hour, time.minute, true)
         AlertDialog(

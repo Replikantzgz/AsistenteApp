@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.IntentCompat
 import com.iatualcance.alfred.Services
 import com.iatualcance.alfred.data.Note
@@ -83,7 +84,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
             snackbarHost = { SnackbarHost(snack, Modifier.padding(bottom = 4.dp)) },
             bottomBar = { PixelNavBar(ui.tab) { ui.overlay = null; ui.tab = it } },
         ) { pad ->
-            Box(Modifier.fillMaxSize().pixelGrid().padding(pad).consumeWindowInsets(pad).imePadding()) {
+            Box(Modifier.fillMaxSize().texture().padding(pad).consumeWindowInsets(pad).imePadding()) {
                 when {
                     ui.overlay != null -> OverlayScreen(ui.overlay!!)
                     else -> when (ui.tab) {

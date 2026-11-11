@@ -56,6 +56,11 @@ class Store(private val ctx: Context) {
         }
     }
 
+    fun clearNotes() {
+        notes.value.forEach { n -> n.attachments.forEach { fileOf(it).delete() } }
+        notes.value = emptyList(); save("notas.json", Note.serializer(), emptyList())
+    }
+
     // ---- Tareas ----
     fun upsertTask(t: Task) {
         tasks.update { l -> if (l.any { it.id == t.id }) l.map { if (it.id == t.id) t else it } else listOf(t) + l }
@@ -67,6 +72,8 @@ class Store(private val ctx: Context) {
         save("tareas.json", Task.serializer(), tasks.value)
     }
 
+    fun clearTasks() { tasks.value = emptyList(); save("tareas.json", Task.serializer(), emptyList()) }
+
     // ---- Plantillas ----
     fun upsertTemplate(t: Template) {
         templates.update { l -> if (l.any { it.id == t.id }) l.map { if (it.id == t.id) t else it } else l + t }
@@ -77,6 +84,8 @@ class Store(private val ctx: Context) {
         templates.update { l -> l.filterNot { it.id == id } }
         save("plantillas.json", Template.serializer(), templates.value)
     }
+
+    fun clearTemplates() { templates.value = emptyList(); save("plantillas.json", Template.serializer(), emptyList()) }
 
     // ---- Chat ----
     fun addChat(m: ChatMsg) {

@@ -65,6 +65,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -145,7 +146,7 @@ fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.draw
                 }
             }
         }
-        FloatingActionButton(onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo contacto") }
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo contacto") }
     }
 
     selected?.let { c ->
@@ -257,39 +258,49 @@ private fun SettingsScreen() {
     val savedKey by sv.settings.apiKey.collectAsStateCompat()
     val model by sv.settings.model.collectAsStateCompat()
     val driveAuto by sv.settings.driveAuto.collectAsStateCompat()
+    val noteCount by sv.store.notes.collectAsStateCompat()
+    val taskCount by sv.store.tasks.collectAsStateCompat()
+    val templateCount by sv.store.templates.collectAsStateCompat()
     var key by remember { mutableStateOf(savedKey) }
     var show by remember { mutableStateOf(false) }
     var models by remember { mutableStateOf<List<String>>(emptyList()) }
     var modelMenu by remember { mutableStateOf(false) }
-    var askWipe by remember { mutableStateOf(false) }
+    var confirm by remember { mutableStateOf<String?>(null) }   // acción grave pendiente de confirmar
     val connect = rememberGoogleConnect()
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // ------------------------------------------------------------------ Cuenta
         Section("Cuenta de Google") {
             val a = account
             if (a == null) {
-                Hint("Conecte su cuenta para usar Calendar, Gmail, Contactos y Drive.")
-                Button(onClick = connect) { Text("Conectar con Google") }
+                Hint("Conecta tu cuenta para usar Calendar, Gmail, Contactos y Drive.")
+                AppButton(onClick = connect, modifier = Modifier.fillMaxWidth()) { Text("Conectar con Google") }
             } else {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    if (a.photo != null) { AsyncImage(a.photo, null, Modifier.size(44.dp).clip(PxShape)); Spacer(Modifier.width(12.dp)) }
-                    Column(Modifier.weight(1f)) { Text(a.name, fontWeight = FontWeight.Medium); Text(a.email, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+                    if (a.photo != null) AsyncImage(a.photo, null, Modifier.size(52.dp).clip(CircleShape)) else Art(com.iatualcance.alfred.R.drawable.art_pikachu, 52.dp)
+                    Spacer(Modifier.width(14.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(a.name, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(a.email, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
                 }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedButton(onClick = connect) { Text("Reconectar") }
-                    OutlinedButton(onClick = { scope.launch { sv.disconnect(); ui.say("Cuenta desconectada") } }) { Text("Desconectar") }
+                    AppOutlinedButton(onClick = { scope.launch { sv.disconnect(); connect() } }, modifier = Modifier.weight(1f)) { Text("Cambiar de cuenta") }
+                    AppOutlinedButton(onClick = { confirm = "signout" }, modifier = Modifier.weight(1f)) { Text("Cerrar sesión") }
                 }
                 TextButton(onClick = { ctx.openUrl("https://myaccount.google.com/connections") }) { Text("Gestionar permisos en Google") }
             }
         }
+
+        // ------------------------------------------------------------------ IA
         Section("Inteligencia artificial (Gemini)") {
             OutlinedTextField(
-                key, { key = it }, label = { Text("Clave de API de Gemini") }, singleLine = true, modifier = Modifier.fillMaxWidth(),
+                key, { key = it }, label = { Text("Clave de API de Gemini") }, singleLine = true, modifier = Modifier.fillMaxWidth(), shape = PxShape,
                 visualTransformation = if (show) VisualTransformation.None else PasswordVisualTransformation(),
                 trailingIcon = { IconButton(onClick = { show = !show }) { Icon(if (show) Icons.Default.VisibilityOff else Icons.Default.Visibility, "Mostrar") } },
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                AppButton(onClick = {
                     sv.settings.setApiKey(key)
                     if (key.isBlank()) ui.say("Clave borrada") else ui.run("Comprobando la clave…") {
                         models = sv.gemini.listModels()
@@ -299,42 +310,22 @@ private fun SettingsScreen() {
                 TextButton(onClick = { ctx.openUrl("https://aistudio.google.com/apikey") }) { Text("Obtener clave gratis") }
             }
             Box {
-                OutlinedButton(onClick = {
+                AppOutlinedButton(onClick = {
                     if (models.isNotEmpty()) modelMenu = true
-                    else if (savedKey.isBlank()) ui.say("Guarde primero la clave")
+                    else if (savedKey.isBlank()) ui.say("Guarda primero la clave")
                     else ui.run("Cargando modelos…") { models = sv.gemini.listModels(); modelMenu = true }
                 }) { Text("Modelo: $model") }
                 DropdownMenu(modelMenu, { modelMenu = false }) {
                     models.forEach { m -> DropdownMenuItem({ Text(m) }, { sv.settings.setModel(m); modelMenu = false }) }
                 }
             }
+            if (savedKey.isNotBlank()) TextButton(onClick = { sv.settings.setApiKey(""); key = ""; ui.say("Clave eliminada de este móvil") }) {
+                Text("Quitar la clave de este móvil", color = MaterialTheme.colorScheme.error)
+            }
             Hint("La clave se guarda cifrada solo en este móvil y se usa únicamente para hablar con Gemini.")
         }
-        if (BillingConfig.ENABLED) Section("Plan") {
-            val lic by sv.settings.license.collectAsStateCompat()
-            val data = sv.licenseData(lic)
-            Text(if (data != null) "Premium activo" + (data.x?.let { " hasta $it" } ?: " · de por vida") else "Plan gratuito", fontWeight = FontWeight.Medium)
-            OutlinedButton(onClick = { ui.overlay = "premium" }) { Text(if (data != null) "Ver mi plan" else "Ver Premium") }
-        }
-        Section("Actualizaciones") {
-            val autoUpdate by sv.settings.autoUpdate.collectAsStateCompat()
-            val upd by sv.updater.state.collectAsStateCompat()
-            Text("Versión instalada: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", fontWeight = FontWeight.Medium)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Buscar e instalar al abrir")
-                    Text("Si hay una versión nueva, se descarga y se instala sola.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(autoUpdate, { sv.settings.setAutoUpdate(it) })
-            }
-            OutlinedButton(enabled = upd !is com.iatualcance.alfred.update.UpdateState.Checking && upd !is com.iatualcance.alfred.update.UpdateState.Downloading, onClick = {
-                scope.launch {
-                    val info = sv.updater.check(install = true)
-                    if (info == null && sv.updater.state.value !is com.iatualcance.alfred.update.UpdateState.Failed) ui.say("Ya tienes la última versión")
-                    else if (info != null && sv.updater.canInstall()) ui.say("Actualizando a la ${info.versionName}…")
-                }
-            }) { Text(when (upd) { is com.iatualcance.alfred.update.UpdateState.Checking -> "Buscando…"; is com.iatualcance.alfred.update.UpdateState.Downloading -> "Descargando…"; else -> "Buscar actualizaciones ahora" }) }
-        }
+
+        // ------------------------------------------------------------------ Notificaciones
         Section("Notificaciones") {
             val notifyEvents by sv.settings.notifyEvents.collectAsStateCompat()
             val notifyTasks by sv.settings.notifyTasks.collectAsStateCompat()
@@ -344,64 +335,124 @@ private fun SettingsScreen() {
             androidx.lifecycle.compose.LifecycleResumeEffect(Unit) { allowed = com.iatualcance.alfred.notify.Notif.canPost(ctx); onPauseOrDispose {} }
             if (!allowed) {
                 Hint("Las notificaciones están desactivadas para Alfred, así que no sonará ningún aviso.")
-                Button(onClick = {
+                AppButton(onClick = {
                     ctx.startActivity(Intent(android.provider.Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(android.provider.Settings.EXTRA_APP_PACKAGE, ctx.packageName).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 }) { Text("Permitir notificaciones") }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Avisar de las citas")
-                    Text("Notificación antes de cada evento de Google Calendar.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(notifyEvents, { sv.settings.setNotifyEvents(it) })
-            }
+            SwitchRow("Avisar de las citas", "Notificación antes de cada evento de Google Calendar.", notifyEvents) { sv.settings.setNotifyEvents(it) }
             if (notifyEvents) Box {
-                OutlinedButton(onClick = { leadMenu = true }) { Text(if (lead == 0) "Avisar a la hora exacta" else "Avisar $lead min antes") }
+                AppOutlinedButton(onClick = { leadMenu = true }) { Text(if (lead == 0) "Avisar a la hora exacta" else "Avisar $lead min antes") }
                 DropdownMenu(leadMenu, { leadMenu = false }) {
                     listOf(0, 5, 10, 15, 30, 60, 120).forEach { m -> DropdownMenuItem({ Text(if (m == 0) "A la hora exacta" else "$m minutos antes") }, { sv.settings.setLeadMin(m); leadMenu = false }) }
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Avisar de las tareas")
-                    Text("A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                }
-                Switch(notifyTasks, { sv.settings.setNotifyTasks(it) })
-            }
-            OutlinedButton(onClick = {
+            SwitchRow("Avisar de las tareas", "A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", notifyTasks) { sv.settings.setNotifyTasks(it) }
+            AppOutlinedButton(onClick = {
                 com.iatualcance.alfred.notify.Notif.show(ctx, com.iatualcance.alfred.notify.Reminder("test", System.currentTimeMillis(), "Alfred", "Así sonarán tus avisos.", "chat"))
                 if (!allowed) ui.say("Activa primero las notificaciones")
             }) { Text("Enviar notificación de prueba") }
         }
-        Section("Drive") {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(Modifier.weight(1f)) {
-                    Text("Subir escaneos automáticamente")
-                    Text("Cada documento escaneado se guarda también en Drive, carpeta Alfred (Facturas o Escaneos).", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        // ------------------------------------------------------------------ Actualizaciones
+        Section("Actualizaciones") {
+            val autoUpdate by sv.settings.autoUpdate.collectAsStateCompat()
+            val upd by sv.updater.state.collectAsStateCompat()
+            Text("Versión instalada: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", style = MaterialTheme.typography.titleSmall)
+            SwitchRow("Buscar e instalar al abrir", "Si hay una versión nueva, se descarga y se instala sola.", autoUpdate) { sv.settings.setAutoUpdate(it) }
+            AppOutlinedButton(enabled = upd !is com.iatualcance.alfred.update.UpdateState.Checking && upd !is com.iatualcance.alfred.update.UpdateState.Downloading, onClick = {
+                scope.launch {
+                    val info = sv.updater.check(install = true)
+                    if (info == null && sv.updater.state.value !is com.iatualcance.alfred.update.UpdateState.Failed) ui.say("Ya tienes la última versión")
+                    else if (info != null && sv.updater.canInstall()) ui.say("Actualizando a la ${info.versionName}…")
                 }
-                Switch(driveAuto, { sv.settings.setDriveAuto(it) })
-            }
+            }) { Text(when (upd) { is com.iatualcance.alfred.update.UpdateState.Checking -> "Buscando…"; is com.iatualcance.alfred.update.UpdateState.Downloading -> "Descargando…"; else -> "Buscar actualizaciones ahora" }) }
         }
-        Section("Datos y privacidad") {
-            Hint("Sus notas, tareas y plantillas se guardan en este móvil. Alfred solo envía a Google lo necesario para cada acción (Calendar, Gmail, Contactos, Drive) y a Gemini el texto, audio o imagen que usted le pida procesar. No hay servidores propios ni se comparten datos con terceros.")
-            OutlinedButton(onClick = { askWipe = true }) { Text("Borrar todos los datos de la app", color = MaterialTheme.colorScheme.error) }
+
+        // ------------------------------------------------------------------ Drive
+        Section("Drive") {
+            SwitchRow("Subir escaneos automáticamente", "Cada documento escaneado se guarda también en Drive, carpeta Alfred (Facturas o Escaneos).", driveAuto) { sv.settings.setDriveAuto(it) }
+            AppOutlinedButton(enabled = account != null, onClick = { ui.run("Haciendo copia de seguridad…") { sv.backupToDrive(); ui.say("Copia de notas, tareas y plantillas guardada en Drive") } }) { Text("Hacer copia de seguridad ahora") }
+            if (account == null) Hint("Conecta tu cuenta de Google para usar Drive.")
         }
-        Text("Alfred ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+        // ------------------------------------------------------------------ Plan
+        if (BillingConfig.ENABLED) Section("Plan") {
+            val lic by sv.settings.license.collectAsStateCompat()
+            val data = sv.licenseData(lic)
+            Text(if (data != null) "Premium activo" + (data.x?.let { " hasta $it" } ?: " · de por vida") else "Plan gratuito", style = MaterialTheme.typography.titleSmall)
+            AppOutlinedButton(onClick = { ui.overlay = "premium" }) { Text(if (data != null) "Ver mi plan" else "Ver Premium") }
+        }
+
+        // ------------------------------------------------------------------ Datos
+        Section("Tus datos") {
+            Hint("Tus notas, tareas y plantillas se guardan solo en este móvil. Alfred envía a Google únicamente lo necesario para cada acción (Calendar, Gmail, Contactos, Drive) y a Gemini el texto, audio o imagen que le pidas procesar. No hay servidores propios ni se comparten datos con terceros.")
+            AppOutlinedButton(onClick = { ui.run("Preparando la copia…") { ctx.shareFile(sv.exportFile(), "application/json") } }, modifier = Modifier.fillMaxWidth()) { Text("Exportar mis datos (JSON)") }
+        }
+
+        // ------------------------------------------------------------------ Zona de borrado
+        Section("Zona de borrado", danger = true) {
+            Hint("Estas acciones no se pueden deshacer. Lo que ya está en Drive, Calendar o Gmail no se toca (salvo que lo indique).")
+            DangerRow("Borrar la conversación con el asistente") { confirm = "chat" }
+            DangerRow("Borrar todas las notas y sus adjuntos") { confirm = "notes" }
+            DangerRow("Borrar todas las tareas y recordatorios") { confirm = "tasks" }
+            DangerRow("Borrar todas las plantillas") { confirm = "templates" }
+            if (account != null) DangerRow("Borrar mi copia de seguridad en Drive") { confirm = "backup" }
+            DangerRow("Restablecer los ajustes") { confirm = "reset" }
+            AppOutlinedButton(onClick = { confirm = "all" }, modifier = Modifier.fillMaxWidth()) { Text("Borrar mi cuenta y todos los datos", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
+        }
+
+        Text("Alfred ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
-    if (askWipe) Confirm("Borrar todo", "Se borrarán del móvil las notas, tareas, plantillas, el chat, la clave de Gemini y la conexión con Google. Lo guardado en Drive, Calendar y Gmail no se toca.", "Borrar todo", { askWipe = false }) {
-        scope.launch { runCatching { sv.disconnect() }; sv.wipe(); key = ""; ui.say("Datos borrados") }
+
+    when (confirm) {
+        "signout" -> Confirm("Cerrar sesión", "Se retiran los permisos de Google a Alfred. Tus notas, tareas y plantillas se quedan en el móvil.", "Cerrar sesión", { confirm = null }) { scope.launch { sv.disconnect(); ui.say("Sesión cerrada") } }
+        "chat" -> Confirm("Borrar la conversación", "Se borra el historial del chat. Tus notas y tareas no se tocan.", "Borrar", { confirm = null }) { sv.store.clearChat(); ui.say("Conversación borrada") }
+        "notes" -> Confirm("Borrar todas las notas", "Se borran del móvil ${noteCount.size} notas y todos sus adjuntos. Lo que ya esté en Drive no se toca.", "Borrar", { confirm = null }) { sv.store.clearNotes(); ui.say("Notas borradas") }
+        "tasks" -> Confirm("Borrar todas las tareas", "Se borran ${taskCount.size} tareas y sus avisos.", "Borrar", { confirm = null }) { sv.store.clearTasks(); ui.say("Tareas borradas") }
+        "templates" -> Confirm("Borrar todas las plantillas", "Se borran las ${templateCount.size} plantillas guardadas.", "Borrar", { confirm = null }) { sv.store.clearTemplates(); ui.say("Plantillas borradas") }
+        "backup" -> Confirm("Borrar la copia de Drive", "Se elimina de tu Drive el archivo «Copia de seguridad Alfred.json». Las notas del móvil no se tocan.", "Borrar", { confirm = null }) {
+            ui.run("Borrando la copia…") { ui.say(if (sv.deleteDriveBackup()) "Copia de seguridad borrada" else "No había ninguna copia en Drive") }
+        }
+        "reset" -> Confirm("Restablecer los ajustes", "Notificaciones, actualizaciones, Drive y modelo vuelven a su valor inicial. La clave de Gemini, la cuenta y tus datos no se tocan.", "Restablecer", { confirm = null }) { sv.settings.resetPreferences(); ui.say("Ajustes restablecidos") }
+        "all" -> ConfirmTyped(
+            "Borrar mi cuenta y todos los datos",
+            "Se retiran los permisos de Google, se cancelan los avisos y se borran del móvil las notas, tareas, plantillas, adjuntos, el chat y la clave de Gemini. No se puede deshacer. Lo que está en Drive, Calendar y Gmail no se toca.",
+            onDismiss = { confirm = null },
+        ) { scope.launch { sv.deleteAccountAndData(); key = ""; ui.say("Todo borrado") } }
     }
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) =
-    Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.primary)
+private fun SwitchRow(title: String, sub: String, checked: Boolean, onChange: (Boolean) -> Unit) = Row(verticalAlignment = Alignment.CenterVertically) {
+    Column(Modifier.weight(1f)) {
+        Text(title, style = MaterialTheme.typography.titleSmall)
+        Text(sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    Spacer(Modifier.width(8.dp))
+    Switch(checked, onChange)
+}
+
+@Composable
+private fun DangerRow(text: String, onClick: () -> Unit) = Row(
+    Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically,
+) {
+    Icon(Icons.Default.Delete, null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
+    Spacer(Modifier.width(12.dp))
+    Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
+    Icon(Icons.Default.ChevronRight, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+}
+
+@Composable
+private fun Section(title: String, danger: Boolean = false, content: @Composable () -> Unit) =
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape,
+        modifier = Modifier.fillMaxWidth().pxBorder(if (danger) MaterialTheme.colorScheme.error.copy(alpha = 0.55f) else SoftLine),
+    ) {
+        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = if (danger) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
             content()
         }
     }
-
 
 // =============================================================== Premium (solo accesible con BillingConfig.ENABLED)
 @Composable
@@ -436,7 +487,7 @@ private fun PremiumScreen() {
         }
         Section(if (data != null) "Cambiar de código" else "Ya tengo un código") {
             OutlinedTextField(code, { code = it; error = null }, label = { Text("Código ALFRED1.…") }, modifier = Modifier.fillMaxWidth(), isError = error != null, supportingText = { error?.let { Text(it) } })
-            Button(enabled = code.isNotBlank(), onClick = {
+            AppButton(enabled = code.isNotBlank(), onClick = {
                 val err = sv.activateLicense(code)
                 if (err == null) { code = ""; ui.say("¡Premium activado! Gracias.") } else error = err
             }) { Text("Activar") }

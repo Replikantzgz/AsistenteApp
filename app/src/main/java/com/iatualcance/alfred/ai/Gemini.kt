@@ -87,7 +87,7 @@ class Gemini(private val settings: Settings) {
                 try {
                     return call(model)
                 } catch (e: GeminiError) {
-                    if (e.code !in RETRYABLE) { if (mi > 0 && e.code == 404) break else throw e }
+                    if (e.code !in RETRYABLE) { if (e.code == 404 && mi < models.lastIndex) { last = e; break } else throw e }
                     last = e
                     delay(1200L * (attempt + 1))
                 }

@@ -60,6 +60,11 @@ class Settings(ctx: Context) {
         p.edit().putString("aiDay", today).putInt("aiCount", n).apply(); aiToday.value = n
     }
     fun aiUsedToday(): Int = if (aiDay == java.time.LocalDate.now().toString()) p.getInt("aiCount", 0) else 0
+    /** Vuelve a los valores de fábrica de los ajustes, sin tocar la clave de Gemini, la licencia ni la cuenta. */
+    fun resetPreferences() {
+        p.edit().remove("notifyEvents").remove("notifyTasks").remove("leadMin").remove("driveAuto").remove("autoUpdate").remove("model").apply()
+        notifyEvents.value = true; notifyTasks.value = true; leadMin.value = 15; driveAuto.value = true; autoUpdate.value = true; model.value = DEFAULT_MODEL
+    }
     fun clear() { val keep = license.value; p.edit().clear().putString("license", keep).apply(); account.value = null; apiKey.value = ""; model.value = DEFAULT_MODEL }
 }
 

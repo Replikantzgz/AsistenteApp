@@ -9,6 +9,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,6 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.iatualcance.alfred.R
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
@@ -61,38 +71,46 @@ import kotlinx.coroutines.launch
 import java.io.File
 
 // Tema claro de inspiración Pokémon GBC: blanco, rojo Pokédex, azul y amarillo.
-val Paper = Color(0xFFF6F3EA)
+val Paper = Color(0xFFF4F5F9)
 val Surf = Color(0xFFFFFFFF)
-val SurfHigh = Color(0xFFEDE9DC)
+val SurfHigh = Color(0xFFEEF0F6)
 val Ink = Color(0xFF1F1D2B)
 val Red = Color(0xFFE63B2E)
 val Yellow = Color(0xFFFFCB05)
-val Blue = Color(0xFF3B5BDB)
+val Blue = Color(0xFF3B6FE0)
 val Gold = Color(0xFFB07A00)
 
 private val Colors = lightColorScheme(
     primary = Color(0xFFD7301F), onPrimary = Color.White, primaryContainer = Color(0xFFFFF0A8), onPrimaryContainer = Color(0xFF3B2A00),
-    secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFDCE4FF), onSecondaryContainer = Color(0xFF0E1F66),
+    secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFE4ECFF), onSecondaryContainer = Color(0xFF0E1F66),
     tertiary = Color(0xFF2F9E57), background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
     surfaceVariant = SurfHigh, onSurfaceVariant = Color(0xFF5A5870), surfaceTint = Color.Transparent,
     surfaceContainer = Surf, surfaceContainerLow = Surf, surfaceContainerHigh = Surf, surfaceContainerHighest = SurfHigh, surfaceContainerLowest = Surf,
-    outline = Color(0xFF7A7890), outlineVariant = Color(0xFFCFCABB), error = Color(0xFFB3261E), onError = Color.White,
+    outline = Color(0xFF7A7890), outlineVariant = Color(0xFFD7DBE8), error = Color(0xFFB3261E), onError = Color.White,
     errorContainer = Color(0xFFFBDAD6), onErrorContainer = Color(0xFF5C1512),
 )
 
-private val PixelFont = FontFamily(Font(R.font.pressstart2p))
-
+/** Jerarquía tipográfica: sans-serif limpia, con pesos y tamaños escalonados. */
 private val Type = Typography().let { t ->
+    fun st(base: androidx.compose.ui.text.TextStyle, size: Int, lh: Int, w: FontWeight, ls: Double = 0.0) =
+        base.copy(fontFamily = FontFamily.SansSerif, fontSize = size.sp, lineHeight = lh.sp, fontWeight = w, letterSpacing = ls.sp)
     t.copy(
-        titleLarge = t.titleLarge.copy(fontFamily = PixelFont, fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Normal),
-        titleMedium = t.titleMedium.copy(fontFamily = PixelFont, fontSize = 12.sp, lineHeight = 18.sp, fontWeight = FontWeight.Normal),
-        titleSmall = t.titleSmall.copy(fontFamily = PixelFont, fontSize = 10.sp, lineHeight = 16.sp, fontWeight = FontWeight.Normal),
+        headlineSmall = st(t.headlineSmall, 22, 28, FontWeight.Bold),
+        titleLarge = st(t.titleLarge, 20, 26, FontWeight.ExtraBold, 0.6),
+        titleMedium = st(t.titleMedium, 16, 22, FontWeight.Bold),
+        titleSmall = st(t.titleSmall, 14, 20, FontWeight.Bold, 0.2),
+        bodyLarge = st(t.bodyLarge, 16, 23, FontWeight.Normal),
+        bodyMedium = st(t.bodyMedium, 14, 21, FontWeight.Normal),
+        bodySmall = st(t.bodySmall, 12, 17, FontWeight.Normal),
+        labelLarge = st(t.labelLarge, 14, 20, FontWeight.SemiBold, 0.1),
+        labelMedium = st(t.labelMedium, 12, 16, FontWeight.SemiBold, 0.3),
+        labelSmall = st(t.labelSmall, 11, 15, FontWeight.Medium, 0.3),
     )
 }
 
 private val Pixel = Shapes(
-    extraSmall = RoundedCornerShape(4.dp), small = RoundedCornerShape(6.dp), medium = RoundedCornerShape(8.dp),
-    large = RoundedCornerShape(10.dp), extraLarge = RoundedCornerShape(12.dp),
+    extraSmall = RoundedCornerShape(6.dp), small = RoundedCornerShape(10.dp), medium = RoundedCornerShape(14.dp),
+    large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(20.dp),
 )
 
 @Composable
@@ -203,7 +221,7 @@ fun Centered(content: @Composable () -> Unit) =
 fun Loading() = Centered { CircularProgressIndicator() }
 
 @Composable
-fun Hint(text: String) = Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+fun Hint(text: String) = Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
 
 @Composable
 fun ErrorBox(msg: String, onRetry: () -> Unit) = Centered {
@@ -267,3 +285,69 @@ fun Context.shareText(text: String) = try {
     startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text), "Compartir").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 } catch (_: ActivityNotFoundException) {}
 
+
+
+// ----- Componentes comunes: mismas proporciones en toda la app
+private val BtnShape = RoundedCornerShape(14.dp)
+
+@Composable
+fun AppButton(onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit) =
+    androidx.compose.material3.Button(
+        onClick, modifier.heightIn(min = 46.dp), enabled, BtnShape,
+        elevation = androidx.compose.material3.ButtonDefaults.buttonElevation(defaultElevation = 3.dp, pressedElevation = 1.dp),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 20.dp, vertical = 10.dp), content = content,
+    )
+
+@Composable
+fun AppOutlinedButton(
+    onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true,
+    contentPadding: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+    content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
+) = androidx.compose.material3.OutlinedButton(
+    onClick, modifier.heightIn(min = 46.dp), enabled, BtnShape,
+    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
+    border = androidx.compose.foundation.BorderStroke(1.5.dp, if (enabled) Color(0xFFB9BFD3) else SoftLine), contentPadding = contentPadding, content = content,
+)
+
+/** Botón cuadrado redondeado con degradado rojo (enviar, micrófono). */
+@Composable
+fun AppIconButton(onClick: () -> Unit, enabled: Boolean = true, content: @Composable () -> Unit) {
+    val src = remember { MutableInteractionSource() }
+    Box(
+        Modifier.size(52.dp).shadow(4.dp, BtnShape, clip = false, ambientColor = Color(0x33C92A1F), spotColor = Color(0x55C92A1F))
+            .background(Brush.verticalGradient(if (enabled) listOf(Color(0xFFF2473B), Color(0xFFCB2B20)) else listOf(Color(0xFFBDBDC8), Color(0xFFA9A9B6))), BtnShape)
+            .clickable(src, null, enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) { CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Color.White) { content() } }
+}
+
+/** Chip en forma de pastilla, blanco con sombra suave. */
+@Composable
+fun PillChip(text: String, onClick: () -> Unit, enabled: Boolean = true) = androidx.compose.material3.AssistChip(
+    onClick = onClick, enabled = enabled, label = { Text(text, fontWeight = FontWeight.SemiBold) }, shape = RoundedCornerShape(50),
+    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = Color.White),
+    border = androidx.compose.foundation.BorderStroke(1.5.dp, SoftLine),
+    elevation = androidx.compose.material3.AssistChipDefaults.assistChipElevation(elevation = 2.dp),
+)
+
+/** Confirmación para acciones graves: hay que escribir la palabra indicada. */
+@Composable
+fun ConfirmTyped(title: String, text: String, word: String = "BORRAR", onDismiss: () -> Unit, onOk: () -> Unit) {
+    var typed by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text(title, style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Text(text)
+                androidx.compose.material3.OutlinedTextField(typed, { typed = it }, singleLine = true, shape = PxShape, label = { Text("Escribe $word para confirmar") })
+            }
+        },
+        confirmButton = { TextButton(enabled = typed.trim().equals(word, true), onClick = { onDismiss(); onOk() }) { Text(word, color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancelar") } },
+    )
+}
+
+/** Comparte un fichero (JSON de copia de datos) con otra app. */
+fun Context.shareFile(f: File, mime: String) = try {
+    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).setType(mime).putExtra(Intent.EXTRA_STREAM, fileUri(f)).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION), "Exportar").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+} catch (_: ActivityNotFoundException) {}

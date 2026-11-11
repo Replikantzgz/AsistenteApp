@@ -16,8 +16,8 @@ android {
         minSdk = 26
         targetSdk = 35
         // En GitHub Actions el número sube solo con cada compilación (ALFRED_VERSION_CODE); en local, valor fijo.
-        versionCode = (System.getenv("ALFRED_VERSION_CODE") ?: "4").toInt()
-        versionName = System.getenv("ALFRED_VERSION_NAME") ?: "1.3.0"
+        versionCode = (System.getenv("ALFRED_VERSION_CODE") ?: "5").toInt()
+        versionName = System.getenv("ALFRED_VERSION_NAME") ?: "1.4.0"
         buildConfigField("String", "UPDATE_URL", "\"https://github.com/Replikantzgz/AsistenteApp/releases/latest/download/update.json\"")
     }
 

@@ -43,9 +43,7 @@ import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.AssistChip
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -195,15 +194,15 @@ fun ChatScreen(vm: ChatViewModel) {
             Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
                 Art(R.drawable.art_pikachu, 150.dp, "Asistente")
                 VSpace(16)
-                Text("¿EN QUÉ TE AYUDO?", style = MaterialTheme.typography.titleSmall, color = Ink, textAlign = TextAlign.Center)
+                Text("¿En qué te ayudo?", style = MaterialTheme.typography.headlineSmall, color = Ink, textAlign = TextAlign.Center)
                 VSpace(8)
                 Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídemelo escribiendo o con el micrófono.")
                 VSpace(12)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    suggestions.forEach { s -> AssistChip(onClick = { input = s }, label = { Text(s) }, shape = PxShape) }
+                    suggestions.forEach { s -> PillChip(s, { input = s }) }
                 }
             }
-        } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             items(msgs, key = { it.id }) { Bubble(it) }
             if (vm.busy) item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
@@ -213,8 +212,8 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
         // Atajos
-        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            quick.forEach { q -> AssistChip(onClick = { vm.send(q.prompt, null) }, enabled = !vm.busy, label = { Text(q.label, fontWeight = FontWeight.Bold) }, shape = PxShape) }
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            quick.forEach { q -> PillChip(q.label, { vm.send(q.prompt, null) }, enabled = !vm.busy) }
         }
         image?.let { uri ->
             Row(Modifier.padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -222,24 +221,28 @@ fun ChatScreen(vm: ChatViewModel) {
                 IconButton(onClick = { image = null }) { Icon(Icons.Default.Close, "Quitar imagen") }
             }
         }
-        Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 8.dp, bottom = 6.dp), verticalAlignment = Alignment.Bottom) {
+        Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, bottom = 8.dp, top = 2.dp), verticalAlignment = Alignment.Bottom) {
             IconButton(onClick = { pickImage.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }) {
                 Icon(Icons.Default.Image, "Adjuntar imagen")
             }
             OutlinedTextField(
-                value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f),
-                placeholder = { Text("Escriba a Alfred…") }, maxLines = 5, shape = PxShape,
+                value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f).shadow(3.dp, PxShape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)),
+                placeholder = { Text("Escribe a Alfred…") }, maxLines = 5, shape = PxShape,
+                colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
+                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                    focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = SoftLine,
+                ),
             )
-            Spacer(Modifier.width(4.dp))
-            if (input.isBlank() && image == null) FilledIconButton(onClick = {
+            Spacer(Modifier.width(8.dp))
+            if (input.isBlank() && image == null) AppIconButton(onClick = {
                 try {
                     speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                         .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
                         .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
                         .putExtra(RecognizerIntent.EXTRA_PROMPT, "Dígame"))
                 } catch (_: Exception) { ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
-            }, shape = PxShape) { Icon(Icons.Default.Mic, "Hablar") }
-            else FilledIconButton(onClick = ::send, enabled = !vm.busy, shape = PxShape) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
+            }) { Icon(Icons.Default.Mic, "Hablar") }
+            else AppIconButton(onClick = ::send, enabled = !vm.busy) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
         }
     }
 
@@ -249,19 +252,25 @@ fun ChatScreen(vm: ChatViewModel) {
 @Composable
 private fun Bubble(m: ChatMsg) {
     val cs = MaterialTheme.colorScheme
-    val shape = RoundedCornerShape(12.dp)
+    val shape = RoundedCornerShape(18.dp)
+    val bg = when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> Color.White }
+    val line = when { m.error -> cs.error.copy(alpha = 0.7f); m.fromUser -> Blue.copy(alpha = 0.75f); else -> SoftLine }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
         if (!m.fromUser) {
-            Box(Modifier.size(40.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) { Art(R.drawable.art_pikachu, 34.dp) }
-            Spacer(Modifier.width(8.dp))
+            Box(
+                Modifier.size(44.dp).shadow(3.dp, CircleShape, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) { Art(R.drawable.art_pikachu, 38.dp) }
+            Spacer(Modifier.width(10.dp))
         }
         Column(
-            Modifier.widthIn(max = 300.dp).background(when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> cs.surfaceContainerHigh }, shape)
-                .border(3.dp, when { m.error -> cs.error; m.fromUser -> Blue; else -> Ink }, shape)
-                .padding(horizontal = 14.dp, vertical = 10.dp),
+            Modifier.widthIn(max = 310.dp)
+                .shadow(3.dp, shape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E))
+                .background(bg, shape).border(1.5.dp, line, shape).padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = cs.primary, modifier = Modifier.padding(bottom = 4.dp)) }
-            SelectionContainer { Text(m.text, color = if (m.error) cs.onErrorContainer else cs.onSurface) }
+            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = cs.primary, fontWeight = FontWeight.Bold) }
+            SelectionContainer { Text(m.text, style = MaterialTheme.typography.bodyLarge, color = if (m.error) cs.onErrorContainer else cs.onSurface) }
         }
     }
 }

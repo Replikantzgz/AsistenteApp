@@ -4,7 +4,7 @@ App nativa (Kotlin + Jetpack Compose). Sin servidor: todo ocurre entre el móvil
 
 ## Interfaz
 
-Aspecto de Game Boy Color con tema Pokémon, sobre fondo claro: cabecera roja de Pokédex con su lente azul, cuadros blancos con borde grueso, títulos en fuente pixel e ilustraciones propias del proyecto. Barra inferior: **Correo (Dragonite) · Agenda (Blastoise) · ASISTENTE (Pikachu, centro, grande) · Notas (Psyduck) · Contactos (Lapras)**. Ajustes (los engranajes) y Drive están en la cabecera del asistente. El icono de la app es la Pokéball con Pikachu.
+Tema Pokémon sobre fondo claro: cabecera roja de Pokédex con degradado y lente brillante, tarjetas blancas con sombra suave, barra inferior flotante con la pestaña activa subrayada, tipografía jerarquizada y una textura de iconos de juego casi invisible (`tools/make_bg.py`). Barra inferior: **Correo (Dragonite) · Agenda (Blastoise) · ASISTENTE (Pikachu, centro, grande) · Notas (Psyduck) · Contactos (Lapras)**. Ajustes (los engranajes) y Drive están en la cabecera del asistente. El icono de la app es la Pokéball con Pikachu.
 
 Las ilustraciones se procesan con `python3 tools/process_art.py <7 imágenes>` (recorta, quita el fondo y genera los recursos).
 

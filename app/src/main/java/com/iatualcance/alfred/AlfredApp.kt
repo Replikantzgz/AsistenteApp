@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
+import java.io.File
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -204,6 +205,25 @@ class Services(private val app: Application) {
 
     private suspend fun backupId(): String? =
         google.listFiles(google.folder(null)).firstOrNull { it.name == "Copia de seguridad Alfred.json" }?.id
+
+    /** Borra la copia de seguridad que Alfred guardó en Drive. Devuelve false si no había. */
+    suspend fun deleteDriveBackup(): Boolean {
+        val f = google.listFiles(google.folder(null)).firstOrNull { it.name == "Copia de seguridad Alfred.json" } ?: return false
+        google.deleteFile(f.id); return true
+    }
+
+    /** Copia de todos los datos en un fichero JSON temporal, lista para compartir. */
+    suspend fun exportFile(): File = withContext(Dispatchers.IO) {
+        File(File(app.cacheDir, "export").apply { mkdirs() }, "alfred-datos.json").apply { writeText(store.exportAll()) }
+    }
+
+    /** "Borrar mi cuenta": retira los permisos de Google, cancela los avisos y borra todos los datos del móvil. */
+    suspend fun deleteAccountAndData() {
+        runCatching { disconnect() }
+        reminders.apply(emptyList())
+        updater.cleanup()
+        wipe()
+    }
 
     fun wipe() { store.deleteEverything(); settings.clear() }
 }
