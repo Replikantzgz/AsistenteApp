@@ -1,60 +1,37 @@
-name: Build APK
+name: Compilar APK
 
 on:
   push:
-    branches: [master, main]
+    branches: [main, master, "claude/**"]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Instalar dependencias
-        run: npm ci
-
-      - name: Crear directorio out/ para Capacitor
-        # La app usa Vercel como servidor remoto, no necesita build local
-        # Capacitor solo necesita que exista el webDir para hacer sync
-        run: mkdir -p out && echo "<html><body>app</body></html>" > out/index.html
-
-      - name: Sincronizar plugins de Capacitor
-        run: npx cap sync android --inline
-
-      - name: Configurar Java 17
-        uses: actions/setup-java@v4
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v4
+      # Secretos del repositorio (Settings → Secrets and variables → Actions):
+      #   ALFRED_KEYSTORE_BASE64  = contenido de alfred.jks en base64
+      #   ALFRED_PASSWORD         = contraseña de la firma
+      # Sin ellos el APK se firma con una clave de depuración y Google no lo reconocerá.
+      - name: Preparar firma
+        env:
+          KS: ${{ secrets.ALFRED_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KS" ]; then mkdir -p keystore && echo "$KS" | base64 -d > keystore/alfred.jks; fi
+      - name: Tests y APK
+        env:
+          ALFRED_FILE: keystore/alfred.jks
+          ALFRED_PASSWORD: ${{ secrets.ALFRED_PASSWORD }}
+        run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+      - name: Renombrar
+        run: cp app/build/outputs/apk/release/app-release.apk Alfred.apk
+      - uses: actions/upload-artifact@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-${{ hashFiles('android/**/*.gradle*') }}
-          restore-keys: gradle-
-
-      - name: Dar permisos a Gradle
-        run: chmod +x android/gradlew
-
-      - name: Build APK debug
-        run: ./gradlew assembleDebug
-        working-directory: android
-
-      - name: Subir APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Alfred-debug-${{ github.run_number }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          name: Alfred-apk
+          path: Alfred.apk
