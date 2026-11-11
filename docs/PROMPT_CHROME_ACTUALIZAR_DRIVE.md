@@ -21,6 +21,8 @@ No cambies nada más. No crees claves ni clientes nuevos. Dime al terminar qué 
 
 ## Después, en el móvil
 
+El resto de la app (Agenda, Correo, Contactos…) funciona **sin** este permiso. Solo se pide al entrar en la pestaña Drive.
+
 Abre Alfred. Te pedirá aceptar el permiso nuevo (una vez): marca todas las casillas. También puedes ir a Drive → «Conceder permiso»
 o a Ajustes → Cambiar de cuenta.
 

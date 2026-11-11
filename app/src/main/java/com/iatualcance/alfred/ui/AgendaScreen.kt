@@ -39,6 +39,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -63,7 +64,8 @@ import java.time.format.DateTimeFormatter
 
 private val dayFmt = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Util.ES)
 private val monthFmt = DateTimeFormatter.ofPattern("MMMM yyyy", Util.ES)
-private val monthShort = DateTimeFormatter.ofPattern("MMM yyyy", Util.ES)
+private val shortDay = DateTimeFormatter.ofPattern("d MMM", Util.ES)
+private val shortDayYear = DateTimeFormatter.ofPattern("d MMM yyyy", Util.ES)
 private val hm = DateTimeFormatter.ofPattern("HH:mm")
 private val shortDate = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Util.ES)
 
@@ -71,52 +73,83 @@ private val shortDate = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Util.ES)
 fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawable.art_agenda) {
     val sv = LocalServices.current
     val ui = LocalUi.current
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    var anchor by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }      // día de referencia
+    var view by rememberSaveable { mutableIntStateOf(2) }                              // 0 día · 1 semana · 2 mes
     var events by remember { mutableStateOf<List<CalEvent>?>(null) }
     var error by remember { mutableStateOf<String?>(null) }
     var reload by remember { mutableIntStateOf(0) }
     var editing by remember { mutableStateOf<CalEvent?>(null) }
     var creating by remember { mutableStateOf(false) }
 
-    LaunchedEffect(ui.calendarDate) { ui.calendarDate?.let { month = YearMonth.from(it); ui.calendarDate = null } }
+    val date = LocalDate.parse(anchor)
+    val monday = date.with(java.time.DayOfWeek.MONDAY)
+    val (from, to) = when (view) {
+        0 -> date to date.plusDays(1)
+        1 -> monday to monday.plusDays(7)
+        else -> date.withDayOfMonth(1).let { it to it.plusMonths(1) }
+    }
+    fun step(n: Int) { anchor = when (view) { 0 -> date.plusDays(n.toLong()); 1 -> date.plusWeeks(n.toLong()); else -> date.withDayOfMonth(1).plusMonths(n.toLong()) }.toString() }
+    val title = when (view) {
+        0 -> date.format(dayFmt)
+        1 -> monday.format(shortDay) + " – " + monday.plusDays(6).format(shortDayYear)
+        else -> date.format(monthFmt)
+    }.replaceFirstChar { it.uppercase() }
 
-    LaunchedEffect(month, reload) {
+    LaunchedEffect(ui.calendarDate) { ui.calendarDate?.let { anchor = it.toString(); view = 0; ui.calendarDate = null } }
+
+    LaunchedEffect(anchor, view, reload) {
         events = null; error = null
         val zone = ZoneId.systemDefault()
         try {
-            events = sv.google.listEvents(month.atDay(1).atStartOfDay(zone), month.plusMonths(1).atDay(1).atStartOfDay(zone))
+            events = sv.google.listEvents(from.atStartOfDay(zone), to.atStartOfDay(zone))
         } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) { error = e.message ?: e.toString() }
     }
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            PixelBar(
-                title = { Text(month.format(monthShort).uppercase(), maxLines = 1) },
-                actions = {
-                    IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Mes anterior") }
-                    IconButton(onClick = { month = YearMonth.now() }) { Icon(Icons.Default.Today, "Hoy") }
-                    IconButton(onClick = { month = month.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "Mes siguiente") }
-                },
-            )
+            PixelBar(title = { Text("AGENDA") })
+
+            // Navegación por fechas, justo bajo la cabecera
+            Row(Modifier.fillMaxWidth().padding(start = 4.dp, end = 12.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = { step(-1) }) { Icon(Icons.Default.ChevronLeft, "Anterior") }
+                Text(title, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                IconButton(onClick = { step(1) }) { Icon(Icons.Default.ChevronRight, "Siguiente") }
+                PillChip("Hoy", { anchor = LocalDate.now().toString() })
+            }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                listOf("Día", "Semana", "Mes").forEachIndexed { i, t ->
+                    androidx.compose.material3.FilterChip(view == i, { view = i }, { Text(t, fontWeight = FontWeight.SemiBold) }, shape = androidx.compose.foundation.shape.RoundedCornerShape(50), modifier = Modifier.weight(1f))
+                }
+            }
+
             val evs = events
             when {
                 error != null -> ErrorBox(error!!) { reload++ }
                 evs == null -> Loading()
-                evs.isEmpty() -> ArtHint(com.iatualcance.alfred.R.drawable.art_agenda, "No hay eventos este mes.\nPulsa + para crear uno o pídeselo al asistente.")
+                evs.isEmpty() && view != 1 -> ArtHint(com.iatualcance.alfred.R.drawable.art_agenda, if (view == 0) "No tienes nada este día.\nPulsa + para crear un evento o pídeselo al asistente." else "No hay eventos este mes.\nPulsa + para crear uno o pídeselo al asistente.")
                 else -> {
                     val today = LocalDate.now()
-                    // En el mes actual se ocultan los días ya pasados.
-                    val shown = if (month == YearMonth.now()) evs.filter { !it.end.toLocalDate().isBefore(today) }.ifEmpty { evs } else evs
-                    val byDay = shown.groupBy { it.start.toLocalDate() }.toSortedMap()
-                    LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 88.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        byDay.forEach { (day, list) ->
-                            item(key = day.toString()) {
+                    val byDay = evs.groupBy { it.start.toLocalDate() }
+                    val days = when (view) {
+                        0 -> listOf(date)
+                        1 -> (0L..6L).map { monday.plusDays(it) }
+                        else -> {
+                            // En el mes actual se ocultan los días ya pasados.
+                            val all = byDay.keys.sorted()
+                            if (date.year == today.year && date.month == today.month) all.filter { !it.isBefore(today) }.ifEmpty { all } else all
+                        }
+                    }
+                    LazyColumn(contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = 96.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        days.forEach { day ->
+                            if (view != 0) item(key = "h$day") {
                                 Text(
                                     (if (day == today) "Hoy · " else "") + day.format(dayFmt).replaceFirstChar { it.uppercase() },
                                     color = if (day == today) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                                     style = MaterialTheme.typography.labelLarge, modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
                                 )
                             }
+                            val list = byDay[day].orEmpty()
+                            if (list.isEmpty() && view == 1) item(key = "e$day") { Text("Sin eventos", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.outline, modifier = Modifier.padding(start = 4.dp)) }
                             list.forEach { e -> item(key = e.id + e.start) { EventRow(e) { editing = e } } }
                         }
                     }
@@ -127,7 +160,7 @@ fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawab
     }
 
     if (creating || editing != null) EventDialog(
-        event = editing, defaultDay = if (month == YearMonth.now()) LocalDate.now() else month.atDay(1),
+        event = editing, defaultDay = if (view == 2 && date.month == LocalDate.now().month && date.year == LocalDate.now().year) LocalDate.now() else date,
         onDismiss = { creating = false; editing = null },
         onSave = { f ->
             val ev = editing

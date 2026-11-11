@@ -26,6 +26,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -147,8 +148,10 @@ private fun RowScope.CenterItem(active: Boolean, onClick: () -> Unit) {
 @Composable
 fun PixelBar(
     title: @Composable () -> Unit = {},
-    navigationIcon: @Composable () -> Unit = {},
+    navigationIcon: (@Composable () -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit = {},
+    /** Buscar y Ajustes, iguales en todas las pestañas. Se ocultan en pantallas con flecha de volver. */
+    global: Boolean = navigationIcon == null,
 ) {
     Column(Modifier.fillMaxWidth().statusBarsPadding()) {
         Box(
@@ -158,16 +161,27 @@ fun PixelBar(
             Box(Modifier.fillMaxWidth().height(30.dp).background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.Transparent))))
             CompositionLocalProvider(LocalContentColor provides Color.White) {
                 Row(Modifier.fillMaxWidth().height(64.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    navigationIcon()
+                    navigationIcon?.invoke()
                     Lens()
                     Spacer(Modifier.width(12.dp))
-                    Box(Modifier.weight(1f)) { ProvideTextStyle(MaterialTheme.typography.titleLarge) { title() } }
+                    Box(Modifier.weight(1f)) { ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 19.sp)) { title() } }
                     actions()
+                    if (global) GlobalActions()
                 }
             }
             Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(Color(0x55801510)))
         }
     }
+}
+
+/** Buscar y Ajustes: las mismas acciones a la derecha de la cabecera en todas las pestañas. */
+@Composable
+private fun GlobalActions() {
+    val ui = LocalUi.current
+    androidx.compose.material3.IconButton(onClick = { ui.overlay = "search" }) {
+        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Search, "Buscar", tint = Color.White)
+    }
+    androidx.compose.material3.IconButton(onClick = { ui.overlay = "settings" }) { Art(R.drawable.art_ajustes, 34.dp, "Ajustes") }
 }
 
 /** Lente azul brillante con tres luces (roja, amarilla, verde), como la cabecera de un Pokédex. */

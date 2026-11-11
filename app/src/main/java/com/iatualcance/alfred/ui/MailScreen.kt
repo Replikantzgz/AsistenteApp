@@ -102,7 +102,7 @@ private fun MailInner() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawa
         ui.mailOpenId != null -> ReadMail(ui.mailOpenId!!, onClose = { ui.mailOpenId = null }, onChanged = { reload++ })
         else -> Box(Modifier.fillMaxSize()) {
             Column {
-                PixelBar(title = { Text("CORREO Y CONTACTOS") })
+                PixelBar(title = { Text("CORREO") })
                 MailTabs()
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(search, { search = it }, Modifier.weight(1f), placeholder = { Text("Buscar en el correo") }, singleLine = true,
@@ -309,7 +309,7 @@ private fun ComposeMail(initial: MailDraft, onClose: () -> Unit, onSent: () -> U
 fun MailScreen() {
     val ui = LocalUi.current
     if (ui.mailSub == 1 && ui.compose == null && ui.mailOpenId == null) Column(Modifier.fillMaxSize()) {
-        PixelBar(title = { Text("CORREO Y CONTACTOS") })
+        PixelBar(title = { Text("CORREO") })
         MailTabs()
         ContactsScreen()
     } else MailInner()

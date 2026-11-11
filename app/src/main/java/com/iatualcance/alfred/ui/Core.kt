@@ -197,7 +197,7 @@ val LocalServices = staticCompositionLocalOf<Services> { error("sin Services") }
 
 /** Devuelve una función que conecta la cuenta de Google (mostrando la pantalla de permisos si hace falta). */
 @Composable
-fun rememberGoogleConnect(onDone: (Throwable?) -> Unit = {}): () -> Unit {
+fun rememberGoogleConnect(full: Boolean = false, onDone: (Throwable?) -> Unit = {}): () -> Unit {
     val sv = LocalServices.current
     val ui = LocalUi.current
     val scope = rememberCoroutineScope()
@@ -215,7 +215,7 @@ fun rememberGoogleConnect(onDone: (Throwable?) -> Unit = {}): () -> Unit {
     return {
         scope.launch {
             try {
-                sv.auth.token(); sv.loadProfile(); finish(null)
+                sv.auth.token(full); sv.loadProfile(); finish(null)
             } catch (e: ConsentRequired) {
                 launcher.launch(IntentSenderRequest.Builder(e.pendingIntent.intentSender).build())
             } catch (e: Exception) {
@@ -239,7 +239,9 @@ fun Hint(text: String) = Text(text, style = MaterialTheme.typography.bodyMedium,
 
 @Composable
 fun ErrorBox(msg: String, onRetry: () -> Unit) = Centered {
+    val connect = rememberGoogleConnect { onRetry() }
     Hint(msg)
+    if ("Conecta tu cuenta de Google" in msg) AppButton(onClick = connect) { Text("Conectar con Google") }
     Button(onClick = onRetry) { Icon(Icons.Default.Refresh, null); Spacer(Modifier.width(8.dp)); Text("Reintentar") }
 }
 

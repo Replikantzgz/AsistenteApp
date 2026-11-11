@@ -193,8 +193,6 @@ fun ChatScreen(vm: ChatViewModel) {
         PixelBar(
             title = { Text("ALFRED") },
             actions = {
-                IconButton(onClick = { ui.overlay = "search" }) { Icon(Icons.Default.Search, "Buscar", tint = Color.White) }
-                IconButton(onClick = { ui.overlay = "settings" }) { Art(R.drawable.art_ajustes, 34.dp, "Ajustes") }
                 if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Color.White) }
             },
         )

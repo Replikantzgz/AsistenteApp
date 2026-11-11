@@ -85,13 +85,13 @@ class GoogleApi(private val auth: GoogleAuth) {
 
     private suspend fun call(
         method: String, url: String, query: Map<String, String?> = emptyMap(),
-        body: JsonElement? = null, rawBody: RequestBody? = null,
+        body: JsonElement? = null, rawBody: RequestBody? = null, full: Boolean = false,
     ): JsonObject = withContext(Dispatchers.IO) {
         val u = url.toHttpUrl().newBuilder().apply { query.forEach { (k, v) -> if (v != null) addQueryParameter(k, v) } }.build()
         val rb = rawBody ?: body?.toString()?.toRequestBody(Http.JSON_TYPE)
             ?: if (method == "POST" || method == "PATCH") ByteArray(0).toRequestBody(null) else null
         repeat(2) { attempt ->
-            val req = Request.Builder().url(u).method(method, rb).header("Authorization", "Bearer " + auth.token()).build()
+            val req = Request.Builder().url(u).method(method, rb).header("Authorization", "Bearer " + auth.token(full)).build()
             Http.client.newCall(req).execute().use { resp ->
                 val text = resp.body?.string().orEmpty()
                 if (resp.isSuccessful) {
@@ -322,7 +322,7 @@ class GoogleApi(private val auth: GoogleAuth) {
         )).arr("files").map { parseFile(it.jsonObject) }
 
     /** Sube un fichero. Si [existingId] no es nulo, sustituye su contenido en vez de crear otro. */
-    suspend fun upload(bytes: ByteArray, name: String, mime: String, parent: String, existingId: String? = null, convertTo: String? = null): DriveFile {
+    suspend fun upload(bytes: ByteArray, name: String, mime: String, parent: String, existingId: String? = null, convertTo: String? = null, full: Boolean = false): DriveFile {
         val meta = buildJsonObject {
             put("name", name)
             convertTo?.let { put("mimeType", it) }
@@ -336,9 +336,9 @@ class GoogleApi(private val auth: GoogleAuth) {
         val base = "https://www.googleapis.com/upload/drive/v3/files"
         val q = mapOf("uploadType" to "multipart", "fields" to fileFields)
         return try {
-            parseFile(if (existingId == null) call("POST", base, q, rawBody = multi) else call("PATCH", "$base/$existingId", q, rawBody = multi))
+            parseFile(if (existingId == null) call("POST", base, q, rawBody = multi, full = full) else call("PATCH", "$base/$existingId", q, rawBody = multi, full = full))
         } catch (e: ApiError) {
-            if (existingId != null && e.code == 404) upload(bytes, name, mime, parent, null) else throw e
+            if (existingId != null && e.code == 404) upload(bytes, name, mime, parent, null, convertTo, full) else throw e
         }
     }
 
@@ -359,7 +359,7 @@ class GoogleApi(private val auth: GoogleAuth) {
         return call("GET", dr, driveAll + mapOf(
             "q" to parts.joinToString(" and "), "fields" to "files($fileFields)", "pageSize" to "200",
             "orderBy" to if (query.isNullOrBlank()) "folder,name_natural" else "modifiedTime desc",
-        )).arr("files").map { parseFile(it.jsonObject) }
+        ), full = true).arr("files").map { parseFile(it.jsonObject) }
     }
 
     suspend fun createFolder(name: String, parent: String?): DriveFile = createDriveItem(name, DriveFile.FOLDER, parent)
@@ -369,19 +369,19 @@ class GoogleApi(private val auth: GoogleAuth) {
         call("POST", dr, driveAll + mapOf("fields" to fileFields), buildJsonObject {
             put("name", name); put("mimeType", mime)
             if (parent != null) put("parents", buildJsonArray { add(JsonPrimitive(parent)) })
-        })
+        }, full = true)
     )
 
     /** Crea un documento de Google con texto inicial (se convierte al subirlo). */
     suspend fun createDocWithText(name: String, text: String, parent: String): DriveFile =
-        upload(text.toByteArray(), name, "text/plain", parent, null, convertTo = DriveFile.DOC)
+        upload(text.toByteArray(), name, "text/plain", parent, null, convertTo = DriveFile.DOC, full = true)
 
-    suspend fun trash(id: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("trashed", true) }) }
+    suspend fun trash(id: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("trashed", true) }, full = true) }
 
-    suspend fun rename(id: String, name: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("name", name) }) }
+    suspend fun rename(id: String, name: String) { call("PATCH", "$dr/$id", driveAll + mapOf("fields" to "id"), buildJsonObject { put("name", name) }, full = true) }
 
     suspend fun permissions(id: String): List<DrivePerm> =
-        call("GET", "$dr/$id/permissions", driveAll + mapOf("fields" to "permissions(id,type,role,emailAddress,displayName)")).arr("permissions").map {
+        call("GET", "$dr/$id/permissions", driveAll + mapOf("fields" to "permissions(id,type,role,emailAddress,displayName)"), full = true).arr("permissions").map {
             val p = it.jsonObject
             DrivePerm(p.str("id").orEmpty(), p.str("emailAddress").orEmpty(), p.str("displayName") ?: p.str("emailAddress").orEmpty(), p.str("role").orEmpty(), p.str("type").orEmpty())
         }
@@ -390,10 +390,10 @@ class GoogleApi(private val auth: GoogleAuth) {
     suspend fun share(id: String, email: String, role: String, message: String? = null) {
         call("POST", "$dr/$id/permissions", driveAll + mapOf("sendNotificationEmail" to "true", "emailMessage" to message), buildJsonObject {
             put("type", "user"); put("role", role); put("emailAddress", email.trim())
-        })
+        }, full = true)
     }
 
-    suspend fun unshare(id: String, permissionId: String) { call("DELETE", "$dr/$id/permissions/$permissionId", driveAll) }
+    suspend fun unshare(id: String, permissionId: String) { call("DELETE", "$dr/$id/permissions/$permissionId", driveAll, full = true) }
 
     fun forgetCache() = folderCache.clear()
 }

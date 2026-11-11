@@ -102,7 +102,7 @@ private fun DriveBrowser(reloadKey: Int, requestReload: () -> Unit) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     val ctx = LocalContext.current
-    val connect = rememberGoogleConnect { requestReload() }
+    val connect = rememberGoogleConnect(full = true) { requestReload() }
 
     var mode by rememberSaveable { mutableIntStateOf(0) }              // 0 Mi unidad · 1 Compartido conmigo · 2 Proyectos
     var stack by remember { mutableStateOf(listOf<Crumb>()) }
@@ -132,7 +132,7 @@ private fun DriveBrowser(reloadKey: Int, requestReload: () -> Unit) {
                 val name = cr.query(uri, null, null, null, null)?.use { c -> if (c.moveToFirst()) c.getString(c.getColumnIndexOrThrow(OpenableColumns.DISPLAY_NAME)) else null } ?: "archivo"
                 val bytes = withContext(Dispatchers.IO) { cr.openInputStream(uri)!!.use { it.readBytes() } }
                 if (bytes.size > 25 * 1024 * 1024) throw Exception("«$name» pesa más de 25 MB. Súbelo desde la app de Drive.")
-                sv.google.upload(bytes, name, cr.getType(uri) ?: "application/octet-stream", parent)
+                sv.google.upload(bytes, name, cr.getType(uri) ?: "application/octet-stream", parent, full = true)
             }
             ui.say(if (uris.size == 1) "Archivo subido" else "${uris.size} archivos subidos"); reloadNow()
         }
@@ -175,7 +175,7 @@ private fun DriveBrowser(reloadKey: Int, requestReload: () -> Unit) {
             val list = files
             val err = error
             when {
-                err != null -> if (err is ConsentRequired || "permisos" in (err.message ?: "").lowercase()) Centered {
+                err != null -> if (err is ConsentRequired || "permiso de drive" in (err.message ?: "").lowercase() || "permisos" in (err.message ?: "").lowercase()) Centered {
                     Art(R.drawable.art_drive, 110.dp)
                     Text("Falta un permiso de Google", style = MaterialTheme.typography.titleSmall)
                     Hint("Para ver y compartir todo tu Drive, Alfred necesita el permiso de Drive completo. Concédelo una vez.")
