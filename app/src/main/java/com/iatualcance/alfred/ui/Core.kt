@@ -117,7 +117,9 @@ class AppUi(val snack: SnackbarHostState, private val scope: CoroutineScope) {
 
     fun say(msg: String) { scope.launch { snack.currentSnackbarData?.dismiss(); snack.showSnackbar(msg) } }
 
-    fun fail(e: Throwable) = say(if (e is ConsentRequired) "Conecta tu cuenta de Google en Ajustes (engranaje de la pantalla de Alfred)" else (e.message ?: e.toString()))
+    fun fail(e: Throwable) { if (e is com.iatualcance.alfred.QuotaExceeded) overlay = "premium" else failMsg(e) }
+
+    private fun failMsg(e: Throwable) = say(if (e is ConsentRequired) "Conecta tu cuenta de Google en Ajustes (engranaje de la pantalla de Alfred)" else (e.message ?: e.toString()))
 
     /** Ejecuta una operación mostrando "Trabajando…" y enseñando el error si falla. */
     fun run(label: String, block: suspend () -> Unit) {

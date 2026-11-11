@@ -28,6 +28,10 @@ class Settings(ctx: Context) {
     val notifyEvents = MutableStateFlow(p.getBoolean("notifyEvents", true))
     val notifyTasks = MutableStateFlow(p.getBoolean("notifyTasks", true))
     val leadMin = MutableStateFlow(p.getInt("leadMin", 15))
+    val license = MutableStateFlow(p.getString("license", "") ?: "")
+    private val aiDay get() = p.getString("aiDay", "") ?: ""
+    /** Mensajes de IA usados hoy. */
+    val aiToday = MutableStateFlow(if (aiDay == java.time.LocalDate.now().toString()) p.getInt("aiCount", 0) else 0)
 
     fun setAccount(a: Account?) {
         account.value = a
@@ -47,7 +51,14 @@ class Settings(ctx: Context) {
     fun setNotifyEvents(v: Boolean) { notifyEvents.value = v; p.edit().putBoolean("notifyEvents", v).apply() }
     fun setNotifyTasks(v: Boolean) { notifyTasks.value = v; p.edit().putBoolean("notifyTasks", v).apply() }
     fun setLeadMin(v: Int) { leadMin.value = v; p.edit().putInt("leadMin", v).apply() }
-    fun clear() { p.edit().clear().apply(); account.value = null; apiKey.value = ""; model.value = DEFAULT_MODEL }
+    fun setLicense(code: String) { license.value = code; p.edit().putString("license", code).apply() }
+    fun addAiUse() {
+        val today = java.time.LocalDate.now().toString()
+        val n = (if (aiDay == today) p.getInt("aiCount", 0) else 0) + 1
+        p.edit().putString("aiDay", today).putInt("aiCount", n).apply(); aiToday.value = n
+    }
+    fun aiUsedToday(): Int = if (aiDay == java.time.LocalDate.now().toString()) p.getInt("aiCount", 0) else 0
+    fun clear() { val keep = license.value; p.edit().clear().putString("license", keep).apply(); account.value = null; apiKey.value = ""; model.value = DEFAULT_MODEL }
 }
 
 private object Crypto {

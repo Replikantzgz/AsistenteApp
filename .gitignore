@@ -9,3 +9,5 @@ captures/
 keystore/
 keystore.properties
 *.jks
+*.pem
+alfred_license_private*

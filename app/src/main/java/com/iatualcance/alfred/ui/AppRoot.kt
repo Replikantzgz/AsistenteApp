@@ -58,6 +58,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
         ui.run("Guardando en Alfred…") { handleShared(i, sv, ui) }
     }
     // Alfred (el asistente) manda a la interfaz: abrir pantallas, notas, redactar…
+    LaunchedEffect(chat.needsPremium) { if (chat.needsPremium) { ui.overlay = "premium"; chat.needsPremium = false } }
     LaunchedEffect(chat.nav) { chat.nav?.let { ui.navigate(it); chat.nav = null } }
 
     CompositionLocalProvider(LocalUi provides ui) {

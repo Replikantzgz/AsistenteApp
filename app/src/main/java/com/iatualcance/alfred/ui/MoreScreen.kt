@@ -67,6 +67,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -74,6 +75,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.iatualcance.alfred.BuildConfig
+import com.iatualcance.alfred.billing.BillingConfig
 import com.iatualcance.alfred.google.Contact
 import com.iatualcance.alfred.google.DriveFile
 import kotlinx.coroutines.launch
@@ -85,10 +87,10 @@ fun OverlayScreen(which: String) {
     BackHandler { ui.overlay = null }
     Column(Modifier.fillMaxSize()) {
         PixelBar(
-            title = { Text(if (which == "drive") "DRIVE" else "AJUSTES") },
+            title = { Text(when (which) { "drive" -> "DRIVE"; "premium" -> "PREMIUM"; else -> "AJUSTES" }) },
             navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Ink) } },
         )
-        if (which == "drive") DriveScreen() else SettingsScreen()
+        when (which) { "drive" -> DriveScreen(); "premium" -> PremiumScreen(); else -> SettingsScreen() }
     }
 }
 
@@ -307,6 +309,12 @@ private fun SettingsScreen() {
             }
             Hint("La clave se guarda cifrada solo en este móvil y se usa únicamente para hablar con Gemini.")
         }
+        if (BillingConfig.ENABLED) Section("Plan") {
+            val lic by sv.settings.license.collectAsStateCompat()
+            val data = sv.licenseData(lic)
+            Text(if (data != null) "Premium activo" + (data.x?.let { " hasta $it" } ?: " · de por vida") else "Plan gratuito", fontWeight = FontWeight.Medium)
+            OutlinedButton(onClick = { ui.overlay = "premium" }) { Text(if (data != null) "Ver mi plan" else "Ver Premium") }
+        }
         Section("Notificaciones") {
             val notifyEvents by sv.settings.notifyEvents.collectAsStateCompat()
             val notifyTasks by sv.settings.notifyTasks.collectAsStateCompat()
@@ -373,3 +381,58 @@ private fun Section(title: String, content: @Composable () -> Unit) =
             content()
         }
     }
+
+
+// =============================================================== Premium (solo accesible con BillingConfig.ENABLED)
+@Composable
+private fun PremiumScreen() {
+    val sv = LocalServices.current
+    val ui = LocalUi.current
+    val ctx = LocalContext.current
+    val lic by sv.settings.license.collectAsStateCompat()
+    val used by sv.settings.aiToday.collectAsStateCompat()
+    val data = sv.licenseData(lic)
+    var code by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        Surface(color = MaterialTheme.colorScheme.primaryContainer, shape = PxShape, modifier = Modifier.fillMaxWidth().pxBorder(Ink)) {
+            Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                PixelIcon(com.iatualcance.alfred.R.drawable.px_alfred, 72.dp)
+                Text(if (data != null) "PREMIUM ACTIVO" else "ALFRED PREMIUM", style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+                if (data != null) Text(data.x?.let { "Válido hasta $it" } ?: "De por vida · ${data.e}", style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        if (data == null) {
+            Section("Qué incluye") {
+                listOf("Mensajes ilimitados con Alfred", "Transcripción de audios y lectura de facturas sin límite", "Todas las funciones futuras").forEach { Text("✔  $it") }
+                Text("Plan gratuito: ${BillingConfig.FREE_AI_PER_DAY} usos de IA al día · hoy llevas $used.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            Section("Elige tu plan") {
+                PlanButton("Mensual", BillingConfig.PRICE_MONTHLY, BillingConfig.CHECKOUT_MONTHLY_URL)
+                PlanButton("Anual", BillingConfig.PRICE_YEARLY, BillingConfig.CHECKOUT_YEARLY_URL)
+                Hint("Tras pagar recibirás un código por correo. Pégalo aquí abajo.")
+            }
+        }
+        Section(if (data != null) "Cambiar de código" else "Ya tengo un código") {
+            OutlinedTextField(code, { code = it; error = null }, label = { Text("Código ALFRED1.…") }, modifier = Modifier.fillMaxWidth(), isError = error != null, supportingText = { error?.let { Text(it) } })
+            Button(enabled = code.isNotBlank(), onClick = {
+                val err = sv.activateLicense(code)
+                if (err == null) { code = ""; ui.say("¡Premium activado! Gracias.") } else error = err
+            }) { Text("Activar") }
+            if (BillingConfig.SUPPORT_EMAIL.isNotBlank()) TextButton(onClick = { ctx.openUrl("mailto:${BillingConfig.SUPPORT_EMAIL}") }) { Text("Escribir a soporte") }
+        }
+    }
+}
+
+@Composable
+private fun PlanButton(name: String, price: String, url: String) {
+    val ctx = LocalContext.current
+    Row(Modifier.fillMaxWidth().pxBorder().clickable(enabled = url.isNotBlank()) { ctx.openUrl(url) }.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(name, fontWeight = FontWeight.Bold)
+            Text(if (url.isBlank()) "Próximamente" else price, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        if (url.isNotBlank()) Text("COMPRAR", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+    }
+}

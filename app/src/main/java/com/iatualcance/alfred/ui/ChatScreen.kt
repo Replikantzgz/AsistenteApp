@@ -71,6 +71,8 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import coil.compose.AsyncImage
 import com.iatualcance.alfred.AlfredApp
+import com.iatualcance.alfred.QuotaExceeded
+import com.iatualcance.alfred.billing.BillingConfig
 import com.iatualcance.alfred.R
 import com.iatualcance.alfred.data.ChatMsg
 import kotlinx.coroutines.CancellationException
@@ -88,6 +90,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     var pending by mutableStateOf<PendingConfirm?>(null)
     /** Orden de navegación que Alfred ha dado; la consume AppRoot. */
     var nav by mutableStateOf<com.iatualcance.alfred.ai.Nav?>(null)
+    /** Se pone a true cuando se agota la cuota gratis; AppRoot abre la pantalla Premium. */
+    var needsPremium by mutableStateOf(false)
 
     fun send(text: String, image: Uri?) {
         if (busy || (text.isBlank() && image == null)) return
@@ -102,15 +106,18 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                         cr.openInputStream(uri)!!.use { it.readBytes() } to (cr.getType(uri) ?: "image/jpeg")
                     }
                 }
-                val reply = sv.assistant.ask(history, text, img) { title, detail ->
+                val reply = sv.metered { sv.assistant.ask(history, text, img) { title, detail ->
                     val d = CompletableDeferred<Boolean>()
                     pending = PendingConfirm(title, detail, d)
                     try { d.await() } finally { pending = null }
-                }
+                } }
                 sv.store.addChat(ChatMsg(fromUser = false, text = reply.text, actions = reply.actions))
                 nav = reply.nav.lastOrNull()
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: QuotaExceeded) {
+                sv.store.addChat(ChatMsg(fromUser = false, text = e.message.orEmpty(), error = true))
+                needsPremium = true
             } catch (e: Exception) {
                 val msg = if (e is ConsentRequired) "Para esto necesito tu cuenta de Google. Conéctala en Ajustes (el engranaje de la pantalla de Alfred)." else (e.message ?: e.toString())
                 sv.store.addChat(ChatMsg(fromUser = false, text = msg, error = true))
@@ -167,6 +174,15 @@ fun ChatScreen(vm: ChatViewModel) {
             },
         )
 
+        if (BillingConfig.ENABLED) {
+            val lic by sv.settings.license.collectAsStateCompat()
+            val used by sv.settings.aiToday.collectAsStateCompat()
+            if (!sv.isPremium(lic)) Text(
+                "Te quedan ${(BillingConfig.FREE_AI_PER_DAY - used).coerceAtLeast(0)} mensajes gratis hoy · Ver Premium",
+                Modifier.fillMaxWidth().clickable { ui.overlay = "premium" }.padding(horizontal = 16.dp, vertical = 6.dp),
+                style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, textAlign = TextAlign.Center,
+            )
+        }
         if (key.isBlank()) Surface(
             color = MaterialTheme.colorScheme.primaryContainer, shape = PxShape,
             modifier = Modifier.padding(12.dp).fillMaxWidth().pxBorder(Gold).clickable { ui.overlay = "settings" },

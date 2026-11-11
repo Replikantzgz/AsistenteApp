@@ -21,6 +21,8 @@ import kotlinx.coroutines.sync.withLock
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
+class QuotaExceeded : Exception("Has agotado los mensajes gratis de hoy. Con Premium no hay límite.")
+
 class AlfredApp : Application() {
     lateinit var sv: Services
     override fun onCreate() {
@@ -98,6 +100,29 @@ class Services(private val app: Application) {
         }
     }
 
+    // ---- Premium (apagado mientras BillingConfig.ENABLED sea false: todo ilimitado)
+    /** Licencia válida y vigente, o null. */
+    fun licenseData(code: String = settings.license.value): com.iatualcance.alfred.billing.LicenseData? =
+        (com.iatualcance.alfred.billing.Licenses.verify(code) as? com.iatualcance.alfred.billing.LicenseResult.Valid)?.data
+
+    fun isPremium(code: String = settings.license.value): Boolean = !com.iatualcance.alfred.billing.BillingConfig.ENABLED || licenseData(code) != null
+
+    /** Devuelve null si el código se ha activado, o el motivo por el que no vale. */
+    fun activateLicense(code: String): String? = when (val r = com.iatualcance.alfred.billing.Licenses.verify(code)) {
+        is com.iatualcance.alfred.billing.LicenseResult.Valid -> { settings.setLicense(code.filterNot { it.isWhitespace() }); null }
+        is com.iatualcance.alfred.billing.LicenseResult.Invalid -> r.reason
+    }
+
+    fun aiLeftToday(): Int = (com.iatualcance.alfred.billing.BillingConfig.FREE_AI_PER_DAY - settings.aiUsedToday()).coerceAtLeast(0)
+
+    /** Ejecuta una operación con IA descontándola de la cuota diaria si el usuario no es Premium. */
+    suspend fun <T> metered(block: suspend () -> T): T {
+        if (!isPremium() && aiLeftToday() <= 0) throw QuotaExceeded()
+        val r = block()
+        if (com.iatualcance.alfred.billing.BillingConfig.ENABLED && !isPremium()) settings.addAiUse()
+        return r
+    }
+
     val hasAi get() = settings.apiKey.value.isNotBlank()
     val hasGoogle get() = settings.account.value != null
 
@@ -149,7 +174,7 @@ class Services(private val app: Application) {
         note = note.copy(attachments = note.attachments + atts)
         val forAi = atts.firstOrNull { it.mime.startsWith("image/") } ?: atts.firstOrNull()
         if (hasAi && forAi != null) runCatching {
-            val info = assistant.analyzeDocument(bytes(forAi), forAi.mime)
+            val info = metered { assistant.analyzeDocument(bytes(forAi), forAi.mime) }
             val tags = (note.tags + if (info.isInvoice) listOf("factura") else emptyList()).distinct()
             note = note.copy(
                 title = if (into == null || note.title.isBlank()) info.title else note.title,
@@ -162,7 +187,7 @@ class Services(private val app: Application) {
 
     /** Audio grabado, elegido o compartido → nota con la transcripción y el audio adjunto. */
     suspend fun audioToNote(att: Attachment, into: Note? = null): Note {
-        val text = gemini.transcribe(bytes(att), att.mime)
+        val text = metered { gemini.transcribe(bytes(att), att.mime) }
         val note = into ?: Note(title = "Nota de voz ${stamp()}", tags = listOf("audio"))
         val has = note.attachments.any { it.id == att.id }
         return store.upsertNote(note.copy(
