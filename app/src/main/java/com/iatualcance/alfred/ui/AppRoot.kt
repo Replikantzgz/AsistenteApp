@@ -14,6 +14,10 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextButton
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.iatualcance.alfred.update.UpdateState
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.Surface
+import kotlinx.coroutines.launch
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -50,6 +54,18 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
             androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED
         ) notifPermission.launch(android.Manifest.permission.POST_NOTIFICATIONS)
     }
+    // Actualizaciones: al abrir la app busca una versión nueva y, si la hay, la descarga y lanza el instalador.
+    val updateState by sv.updater.state.collectAsState()
+    LaunchedEffect(Unit) {
+        sv.updater.cleanup()
+        if (sv.settings.autoUpdate.value) sv.updater.check(install = true, quiet = true)
+    }
+    // Al volver de la pantalla de permisos de Android, reintenta.
+    androidx.lifecycle.compose.LifecycleResumeEffect(updateState) {
+        if (updateState is UpdateState.NeedsPermission && sv.updater.canInstall()) scope.launch { sv.updater.check(install = true) }
+        onPauseOrDispose {}
+    }
+    LaunchedEffect(updateState) { (updateState as? UpdateState.Failed)?.let { ui.say(it.message); sv.updater.state.value = UpdateState.Idle } }
     LaunchedEffect(routed) { routed?.let { ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(it)); route.value = null } }
 
     LaunchedEffect(incoming) {
@@ -81,6 +97,24 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
             }
         }
         ui.busy?.let { BusyDialog(it) }
+        (updateState as? UpdateState.NeedsPermission)?.let { st ->
+            AlertDialog(
+                onDismissRequest = { sv.updater.state.value = UpdateState.Idle },
+                title = { Text("Hay una versión nueva", style = MaterialTheme.typography.titleSmall) },
+                text = { Text("Alfred ${st.info.versionName} está disponible. Para instalarla solo, Alfred necesita permiso para instalar aplicaciones: activa «Permitir desde esta fuente» y vuelve.\n\n" + st.info.notes.take(300)) },
+                confirmButton = { TextButton(onClick = { sv.updater.openInstallPermission() }) { Text("ABRIR AJUSTES") } },
+                dismissButton = { TextButton(onClick = { sv.updater.state.value = UpdateState.Idle }) { Text("MÁS TARDE") } },
+            )
+        }
+        // Banner de progreso, sin bloquear la app
+        val msg = when (val st = updateState) {
+            is UpdateState.Downloading -> "Descargando Alfred ${st.info.versionName}… ${st.percent}%"
+            is UpdateState.Installing -> "Instalando Alfred ${st.info.versionName}…"
+            else -> null
+        }
+        if (msg != null) Box(Modifier.fillMaxSize().padding(top = 70.dp).statusBarsPadding(), contentAlignment = androidx.compose.ui.Alignment.TopCenter) {
+            Surface(color = Yellow, shape = PxShape, modifier = Modifier.pxBorder()) { Text(msg, Modifier.padding(horizontal = 14.dp, vertical = 8.dp), fontWeight = androidx.compose.ui.text.font.FontWeight.Bold) }
+        }
         chat.pending?.let { p ->
             AlertDialog(
                 onDismissRequest = { p.answer.complete(false) }, title = { Text(p.title, style = MaterialTheme.typography.titleSmall) },

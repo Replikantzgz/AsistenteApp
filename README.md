@@ -12,6 +12,10 @@ Las ilustraciones se procesan con `python3 tools/process_art.py <7 imágenes>` (
 
 **Alfred controla el resto de la app.** Además de actuar sobre Calendar, Gmail, Contactos, notas, tareas, plantillas y Drive (crear, editar y borrar), puede cambiar de pantalla («abre mis tareas»), abrir una nota, dejar un correo redactado para que lo revises, abrir el escáner o la grabadora y situar la agenda en un mes. Envíos y borrados piden confirmación.
 
+## Actualizaciones automáticas
+
+Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y abre el instalador. Cada `git push` compila, firma y publica la versión; ver [`docs/ACTUALIZACIONES.md`](docs/ACTUALIZACIONES.md) (incluye lo que hay que preparar una vez).
+
 ## Notificaciones
 
 - **Tareas**: avisan a la hora que indiques; si solo tienen fecha, a las 9:00. La notificación tiene botón «Hecho».

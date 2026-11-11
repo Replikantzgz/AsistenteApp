@@ -28,6 +28,7 @@ class Settings(ctx: Context) {
     val notifyEvents = MutableStateFlow(p.getBoolean("notifyEvents", true))
     val notifyTasks = MutableStateFlow(p.getBoolean("notifyTasks", true))
     val leadMin = MutableStateFlow(p.getInt("leadMin", 15))
+    val autoUpdate = MutableStateFlow(p.getBoolean("autoUpdate", true))
     val license = MutableStateFlow(p.getString("license", "") ?: "")
     private val aiDay get() = p.getString("aiDay", "") ?: ""
     /** Mensajes de IA usados hoy. */
@@ -51,6 +52,7 @@ class Settings(ctx: Context) {
     fun setNotifyEvents(v: Boolean) { notifyEvents.value = v; p.edit().putBoolean("notifyEvents", v).apply() }
     fun setNotifyTasks(v: Boolean) { notifyTasks.value = v; p.edit().putBoolean("notifyTasks", v).apply() }
     fun setLeadMin(v: Int) { leadMin.value = v; p.edit().putInt("leadMin", v).apply() }
+    fun setAutoUpdate(v: Boolean) { autoUpdate.value = v; p.edit().putBoolean("autoUpdate", v).apply() }
     fun setLicense(code: String) { license.value = code; p.edit().putString("license", code).apply() }
     fun addAiUse() {
         val today = java.time.LocalDate.now().toString()

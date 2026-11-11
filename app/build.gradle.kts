@@ -15,8 +15,10 @@ android {
         applicationId = "com.iatualcance.alfred"
         minSdk = 26
         targetSdk = 35
-        versionCode = 3
-        versionName = "1.2.0"
+        // En GitHub Actions el número sube solo con cada compilación (ALFRED_VERSION_CODE); en local, valor fijo.
+        versionCode = (System.getenv("ALFRED_VERSION_CODE") ?: "4").toInt()
+        versionName = System.getenv("ALFRED_VERSION_NAME") ?: "1.3.0"
+        buildConfigField("String", "UPDATE_URL", "\"https://github.com/Replikantzgz/AsistenteApp/releases/latest/download/update.json\"")
     }
 
     // La firma no está en el repositorio. Se lee de keystore.properties (local, ignorado por git)

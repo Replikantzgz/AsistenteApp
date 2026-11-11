@@ -1,9 +1,19 @@
-name: Compilar APK
+name: Compilar y publicar APK
+
+# Cada push compila, prueba y firma el APK. Si la firma es la buena, publica una versión en GitHub Releases
+# con un update.json; la app instalada lo lee al abrirse y se actualiza sola (ver docs/ACTUALIZACIONES.md).
 
 on:
   push:
     branches: [main, master, "claude/**"]
   workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Huella SHA-1 de la clave de firma de Alfred (la registrada en Google Cloud). Si no coincide, no se publica.
+  EXPECTED_SHA1: dd56972dd5cefce35149536a18f268e603de8100
 
 jobs:
   build:
@@ -15,23 +25,71 @@ jobs:
           distribution: temurin
           java-version: "21"
       - uses: gradle/actions/setup-gradle@v4
+
       # Secretos del repositorio (Settings → Secrets and variables → Actions):
-      #   ALFRED_KEYSTORE_BASE64  = contenido de alfred.jks en base64
-      #   ALFRED_PASSWORD         = contraseña de la firma
-      # Sin ellos el APK se firma con una clave de depuración y Google no lo reconocerá.
+      #   ALFRED_KEYSTORE_BASE64 = contenido de alfred.jks en base64
+      #   ALFRED_PASSWORD        = contraseña de la firma
       - name: Preparar firma
+        id: sign
         env:
           KS: ${{ secrets.ALFRED_KEYSTORE_BASE64 }}
         run: |
-          if [ -n "$KS" ]; then mkdir -p keystore && echo "$KS" | base64 -d > keystore/alfred.jks; fi
+          if [ -n "$KS" ]; then
+            mkdir -p keystore && echo "$KS" | base64 -d > keystore/alfred.jks
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Faltan los secretos ALFRED_KEYSTORE_BASE64 y ALFRED_PASSWORD: el APK saldrá con firma de depuración y NO se publicará como actualización."
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Número de versión
+        run: |
+          # El número solo puede subir: run_number + 10 deja margen sobre las versiones instaladas a mano.
+          echo "ALFRED_VERSION_CODE=$((GITHUB_RUN_NUMBER + 10))" >> "$GITHUB_ENV"
+          echo "ALFRED_VERSION_NAME=1.3.$GITHUB_RUN_NUMBER" >> "$GITHUB_ENV"
+
       - name: Tests y APK
         env:
           ALFRED_FILE: keystore/alfred.jks
           ALFRED_PASSWORD: ${{ secrets.ALFRED_PASSWORD }}
         run: ./gradlew --no-daemon testDebugUnitTest assembleRelease
+
       - name: Renombrar
         run: cp app/build/outputs/apk/release/app-release.apk Alfred.apk
+
       - uses: actions/upload-artifact@v4
         with:
           name: Alfred-apk
           path: Alfred.apk
+
+      - name: Comprobar la firma
+        if: steps.sign.outputs.signed == 'true'
+        run: |
+          APKSIGNER="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          GOT=$("$APKSIGNER" verify --print-certs Alfred.apk | grep -i 'SHA-1' | head -1 | sed 's/.*: *//' | tr -d ': ' | tr 'A-F' 'a-f')
+          echo "SHA-1 del APK:   $GOT"
+          echo "SHA-1 esperado:  $EXPECTED_SHA1"
+          if [ "$GOT" != "$EXPECTED_SHA1" ]; then
+            echo "::error::El APK no está firmado con la clave de Alfred. Revisa los secretos ALFRED_KEYSTORE_BASE64 y ALFRED_PASSWORD. No se publica."
+            exit 1
+          fi
+
+      - name: Publicar versión
+        if: steps.sign.outputs.signed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SUBJECT=$(git log -1 --pretty=%s)
+          SHA256=$(sha256sum Alfred.apk | cut -d' ' -f1)
+          URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/v${ALFRED_VERSION_CODE}/Alfred.apk"
+          python3 - "$SUBJECT" "$SHA256" "$URL" <<'PY'
+          import json, sys, os, datetime
+          notes, sha, url = sys.argv[1:4]
+          json.dump({"versionCode": int(os.environ["ALFRED_VERSION_CODE"]), "versionName": os.environ["ALFRED_VERSION_NAME"],
+                     "url": url, "sha256": sha, "notes": notes, "date": datetime.date.today().isoformat()},
+                    open("update.json", "w"), ensure_ascii=False, indent=2)
+          PY
+          cat update.json
+          gh release delete "v${ALFRED_VERSION_CODE}" --yes --cleanup-tag 2>/dev/null || true
+          gh release create "v${ALFRED_VERSION_CODE}" Alfred.apk update.json \
+            --target "$GITHUB_SHA" --title "Alfred ${ALFRED_VERSION_NAME}" --notes "$SUBJECT" --latest

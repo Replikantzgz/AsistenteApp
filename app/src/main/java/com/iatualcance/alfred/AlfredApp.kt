@@ -56,6 +56,7 @@ class Services(private val app: Application) {
     val auth = GoogleAuth(app)
     val google = GoogleApi(auth)
     val gemini = Gemini(settings)
+    val updater = com.iatualcance.alfred.update.Updater(app, com.iatualcance.alfred.google.Http.client)
     val assistant = Assistant(gemini, google, store, settings, uploadNote = { uploadNote(it) }, backup = { backupToDrive() })
 
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)

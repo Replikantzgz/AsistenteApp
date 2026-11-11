@@ -316,6 +316,25 @@ private fun SettingsScreen() {
             Text(if (data != null) "Premium activo" + (data.x?.let { " hasta $it" } ?: " · de por vida") else "Plan gratuito", fontWeight = FontWeight.Medium)
             OutlinedButton(onClick = { ui.overlay = "premium" }) { Text(if (data != null) "Ver mi plan" else "Ver Premium") }
         }
+        Section("Actualizaciones") {
+            val autoUpdate by sv.settings.autoUpdate.collectAsStateCompat()
+            val upd by sv.updater.state.collectAsStateCompat()
+            Text("Versión instalada: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})", fontWeight = FontWeight.Medium)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text("Buscar e instalar al abrir")
+                    Text("Si hay una versión nueva, se descarga y se instala sola.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                Switch(autoUpdate, { sv.settings.setAutoUpdate(it) })
+            }
+            OutlinedButton(enabled = upd !is com.iatualcance.alfred.update.UpdateState.Checking && upd !is com.iatualcance.alfred.update.UpdateState.Downloading, onClick = {
+                scope.launch {
+                    val info = sv.updater.check(install = true)
+                    if (info == null && sv.updater.state.value !is com.iatualcance.alfred.update.UpdateState.Failed) ui.say("Ya tienes la última versión")
+                    else if (info != null && sv.updater.canInstall()) ui.say("Actualizando a la ${info.versionName}…")
+                }
+            }) { Text(when (upd) { is com.iatualcance.alfred.update.UpdateState.Checking -> "Buscando…"; is com.iatualcance.alfred.update.UpdateState.Downloading -> "Descargando…"; else -> "Buscar actualizaciones ahora" }) }
+        }
         Section("Notificaciones") {
             val notifyEvents by sv.settings.notifyEvents.collectAsStateCompat()
             val notifyTasks by sv.settings.notifyTasks.collectAsStateCompat()
