@@ -100,10 +100,10 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
                     ui.overlay != null -> OverlayScreen(ui.overlay!!)
                     else -> when (ui.tab) {
                         Tab.CHAT -> ChatScreen(chat)
-                        Tab.DRIVE -> DriveTab()
+                        Tab.AGENDA -> AgendaScreen()
                         Tab.NOTES -> NotesScreen()
                         Tab.MAIL -> MailScreen()
-                        Tab.CONTACTS -> ContactsTab()
+                        Tab.DRIVE -> DriveTab()
                     }
                 }
             }

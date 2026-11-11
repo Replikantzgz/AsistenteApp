@@ -4,7 +4,7 @@ App nativa (Kotlin + Jetpack Compose). Sin servidor: todo ocurre entre el móvil
 
 ## Interfaz
 
-Tema Pokémon sobre fondo claro: cabecera roja de Pokédex con degradado y lente brillante, tarjetas blancas con sombra suave, barra inferior flotante con la pestaña activa subrayada, tipografía jerarquizada y una textura de iconos de juego casi invisible (`tools/make_bg.py`). Barra inferior: **Correo (Dragonite) · Agenda (Blastoise) · ASISTENTE (Pikachu, centro, grande) · Notas (Psyduck) · Contactos (Lapras)**. Ajustes (los engranajes) y Drive están en la cabecera del asistente. El icono de la app es la Pokéball con Pikachu.
+Tema Pokémon sobre fondo claro: cabecera roja de Pokédex con degradado y lente brillante, tarjetas blancas con sombra suave, barra inferior flotante con la pestaña activa subrayada, tipografía jerarquizada y una textura de iconos de juego casi invisible (`tools/make_bg.py`). Barra inferior: **Correo (Dragonite) · Agenda (Blastoise) · ASISTENTE (Pikachu, centro, grande) · Notas (Psyduck) · Drive**. Los contactos (Lapras) están dentro de Correo. Ajustes (los engranajes) y Drive están en la cabecera del asistente. El icono de la app es la Pokéball con Pikachu.
 
 Las ilustraciones se procesan con `python3 tools/process_art.py <7 imágenes>` (recorta, quita el fondo y genera los recursos).
 
@@ -35,7 +35,8 @@ Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y ab
 - **Correo**: Gmail (recibidos, sin leer, enviados, borradores, búsqueda), leer, responder, redactar, papelera, guardar un correo como nota.
 - **Contactos** de Google: buscar, crear, eliminar, llamar o escribir.
 - **Drive** (pestaña propia): explora tu Drive, busca, sube archivos, crea carpetas, documentos y hojas de Google, y **comparte proyectos con otra persona** (editor o lector) para trabajar a la vez. «Compartido conmigo» y «Proyectos». Además, la carpeta `Alfred` con `Notas`, `Escaneos`, `Facturas` y `Adjuntos`, subida automática de escaneos y copia de seguridad. Necesita el permiso de Drive completo (`docs/PROMPT_CHROME_ACTUALIZAR_DRIVE.md`).
-- **Agenda**: dentro de la pestaña Notas (Notas · Tareas · Agenda · Plantillas).
+- **Agenda**: pestaña propia (Google Calendar por meses).
+- **Contactos**: dentro de la pestaña Correo (Correo · Contactos).
 - **Búsqueda global** (lupa del asistente): notas, tareas, plantillas, agenda, correo, contactos y Drive a la vez.
 - **Correo con adjuntos**: ver, abrir, guardar en nota o en Drive los adjuntos recibidos, y adjuntar archivos al enviar.
 - **Voz**: modo «Conversar» (escucha, responde hablando y vuelve a escuchar) y lectura de respuestas en voz alta.

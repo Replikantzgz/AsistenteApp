@@ -96,15 +96,6 @@ fun OverlayScreen(which: String) {
     }
 }
 
-/** Pestaña de contactos. */
-@Composable
-fun ContactsTab() {
-    Column(Modifier.fillMaxSize()) {
-        PixelBar(title = { Text("CONTACTOS") })
-        ContactsScreen()
-    }
-}
-
 // =============================================================== Contactos
 @Composable
 fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.drawable.art_contactos) {

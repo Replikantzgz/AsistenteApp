@@ -63,6 +63,7 @@ import java.time.format.DateTimeFormatter
 
 private val dayFmt = DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", Util.ES)
 private val monthFmt = DateTimeFormatter.ofPattern("MMMM yyyy", Util.ES)
+private val monthShort = DateTimeFormatter.ofPattern("MMM yyyy", Util.ES)
 private val hm = DateTimeFormatter.ofPattern("HH:mm")
 private val shortDate = DateTimeFormatter.ofPattern("EEE d MMM yyyy", Util.ES)
 
@@ -89,13 +90,14 @@ fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawab
 
     Box(Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp, top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(month.format(monthFmt).replaceFirstChar { it.uppercase() }, Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Mes anterior") }
-                IconButton(onClick = { month = YearMonth.now() }) { Icon(Icons.Default.Today, "Hoy") }
-                IconButton(onClick = { month = month.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "Mes siguiente") }
-                IconButton(onClick = { reload++ }) { Icon(Icons.Default.Refresh, "Actualizar") }
-            }
+            PixelBar(
+                title = { Text(month.format(monthShort).uppercase(), maxLines = 1) },
+                actions = {
+                    IconButton(onClick = { month = month.minusMonths(1) }) { Icon(Icons.Default.ChevronLeft, "Mes anterior") }
+                    IconButton(onClick = { month = YearMonth.now() }) { Icon(Icons.Default.Today, "Hoy") }
+                    IconButton(onClick = { month = month.plusMonths(1) }) { Icon(Icons.Default.ChevronRight, "Mes siguiente") }
+                },
+            )
             val evs = events
             when {
                 error != null -> ErrorBox(error!!) { reload++ }

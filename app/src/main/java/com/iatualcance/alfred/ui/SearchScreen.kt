@@ -144,7 +144,7 @@ fun SearchScreen() {
                 section("Correo", f.mails.size)
                 f.mails.forEach { m -> item(key = "m${m.id}") { Hit(Icons.Default.Mail, m.subject, Util.splitAddress(m.from).first + " · " + m.snippet.take(60)) { ui.overlay = null; ui.compose = null; ui.mailOpenId = m.id; ui.tab = Tab.MAIL } } }
                 section("Contactos", f.contacts.size)
-                f.contacts.forEach { c -> item(key = "c${c.resource}") { Hit(Icons.Default.Contacts, c.name.ifBlank { c.emails.firstOrNull().orEmpty() }, (c.emails + c.phones).joinToString(" · ")) { ui.overlay = null; ui.contactQuery = c.name.ifBlank { c.emails.firstOrNull().orEmpty() }; ui.tab = Tab.CONTACTS } } }
+                f.contacts.forEach { c -> item(key = "c${c.resource}") { Hit(Icons.Default.Contacts, c.name.ifBlank { c.emails.firstOrNull().orEmpty() }, (c.emails + c.phones).joinToString(" · ")) { ui.overlay = null; ui.compose = null; ui.mailOpenId = null; ui.contactQuery = c.name.ifBlank { c.emails.firstOrNull().orEmpty() }; ui.mailSub = 1; ui.tab = Tab.MAIL } } }
                 section("Drive", f.files.size)
                 f.files.forEach { d -> item(key = "d${d.id}") { Hit(if (d.isFolder) Icons.Default.Folder else Icons.Default.Description, d.name, d.modified?.take(10).orEmpty()) { d.link?.let { ctx.openUrl(it) } } } }
             }

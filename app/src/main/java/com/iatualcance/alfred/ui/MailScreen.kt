@@ -80,7 +80,7 @@ private fun mailDate(ms: Long): String {
 }
 
 @Composable
-fun MailScreen() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawable.art_correo) {
+private fun MailInner() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawable.art_correo) {
     val sv = LocalServices.current
     val ui = LocalUi.current
     var filter by rememberSaveable { mutableIntStateOf(0) }
@@ -102,7 +102,8 @@ fun MailScreen() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawable.art
         ui.mailOpenId != null -> ReadMail(ui.mailOpenId!!, onClose = { ui.mailOpenId = null }, onChanged = { reload++ })
         else -> Box(Modifier.fillMaxSize()) {
             Column {
-                PixelBar(title = { Text("CORREO") })
+                PixelBar(title = { Text("CORREO Y CONTACTOS") })
+                MailTabs()
                 Row(Modifier.padding(start = 12.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                     OutlinedTextField(search, { search = it }, Modifier.weight(1f), placeholder = { Text("Buscar en el correo") }, singleLine = true,
                         leadingIcon = { Icon(Icons.Default.Search, null) }, shape = PxShape,
@@ -298,6 +299,28 @@ private fun ComposeMail(initial: MailDraft, onClose: () -> Unit, onSent: () -> U
                 }
             }
             VSpace(12)
+        }
+    }
+}
+
+
+/** Correo y Contactos comparten pestaña: dos subpestañas. */
+@Composable
+fun MailScreen() {
+    val ui = LocalUi.current
+    if (ui.mailSub == 1 && ui.compose == null && ui.mailOpenId == null) Column(Modifier.fillMaxSize()) {
+        PixelBar(title = { Text("CORREO Y CONTACTOS") })
+        MailTabs()
+        ContactsScreen()
+    } else MailInner()
+}
+
+@Composable
+private fun MailTabs() {
+    val ui = LocalUi.current
+    androidx.compose.material3.TabRow(selectedTabIndex = ui.mailSub, containerColor = MaterialTheme.colorScheme.background) {
+        listOf("Correo", "Contactos").forEachIndexed { i, t ->
+            androidx.compose.material3.Tab(ui.mailSub == i, { ui.mailSub = i }, text = { Text(t.uppercase(), fontWeight = FontWeight.Bold) })
         }
     }
 }
