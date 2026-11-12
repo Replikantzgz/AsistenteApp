@@ -132,7 +132,7 @@ private fun RowScope.CenterItem(active: Boolean, onClick: () -> Unit) {
     ) {
         // Botón sencillo: círculo blanco con una línea negra fina (la pestaña activa se marca con el subrayado, como las demás).
         Box(Modifier.padding(top = 4.dp).size(76.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) {
-            Art(R.drawable.art_pikachu, 66.dp, "Asistente")
+            Art(R.drawable.art_pikachu_round, 68.dp, "Asistente")
         }
         Text("ASISTENTE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Ink, letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 2.dp))
         Underline(active)

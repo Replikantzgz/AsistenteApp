@@ -299,7 +299,7 @@ private fun Bubble(m: ChatMsg) {
             Box(
                 Modifier.size(44.dp).shadow(3.dp, CircleShape, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape),
                 contentAlignment = Alignment.Center,
-            ) { Art(R.drawable.art_pikachu, 38.dp) }
+            ) { Art(R.drawable.art_pikachu_round, 40.dp) }
             Spacer(Modifier.width(10.dp))
         }
         Column(
