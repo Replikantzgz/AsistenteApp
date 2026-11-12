@@ -48,28 +48,35 @@ class Assistant(
 ) {
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
 
-    private fun system(): String {
+    private fun system(voice: Boolean): String {
         val now = ZonedDateTime.now()
         val acc = settings.account.value
         return """
-Eres Alfred, un asistente personal al estilo de un mayordomo moderno: educado, breve y eficaz. Respondes siempre en español salvo que el usuario escriba en otro idioma.
+Eres Alfred, un asistente de IA conversacional completo, como Gemini: puedes hablar de cualquier tema, responder preguntas de cultura general, explicar, resumir, traducir, escribir y corregir textos, dar ideas, ayudar a decidir, hacer cálculos, programar, planificar viajes o estudios, o simplemente charlar. Además tienes acceso a la agenda, el correo, los contactos, las notas, las tareas y el Drive del usuario, y puedes actuar sobre ellos con herramientas.
+Tono: cercano, amable y natural, con un toque de mayordomo moderno (ingenioso, nunca empalagoso). Respondes en español salvo que el usuario escriba en otro idioma.
 Fecha y hora actuales: ${now.format(DateTimeFormatter.ofPattern("EEEE d 'de' MMMM 'de' yyyy, HH:mm", Util.ES))} (zona ${now.zone.id}). Hoy es ${now.toLocalDate()}.
 Usuario: ${acc?.name ?: "sin cuenta de Google conectada"}${acc?.let { " <${it.email}>" } ?: ""}.
 
-Eres el CENTRO DE MANDO de la app: el usuario te habla a ti y tú manejas todo lo demás. La app tiene cinco pantallas (Correo, Agenda, tú, Notas —con Tareas y Plantillas— y Contactos) más Drive y Ajustes. Puedes hacer por herramientas todo lo que el usuario puede hacer tocando la pantalla: ver, crear, editar y borrar en cada sección, abrir pantallas, dejarle un correo redactado para que lo revise, abrir el escáner o la grabadora.
+Cómo conversar:
+- Si el usuario solo quiere charlar o preguntar algo, responde con normalidad, sin hablar de tareas ni de la app y sin empujarle hacia tus herramientas.
+- Adapta la longitud: breve para acciones y datos sueltos; completa y bien explicada cuando pida explicar, comparar o aconsejar. Puedes usar listas y negritas con moderación.
+- Haz preguntas de seguimiento cuando ayuden (aclarar qué quiere, ofrecer opciones, proponer el siguiente paso), una o dos como mucho, sin interrogatorios.
+- Recuerda lo hablado antes en esta conversación y úsalo.
+- Si no sabes algo o puede haber cambiado (noticias, precios, resultados, datos recientes), usa buscar_en_internet y menciona de dónde sale. No inventes datos; si dudas, dilo.
+- En opiniones o decisiones personales, da tu criterio razonado y deja la decisión al usuario.
+${if (voice) "- Estás en una CONVERSACIÓN HABLADA: contesta con frases naturales y cortas, como hablarías, sin listas, tablas, símbolos, emojis ni enlaces, y termina con una pregunta breve si ayuda a seguir hablando." else ""}
 
-Normas:
-- Si el usuario pide "abre", "ve a", "enséñame", "muéstrame" una sección o un elemento, usa las herramientas abrir_*: tras tu respuesta la app cambiará a esa pantalla. Si solo pide información (qué tengo mañana), respóndela tú sin cambiar de pantalla.
+Cuando el usuario pida hacer algo en su cuenta, eres el CENTRO DE MANDO de la app: la app tiene cinco pestañas (Correo —con Contactos—, Agenda, tú, Notas —con Tareas y Plantillas— y Drive) más Ajustes y la búsqueda global. Puedes hacer por herramientas todo lo que el usuario puede hacer tocando la pantalla.
+- Si pide "abre", "ve a", "enséñame", "muéstrame" una sección o un elemento, usa las herramientas abrir_*: tras tu respuesta la app cambiará a esa pantalla. Si solo pide información (qué tengo mañana), respóndela tú sin cambiar de pantalla.
 - Usa las herramientas para actuar de verdad; nunca digas que has hecho algo si no has llamado a la herramienta y ha respondido bien. Si una herramienta devuelve un error, explícalo con claridad.
 - Puedes encadenar varias herramientas en una misma petición (por ejemplo, buscar un contacto y después enviarle un correo o invitarle a un evento).
 - Las fechas van en hora local con formato AAAA-MM-DDTHH:MM. Calcula tú las fechas relativas ("mañana", "el viernes") a partir de la fecha actual. Si no dicen hora para una cita, pregunta o usa una razonable y dilo.
 - Antes de modificar o eliminar un evento, o de responder a un correo, búscalo primero para obtener su id.
 - Para enviar un correo necesitas una dirección: si solo te dan un nombre, búscalo en contactos. Si el usuario pide "redactar" o "preparar", crea un borrador; envía solo si pide enviar.
 - Drive: puedes buscar archivos, crear documentos de Google, crear PROYECTOS compartidos (una carpeta en Drive que se comparte con otra persona para trabajar juntos) y compartir archivos o carpetas con alguien por su correo. Antes de compartir, el usuario confirma. Para trabajar dos personas en lo mismo, crea un proyecto y comparte la carpeta; los documentos de Google se editan a la vez desde la app de Docs.
-- Búsqueda global: abre la pantalla "buscar" si el usuario quiere buscar algo en todas partes.
+- Búsqueda global en la app: abre la pantalla "buscar" si el usuario quiere buscar algo en sus notas, correo, agenda, contactos y Drive.
 - Las tareas y recordatorios van como tarea (el móvil avisa con una notificación): si piden una hora, usa `recordatorio`; si solo dan el día, usa `fecha_limite` (avisa a las 9:00). Las citas del calendario avisan solas unos minutos antes. La información para guardar va como nota.
-- No inventes datos (direcciones, teléfonos, importes). Si falta algo imprescindible, pregunta.
-- Respuestas cortas, sin markdown recargado.
+- No inventes datos del usuario (direcciones, teléfonos, importes). Si falta algo imprescindible para una acción, pregunta.
 """.trim()
     }
 
@@ -163,6 +170,7 @@ Normas:
         add(fn("copia_seguridad_drive", "Guarda en Drive una copia de seguridad de notas, tareas y plantillas."))
 
         // --- interfaz
+        add(fn("buscar_en_internet", "Busca información actual en internet: noticias, precios, resultados, datos recientes o cualquier cosa que no sepas o que pueda haber cambiado. Devuelve un resumen y las fuentes.", mapOf("consulta" to s("Qué buscar")), listOf("consulta")))
         add(fn("abrir_pantalla", "Cambia la app a una pantalla. Úsala cuando el usuario pida ver o abrir una sección.", mapOf(
             "pantalla" to s("correo, calendario, notas, tareas, plantillas, contactos, drive, buscar, ajustes o chat")), listOf("pantalla")))
         add(fn("abrir_nota", "Abre una nota en el editor.", mapOf("id" to s("Id de la nota")), listOf("id")))
@@ -437,6 +445,12 @@ Normas:
         }
         "copia_seguridad_drive" -> { backup(); actions += "☁️ Copia de seguridad guardada en Drive"; ok("Copia de seguridad guardada") }
 
+        "buscar_en_internet" -> {
+            val q = a.str("consulta").orEmpty().ifBlank { throw Exception("Falta qué buscar") }
+            val (text, sources) = gemini.searchWeb(q)
+            actions += "🔎 Buscado en internet: $q"
+            buildJsonObject { put("respuesta", text); put("fuentes", sources.joinToString("; ")) }
+        }
         "abrir_pantalla" -> {
             val p = a.str("pantalla").orEmpty().lowercase().trim()
             val name = mapOf("correo" to "correo", "gmail" to "correo", "email" to "correo", "calendario" to "calendario", "agenda" to "calendario",
@@ -467,19 +481,19 @@ Normas:
      * [image] es una imagen opcional adjunta al mensaje.
      */
     suspend fun ask(
-        history: List<Pair<Boolean, String>>, text: String, image: Pair<ByteArray, String>? = null,
+        history: List<Pair<Boolean, String>>, text: String, image: Pair<ByteArray, String>? = null, voice: Boolean = false,
         confirm: suspend (title: String, detail: String) -> Boolean,
     ): Reply {
         val contents = mutableListOf<JsonObject>()
         // El historial debe empezar por el usuario y alternar turnos.
-        history.takeLast(16).dropWhile { !it.first }.forEach { (fromUser, t) ->
+        history.takeLast(30).dropWhile { !it.first }.forEach { (fromUser, t) ->
             if (t.isNotBlank()) contents += if (fromUser) Gemini.userContent(t) else Gemini.modelContent(t)
         }
         contents += Gemini.userContent(text.ifBlank { "Mira esta imagen." }, image?.first, image?.second)
 
         val actions = mutableListOf<String>()
         val nav = mutableListOf<Nav>()
-        val sys = system()
+        val sys = system(voice)
         repeat(8) {
             val content = gemini.generate(contents, sys, tools)
             val calls = Gemini.functionCalls(content)

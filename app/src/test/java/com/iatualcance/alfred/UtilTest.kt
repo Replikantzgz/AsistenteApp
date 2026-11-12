@@ -90,3 +90,17 @@ class SpeechTextTest {
         assertEquals("", com.iatualcance.alfred.voice.SpeechText.clean("🙂 ✅ 📝"))
     }
 }
+
+class ModelInfoTest {
+    @Test fun freeAndPaid() {
+        listOf("gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-flash-latest", "gemini-flash-lite-latest", "gemini-3-flash-preview").forEach { assertTrue(it, com.iatualcance.alfred.ai.ModelInfo.isFree(it)) }
+        listOf("gemini-2.5-pro", "gemini-3-pro-preview", "gemini-pro-latest").forEach { assertTrue(it, com.iatualcance.alfred.ai.ModelInfo.isPaid(it)); assertEquals("de pago", com.iatualcance.alfred.ai.ModelInfo.label(it)) }
+        assertEquals("gratis", com.iatualcance.alfred.ai.ModelInfo.label("gemini-flash-latest"))
+        assertEquals("", com.iatualcance.alfred.ai.ModelInfo.label("gemma-3-27b-it"))
+    }
+
+    @Test fun sortedPutsLiteFirstAndProLast() {
+        val s = com.iatualcance.alfred.ai.ModelInfo.sorted(listOf("gemini-2.5-pro", "gemini-2.5-flash", "gemma-3-27b-it", "gemini-2.5-flash-lite"))
+        assertEquals(listOf("gemini-2.5-flash-lite", "gemini-2.5-flash", "gemma-3-27b-it", "gemini-2.5-pro"), s)
+    }
+}

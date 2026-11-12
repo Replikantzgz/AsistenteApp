@@ -77,6 +77,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.iatualcance.alfred.BuildConfig
+import com.iatualcance.alfred.ai.ModelInfo
 import com.iatualcance.alfred.billing.BillingConfig
 import com.iatualcance.alfred.google.Contact
 import com.iatualcance.alfred.google.DriveFile
@@ -251,15 +252,19 @@ private fun SettingsScreen() {
                     if (models.isNotEmpty()) modelMenu = true
                     else if (savedKey.isBlank()) ui.say("Guarda primero la clave")
                     else ui.run("Cargando modelos…") { models = sv.gemini.listModels(); modelMenu = true }
-                }) { Text("Modelo: $model") }
+                }) { Text("Modelo: $model" + ModelInfo.label(model).let { if (it.isBlank()) "" else " ($it)" }) }
                 DropdownMenu(modelMenu, { modelMenu = false }) {
-                    models.forEach { m -> DropdownMenuItem({ Text(m) }, { sv.settings.setModel(m); modelMenu = false }) }
+                    ModelInfo.sorted(models).forEach { m ->
+                        val l = ModelInfo.label(m)
+                        DropdownMenuItem({ Text(m + if (l.isBlank()) "" else " · $l") }, { sv.settings.setModel(m); modelMenu = false })
+                    }
                 }
             }
             if (savedKey.isNotBlank()) TextButton(onClick = { sv.settings.setApiKey(""); key = ""; ui.say("Clave eliminada de este móvil") }) {
                 Text("Quitar la clave de este móvil", color = MaterialTheme.colorScheme.error)
             }
-            Hint("La clave se guarda cifrada solo en este móvil y se usa únicamente para hablar con Gemini.")
+            Hint("Los modelos Flash y Flash-Lite tienen capa gratuita (con límites por minuto y por día); los Pro son de pago. Flash-Lite tiene más cupo gratis; Flash contesta mejor. Si uno se agota, Alfred prueba con Flash-Lite. Los límites exactos se ven en Google AI Studio.")
+            Hint("La clave se guarda cifrada solo en este móvil. Con la capa gratuita, Google puede usar lo que envíes a Gemini para mejorar sus productos; con una clave de pago, no.")
         }
 
         // ------------------------------------------------------------------ Voz

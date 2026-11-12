@@ -16,6 +16,10 @@ Las ilustraciones se procesan con `python3 tools/process_art.py <7 imágenes>` (
 
 Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y abre el instalador. Cada `git push` compila, firma y publica la versión; ver [`docs/ACTUALIZACIONES.md`](docs/ACTUALIZACIONES.md) (incluye lo que hay que preparar una vez).
 
+## Modelo de IA gratuito
+
+Alfred usa la API de Gemini con tu propia clave de Google AI Studio. Los modelos **Flash** y **Flash-Lite** tienen capa gratuita con límites por minuto y por día (Flash-Lite, más cupo; Flash, mejor calidad); los **Pro** son de pago. Si el modelo elegido agota su cupo, Alfred prueba solo con Flash-Lite. Los límites exactos se ven en Google AI Studio. Con la capa gratuita, Google puede usar lo que envíes para mejorar sus productos; con clave de pago, no.
+
 ## Notificaciones
 
 - **Tareas**: avisan a la hora que indiques; si solo tienen fecha, a las 9:00. La notificación tiene botón «Hecho».
@@ -25,7 +29,7 @@ Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y ab
 
 ## Qué hace
 
-- **Chat con Alfred** (texto, voz e imágenes). Gemini con herramientas reales: crea, modifica y borra eventos, busca y lee correos, redacta borradores, envía correos (con confirmación), busca y crea contactos, y gestiona notas, tareas y plantillas.
+- **Chat con Alfred**: asistente conversacional completo, como Gemini (cultura general, explicaciones, traducciones, textos, ideas, decisiones, charla), con búsqueda en internet para datos actuales y modo voz. Además, texto, voz e imágenes. Gemini con herramientas reales: crea, modifica y borra eventos, busca y lee correos, redacta borradores, envía correos (con confirmación), busca y crea contactos, y gestiona notas, tareas y plantillas.
 - **Agenda**: Google Calendar por meses; crear, editar y eliminar eventos con invitados.
 - **Notas**: con fotos (galería o cámara), documentos escaneados, audios y etiquetas. Buscar, fijar, compartir.
   - **Escáner**: detecta bordes y recorta; guarda PDF + imagen y la IA extrae emisor, fecha, total y texto del ticket o factura.

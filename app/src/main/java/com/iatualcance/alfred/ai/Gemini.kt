@@ -25,6 +25,16 @@ import okhttp3.RequestBody.Companion.toRequestBody
 /** Cliente REST de la API de Gemini (Google AI Studio). La clave la pone el usuario en Ajustes. */
 class GeminiError(val code: Int, message: String) : Exception(message)
 
+/** Qué modelos de Gemini tienen capa gratuita. Según Google: Flash y Flash-Lite, sí; los Pro, de pago. Los límites exactos se ven en AI Studio. */
+object ModelInfo {
+    fun isPaid(name: String) = Regex("(^|-)pro(-|$)").containsMatchIn(name.lowercase())
+    fun isFree(name: String) = !isPaid(name) && ("flash" in name.lowercase() || "lite" in name.lowercase())
+    fun label(name: String) = when { isPaid(name) -> "de pago"; isFree(name) -> "gratis"; else -> "" }
+    private fun rank(n: String) = when { isPaid(n) -> 3; "lite" in n -> 0; "flash" in n -> 1; else -> 2 }
+    /** Primero los gratuitos más generosos (Flash-Lite), luego Flash, luego el resto y al final los de pago. */
+    fun sorted(models: List<String>) = models.sortedWith(compareBy({ rank(it.lowercase()) }, { it }))
+}
+
 class Gemini(private val settings: Settings) {
     private val base = "https://generativelanguage.googleapis.com/v1beta"
 
@@ -41,7 +51,7 @@ class Gemini(private val settings: Settings) {
                 throw GeminiError(resp.code, when (resp.code) {
                     400, 403 -> if ("API key" in msg) "La clave de Gemini no es válida. Revísala en Ajustes." else "Gemini: $msg"
                     404 -> "El modelo «${settings.model.value}» no existe o no está disponible. Elige otro en Ajustes."
-                    429 -> "Has alcanzado el límite de uso de Gemini. Espera un momento y vuelve a intentarlo."
+                    429 -> "Se ha agotado el cupo gratuito de Gemini por ahora (hay un límite por minuto y otro por día; el diario se renueva a medianoche, hora del Pacífico). Espera un poco o prueba otro modelo en Ajustes."
                     500, 502, 503, 504 -> "Gemini está saturado en este momento (error ${resp.code}). Lo he reintentado varias veces; vuelve a probar en un minuto."
                     else -> "Gemini (${resp.code}): $msg"
                 })
@@ -83,17 +93,37 @@ class Gemini(private val settings: Settings) {
         val models = listOf(chosen, FALLBACK).distinct()
         var last: GeminiError? = null
         for ((mi, model) in models.withIndex()) {
-            for (attempt in 0 until (if (mi == 0) 3 else 2)) {
+            val attempts = if (mi == 0) 3 else 2
+            var attempt = 0
+            while (attempt < attempts) {
                 try {
                     return call(model)
                 } catch (e: GeminiError) {
-                    if (e.code !in RETRYABLE) { if (e.code == 404 && mi < models.lastIndex) { last = e; break } else throw e }
                     last = e
-                    delay(1200L * (attempt + 1))
+                    // Cupo agotado: no se insiste con este modelo, se pasa al siguiente (Flash-Lite tiene más cupo gratuito).
+                    if (e.code == 429) break
+                    if (e.code !in RETRYABLE) { if (e.code == 404 && mi < models.lastIndex) break else throw e }
+                    delay(1200L * (attempt + 1)); attempt++
                 }
             }
         }
         throw last ?: Exception("Gemini no responde")
+    }
+
+    /** Búsqueda en internet con "Grounding with Google Search". Devuelve el texto y los títulos de las fuentes. */
+    suspend fun searchWeb(query: String): Pair<String, List<String>> {
+        val body = buildJsonObject {
+            put("contents", buildJsonArray { add(userContent("Busca en internet y responde en español, con datos actuales y concretos y de forma breve: $query")) })
+            putJsonArray("tools") { add(buildJsonObject { putJsonObject("google_search") {} }) }
+            putJsonObject("generationConfig") { put("temperature", 0.2) }
+        }
+        val j = withRetry { model ->
+            http(Request.Builder().url("$base/models/$model:generateContent").header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build())
+        }
+        val cand = j.arr("candidates").firstOrNull()?.jsonObject
+        val text = cand?.obj("content")?.let { textOf(it) }.orEmpty()
+        val sources = cand?.obj("groundingMetadata")?.arr("groundingChunks")?.mapNotNull { c -> c.jsonObject.obj("web")?.let { it.str("title") ?: it.str("uri") } }?.distinct()?.take(5).orEmpty()
+        return text to sources
     }
 
     suspend fun listModels(): List<String> {
@@ -119,7 +149,7 @@ class Gemini(private val settings: Settings) {
     ).trim()
 
     companion object {
-        private val RETRYABLE = setOf(429, 500, 502, 503, 504)
+        private val RETRYABLE = setOf(500, 502, 503, 504)
         private const val FALLBACK = "gemini-flash-lite-latest"
 
         fun textPart(t: String) = buildJsonObject { put("text", t) }

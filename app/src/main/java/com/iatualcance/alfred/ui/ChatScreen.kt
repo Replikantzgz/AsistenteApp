@@ -112,7 +112,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                         bytes to (cr.getType(uri) ?: "image/jpeg")
                     }
                 }
-                val reply = sv.metered { sv.assistant.ask(history, text, img) { title, detail ->
+                val reply = sv.metered { sv.assistant.ask(history, text, img, voice = sv.voice.active) { title, detail ->
                     val d = CompletableDeferred<Boolean>()
                     pending = PendingConfirm(title, detail, d)
                     try { d.await() } finally { pending = null }
@@ -140,8 +140,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
 }
 
 private val suggestions = listOf(
-    "¿Qué tengo en la agenda esta semana?", "Resume mis correos sin leer", "Recuérdame llamar al dentista mañana",
-    "Crea una reunión el viernes a las 10", "Redáctame un correo para…", "Abre mis notas",
+    "Cuéntame algo interesante que no sepa", "Ayúdame a decidir entre dos opciones", "Explícame algo como si tuviera 10 años",
+    "¿Qué tengo en la agenda esta semana?", "Resume mis correos sin leer", "Recuérdame llamar al dentista mañana a las 10",
 )
 
 private data class Quick(val label: String, val prompt: String)
@@ -219,7 +219,7 @@ fun ChatScreen(vm: ChatViewModel) {
                 VSpace(16)
                 Text("¿En qué te ayudo?", style = MaterialTheme.typography.headlineSmall, color = Ink, textAlign = TextAlign.Center)
                 VSpace(8)
-                Hint("Yo manejo todo: correo, agenda, notas, tareas, contactos y Drive. Pídemelo escribiendo o con el micrófono.")
+                Hint("Pregúntame lo que quieras o simplemente charla conmigo. Y si quieres, también manejo tu correo, agenda, notas, tareas, contactos y Drive. Escribe, usa el micrófono o pulsa «Conversar».")
                 VSpace(12)
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     suggestions.forEach { s -> PillChip(s, { input = s }) }
