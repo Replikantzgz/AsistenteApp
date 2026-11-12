@@ -1,6 +1,8 @@
 package com.iatualcance.alfred.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -126,6 +128,7 @@ fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawab
             when {
                 error != null -> ErrorBox(error!!) { reload++ }
                 evs == null -> Loading()
+                view == 2 -> MonthGrid(date, evs.groupBy { it.start.toLocalDate() }) { d -> anchor = d.toString(); view = 0 }
                 evs.isEmpty() && view != 1 -> ArtHint(com.iatualcance.alfred.R.drawable.art_agenda, if (view == 0) "No tienes nada este día.\nPulsa + para crear un evento o pídeselo al asistente." else "No hay eventos este mes.\nPulsa + para crear uno o pídeselo al asistente.")
                 else -> {
                     val today = LocalDate.now()
@@ -278,5 +281,43 @@ fun TimeButton(time: LocalTime, onPick: (LocalTime) -> Unit) {
             dismissButton = { TextButton(onClick = { open = false }) { Text("Cancelar") } },
             text = { TimePicker(st) },
         )
+    }
+}
+
+/** Mes en cuadrícula: una raya roja por evento (hasta 3) y, al tocar un día, se abre su vista de día. */
+@Composable
+private fun MonthGrid(date: LocalDate, byDay: Map<LocalDate, List<CalEvent>>, onDay: (LocalDate) -> Unit) {
+    val today = LocalDate.now()
+    val first = date.withDayOfMonth(1)
+    val start = first.with(java.time.DayOfWeek.MONDAY)
+    val weeks = ((first.dayOfWeek.value - 1) + first.lengthOfMonth() + 6) / 7
+    Column(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp).card().padding(6.dp)) {
+        Row(Modifier.fillMaxWidth().padding(bottom = 4.dp)) {
+            listOf("L", "M", "X", "J", "V", "S", "D").forEach {
+                Text(it, Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+        for (w in 0 until weeks) Row(Modifier.fillMaxWidth()) {
+            for (d in 0..6) {
+                val day = start.plusDays((w * 7 + d).toLong())
+                val inMonth = day.month == first.month
+                val n = byDay[day].orEmpty().size
+                val isToday = day == today
+                Column(
+                    Modifier.weight(1f).height(68.dp).padding(2.dp)
+                        .background(if (isToday) Color(0xFFFFEDEA) else Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .border(1.dp, if (isToday) Red else SoftLine.copy(alpha = if (inMonth) 1f else 0.4f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .clickable { onDay(day) }.padding(vertical = 5.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        day.dayOfMonth.toString(), fontSize = 15.sp, fontWeight = if (isToday) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        color = if (isToday) Red else if (inMonth) Ink else MaterialTheme.colorScheme.outline,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    repeat(minOf(n, 3)) { Box(Modifier.padding(bottom = 3.dp).fillMaxWidth(0.7f).height(4.dp).background(Red, androidx.compose.foundation.shape.RoundedCornerShape(2.dp))) }
+                }
+            }
+        }
     }
 }
