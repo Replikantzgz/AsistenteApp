@@ -18,7 +18,7 @@ Al abrirse, la app busca una versión nueva en GitHub Releases, la descarga y ab
 
 ## Modelo de IA gratuito
 
-Alfred usa la API de Gemini con tu propia clave de Google AI Studio. Los modelos **Flash** y **Flash-Lite** tienen capa gratuita con límites por minuto y por día (Flash-Lite, más cupo; Flash, mejor calidad); los **Pro** son de pago. Si el modelo elegido agota su cupo, Alfred prueba solo con Flash-Lite. Los límites exactos se ven en Google AI Studio. Con la capa gratuita, Google puede usar lo que envíes para mejorar sus productos; con clave de pago, no.
+Alfred usa la API de Gemini con tu propia clave de Google AI Studio. Alfred usa un único modelo, `gemini-flash-latest` (el Flash más reciente, el más potente con capa gratuita; los **Pro** son de pago). Si se agota su cupo, cambia solo a Flash-Lite. Los límites exactos se ven en Google AI Studio. Con la capa gratuita, Google puede usar lo que envíes para mejorar sus productos; con clave de pago, no.
 
 ## Notificaciones
 

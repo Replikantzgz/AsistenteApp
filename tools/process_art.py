@@ -11,13 +11,16 @@ from PIL import Image, ImageDraw
 RES = "app/src/main/res"
 NAMES = ["pikachu", "correo", "agenda", "ajustes", "contactos", "notas", "pokeball"]
 
-def cutout(path):
-    im = Image.open(path).convert("RGB")
+def cutout(path, extra_seeds=()):
+    """Quita el fondo blanco. [extra_seeds]: puntos (x, y) de zonas blancas cerradas (p. ej. el hueco de un triángulo) que también deben desaparecer."""
+    im = path.convert("RGB") if isinstance(path, Image.Image) else Image.open(path).convert("RGB")
     a = np.asarray(im)
     near_white = (a.min(axis=2) >= 236).astype(np.uint8) * 255
     mask = Image.fromarray(near_white, "L").copy()
     ImageDraw.floodfill(mask, (0, 0), 128)                      # solo el blanco conectado con el borde
     for pt in ((im.width - 1, 0), (0, im.height - 1), (im.width - 1, im.height - 1)):
+        if mask.getpixel(pt) == 255: ImageDraw.floodfill(mask, pt, 128)
+    for pt in extra_seeds:
         if mask.getpixel(pt) == 255: ImageDraw.floodfill(mask, pt, 128)
     bg = np.asarray(mask) == 128
     # comer un píxel de halo blanquecino del JPEG pegado al fondo

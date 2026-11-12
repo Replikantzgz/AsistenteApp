@@ -23,7 +23,8 @@ class Settings(ctx: Context) {
         p.getString("email", null)?.let { Account(p.getString("name", "") ?: "", it, p.getString("photo", null)) }
     )
     val apiKey = MutableStateFlow(p.getString("gemini", null)?.let { Crypto.decrypt(it) } ?: "")
-    val model = MutableStateFlow(p.getString("model", DEFAULT_MODEL) ?: DEFAULT_MODEL)
+    /** Modelo único: el Flash más reciente, que es el más potente con capa gratuita. Ya no se puede cambiar. */
+    val model = MutableStateFlow(DEFAULT_MODEL)
     val driveAuto = MutableStateFlow(p.getBoolean("driveAuto", true))
     val notifyEvents = MutableStateFlow(p.getBoolean("notifyEvents", true))
     val notifyTasks = MutableStateFlow(p.getBoolean("notifyTasks", true))
@@ -50,7 +51,6 @@ class Settings(ctx: Context) {
         p.edit().apply { if (k.isBlank()) remove("gemini") else putString("gemini", Crypto.encrypt(k.trim())) }.apply()
     }
 
-    fun setModel(m: String) { model.value = m; p.edit().putString("model", m).apply() }
     fun setDriveAuto(v: Boolean) { driveAuto.value = v; p.edit().putBoolean("driveAuto", v).apply() }
     fun setNotifyEvents(v: Boolean) { notifyEvents.value = v; p.edit().putBoolean("notifyEvents", v).apply() }
     fun setNotifyTasks(v: Boolean) { notifyTasks.value = v; p.edit().putBoolean("notifyTasks", v).apply() }

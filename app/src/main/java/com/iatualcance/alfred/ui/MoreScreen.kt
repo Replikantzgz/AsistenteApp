@@ -201,8 +201,6 @@ private fun SettingsScreen() {
     val templateCount by sv.store.templates.collectAsStateCompat()
     var key by remember { mutableStateOf(savedKey) }
     var show by remember { mutableStateOf(false) }
-    var models by remember { mutableStateOf<List<String>>(emptyList()) }
-    var modelMenu by remember { mutableStateOf(false) }
     var confirm by remember { mutableStateOf<String?>(null) }   // acción grave pendiente de confirmar
     val connect = rememberGoogleConnect()
 
@@ -241,29 +239,17 @@ private fun SettingsScreen() {
                 AppButton(onClick = {
                     sv.settings.setApiKey(key)
                     if (key.isBlank()) ui.say("Clave borrada") else ui.run("Comprobando la clave…") {
-                        models = sv.gemini.listModels()
-                        ui.say("Clave correcta. ${models.size} modelos disponibles.")
+                        sv.gemini.listModels()
+                        ui.say("Clave correcta")
                     }
                 }) { Text("Guardar y probar") }
                 TextButton(onClick = { ctx.openUrl("https://aistudio.google.com/apikey") }) { Text("Obtener clave gratis") }
             }
-            Box {
-                AppOutlinedButton(onClick = {
-                    if (models.isNotEmpty()) modelMenu = true
-                    else if (savedKey.isBlank()) ui.say("Guarda primero la clave")
-                    else ui.run("Cargando modelos…") { models = sv.gemini.listModels(); modelMenu = true }
-                }) { Text("Modelo: $model" + ModelInfo.label(model).let { if (it.isBlank()) "" else " ($it)" }) }
-                DropdownMenu(modelMenu, { modelMenu = false }) {
-                    ModelInfo.sorted(models).forEach { m ->
-                        val l = ModelInfo.label(m)
-                        DropdownMenuItem({ Text(m + if (l.isBlank()) "" else " · $l") }, { sv.settings.setModel(m); modelMenu = false })
-                    }
-                }
-            }
+            Text("Modelo en uso: $model (${ModelInfo.label(model).ifBlank { "gratis" }})", style = MaterialTheme.typography.titleSmall)
             if (savedKey.isNotBlank()) TextButton(onClick = { sv.settings.setApiKey(""); key = ""; ui.say("Clave eliminada de este móvil") }) {
                 Text("Quitar la clave de este móvil", color = MaterialTheme.colorScheme.error)
             }
-            Hint("Los modelos Flash y Flash-Lite tienen capa gratuita (con límites por minuto y por día); los Pro son de pago. Flash-Lite tiene más cupo gratis; Flash contesta mejor. Si uno se agota, Alfred prueba con Flash-Lite. Los límites exactos se ven en Google AI Studio.")
+            Hint("Es el Flash más reciente: el modelo más potente que tiene capa gratuita (los Pro son de pago). La capa gratuita tiene límites por minuto y por día; si se agotan, Alfred cambia solo a Flash-Lite, que tiene más cupo. Los límites exactos se ven en Google AI Studio.")
             Hint("La clave se guarda cifrada solo en este móvil. Con la capa gratuita, Google puede usar lo que envíes a Gemini para mejorar sus productos; con una clave de pago, no.")
         }
 
