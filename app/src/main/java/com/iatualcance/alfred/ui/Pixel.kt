@@ -130,13 +130,9 @@ private fun RowScope.CenterItem(active: Boolean, onClick: () -> Unit) {
         Modifier.weight(1.25f).height(106.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Botón con forma de Pokéball: aro oscuro, aro rojo y centro blanco (amarillo al estar activo).
-        Box(Modifier.padding(top = 2.dp).size(82.dp).shadow(10.dp, CircleShape, ambientColor = ShadowAmbient, spotColor = ShadowSpot).background(Ink, CircleShape), contentAlignment = Alignment.Center) {
-            Box(Modifier.size(77.dp).background(Brush.verticalGradient(listOf(Color(0xFFF2473B), Color(0xFFC92A1F))), CircleShape), contentAlignment = Alignment.Center) {
-                Box(Modifier.size(64.dp).background(if (active) Yellow else Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) {
-                    Art(R.drawable.art_pikachu, 57.dp, "Asistente")
-                }
-            }
+        // Botón sencillo: círculo blanco con una línea negra fina (la pestaña activa se marca con el subrayado, como las demás).
+        Box(Modifier.padding(top = 4.dp).size(76.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) {
+            Art(R.drawable.art_pikachu, 66.dp, "Asistente")
         }
         Text("ASISTENTE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Ink, letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 2.dp))
         Underline(active)
