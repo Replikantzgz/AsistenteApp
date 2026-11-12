@@ -36,7 +36,15 @@ object ModelInfo {
     /** Los modelos gratuitos (Flash y Flash-Lite) de la lista de la API, más los habituales, sin duplicados y ordenados. */
     fun freeList(fromApi: List<String>) = sorted((CURATED + fromApi.filter { isFree(it) }).distinct()).take(14)
 
-    private fun rank(n: String) = when { isPaid(n) -> 3; "lite" in n -> 0; "flash" in n -> 1; else -> 2 }
+    /** Orden: los alias "latest" primero (Flash-Lite y luego Flash), después el resto de Flash-Lite y Flash, otros, y los de pago al final. */
+    private fun rank(n: String) = when {
+        isPaid(n) -> 5
+        "latest" in n && "lite" in n -> 0
+        "latest" in n && "flash" in n -> 1
+        "lite" in n -> 2
+        "flash" in n -> 3
+        else -> 4
+    }
     /** Primero los gratuitos más generosos (Flash-Lite), luego Flash, luego el resto y al final los de pago. */
     fun sorted(models: List<String>) = models.sortedWith(compareBy({ rank(it.lowercase()) }, { it }))
 }
