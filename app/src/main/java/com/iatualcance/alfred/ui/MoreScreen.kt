@@ -201,6 +201,12 @@ private fun SettingsScreen() {
     val templateCount by sv.store.templates.collectAsStateCompat()
     var key by remember { mutableStateOf(savedKey) }
     var show by remember { mutableStateOf(false) }
+    var models by remember { mutableStateOf(ModelInfo.CURATED) }
+    var modelsLoaded by remember { mutableStateOf(false) }
+    var modelMenu by remember { mutableStateOf(false) }
+    var probeOpen by remember { mutableStateOf(false) }
+    val probeRows = remember { androidx.compose.runtime.mutableStateListOf<Triple<String, Int, String>>() }   // modelo, estado (0 probando · 1 ok · 2 falla), detalle
+    var probeJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
     var confirm by remember { mutableStateOf<String?>(null) }   // acción grave pendiente de confirmar
     val connect = rememberGoogleConnect()
 
@@ -246,10 +252,32 @@ private fun SettingsScreen() {
                 TextButton(onClick = { ctx.openUrl("https://aistudio.google.com/apikey") }) { Text("Obtener clave gratis") }
             }
             Text("Modelo en uso: $model (${ModelInfo.label(model).ifBlank { "gratis" }})", style = MaterialTheme.typography.titleSmall)
+            Box {
+                AppOutlinedButton(onClick = {
+                    if (modelsLoaded || savedKey.isBlank()) modelMenu = true
+                    else ui.run("Cargando modelos…") { models = ModelInfo.freeList(sv.gemini.listModels()); modelsLoaded = true; modelMenu = true }
+                }) { Text("Elegir modelo gratuito") }
+                DropdownMenu(modelMenu, { modelMenu = false }) {
+                    models.forEach { m -> DropdownMenuItem({ Text(m + if (m == model) "  ✔" else "") }, { sv.settings.setModel(m); modelMenu = false; ui.say("Modelo: $m") }) }
+                }
+            }
+            AppOutlinedButton(onClick = {
+                if (savedKey.isBlank()) { ui.say("Guarda primero la clave"); return@AppOutlinedButton }
+                probeRows.clear(); probeOpen = true
+                probeJob = scope.launch {
+                    val list = if (modelsLoaded) models else runCatching { ModelInfo.freeList(sv.gemini.listModels()) }.getOrDefault(ModelInfo.CURATED).also { models = it; modelsLoaded = true }
+                    list.take(8).forEach { m ->
+                        probeRows.add(Triple(m, 0, "probando…"))
+                        val i = probeRows.lastIndex
+                        val (ok, detail) = sv.gemini.probe(m)
+                        probeRows[i] = Triple(m, if (ok) 1 else 2, detail)
+                    }
+                }
+            }) { Text("Probar los modelos gratuitos") }
             if (savedKey.isNotBlank()) TextButton(onClick = { sv.settings.setApiKey(""); key = ""; ui.say("Clave eliminada de este móvil") }) {
                 Text("Quitar la clave de este móvil", color = MaterialTheme.colorScheme.error)
             }
-            Hint("Es el Flash más reciente: el modelo más potente que tiene capa gratuita (los Pro son de pago). La capa gratuita tiene límites por minuto y por día; si se agotan, Alfred cambia solo a Flash-Lite, que tiene más cupo. Los límites exactos se ven en Google AI Studio.")
+            Hint("Solo se ofrecen modelos con capa gratuita (Flash y Flash-Lite; los Pro son de pago). Si uno no contesta o agota su cupo, Alfred prueba solo con otros. Los límites exactos se ven en Google AI Studio.")
             Hint("La clave se guarda cifrada solo en este móvil. Con la capa gratuita, Google puede usar lo que envíes a Gemini para mejorar sus productos; con una clave de pago, no.")
         }
 
@@ -344,6 +372,29 @@ private fun SettingsScreen() {
 
         Text("Alfred ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
+
+    if (probeOpen) androidx.compose.material3.AlertDialog(
+        onDismissRequest = { probeJob?.cancel(); probeOpen = false },
+        title = { Text("Probar modelos gratuitos", style = MaterialTheme.typography.titleMedium) },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Hint("Cada modelo recibe una pregunta de prueba. Toca uno que funcione para usarlo.")
+                probeRows.forEach { (m, st, detail) ->
+                    Row(
+                        Modifier.fillMaxWidth().clickable(enabled = st == 1) { sv.settings.setModel(m); probeJob?.cancel(); probeOpen = false; ui.say("Modelo: $m") }.padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(when (st) { 0 -> "⏳"; 1 -> "✅"; else -> "❌" }, Modifier.width(30.dp))
+                        Column(Modifier.weight(1f)) {
+                            Text(m + if (m == model) "  (en uso)" else "", style = MaterialTheme.typography.titleSmall)
+                            Text(detail, style = MaterialTheme.typography.bodySmall, color = if (st == 2) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = { probeJob?.cancel(); probeOpen = false }) { Text("CERRAR") } },
+    )
 
     when (confirm) {
         "signout" -> Confirm("Cerrar sesión", "Se retiran los permisos de Google a Alfred. Tus notas, tareas y plantillas se quedan en el móvil.", "Cerrar sesión", { confirm = null }) { scope.launch { sv.disconnect(); ui.say("Sesión cerrada") } }

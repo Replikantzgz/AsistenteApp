@@ -104,3 +104,14 @@ class ModelInfoTest {
         assertEquals(listOf("gemini-2.5-flash-lite", "gemini-2.5-flash", "gemma-3-27b-it", "gemini-2.5-pro"), s)
     }
 }
+
+class ModelListTest {
+    @Test fun freeListKeepsOnlyFreeModelsAndAlwaysIncludesTheUsualOnes() {
+        val l = com.iatualcance.alfred.ai.ModelInfo.freeList(listOf("gemini-2.5-pro", "gemini-3-pro-preview", "gemini-3-flash-preview", "gemma-3-27b-it", "gemini-2.5-flash"))
+        assertTrue(l.none { com.iatualcance.alfred.ai.ModelInfo.isPaid(it) })
+        assertTrue("gemini-3-flash-preview" in l)
+        assertEquals(1, l.count { it == "gemini-2.5-flash" })
+        assertTrue(l.containsAll(com.iatualcance.alfred.ai.ModelInfo.CURATED))
+        assertEquals("gemini-flash-lite-latest", l.first())
+    }
+}

@@ -30,6 +30,12 @@ object ModelInfo {
     fun isPaid(name: String) = Regex("(^|-)pro(-|$)").containsMatchIn(name.lowercase())
     fun isFree(name: String) = !isPaid(name) && ("flash" in name.lowercase() || "lite" in name.lowercase())
     fun label(name: String) = when { isPaid(name) -> "de pago"; isFree(name) -> "gratis"; else -> "" }
+    /** Modelos gratuitos que siempre se ofrecen, aunque la API no los liste. */
+    val CURATED = listOf("gemini-flash-lite-latest", "gemini-flash-latest", "gemini-2.5-flash-lite", "gemini-2.5-flash")
+
+    /** Los modelos gratuitos (Flash y Flash-Lite) de la lista de la API, más los habituales, sin duplicados y ordenados. */
+    fun freeList(fromApi: List<String>) = sorted((CURATED + fromApi.filter { isFree(it) }).distinct()).take(14)
+
     private fun rank(n: String) = when { isPaid(n) -> 3; "lite" in n -> 0; "flash" in n -> 1; else -> 2 }
     /** Primero los gratuitos más generosos (Flash-Lite), luego Flash, luego el resto y al final los de pago. */
     fun sorted(models: List<String>) = models.sortedWith(compareBy({ rank(it.lowercase()) }, { it }))
@@ -42,8 +48,18 @@ class Gemini(private val settings: Settings) {
         throw Exception("Falta la clave de Gemini. Añádela en Ajustes (el engranaje de la pantalla de Alfred).")
     }
 
-    private suspend fun http(req: Request): JsonObject = withContext(Dispatchers.IO) {
-        Http.client.newCall(req).execute().use { resp ->
+    /** Cliente con un tiempo de espera razonable: si un modelo no contesta, se pasa al siguiente en vez de esperar dos minutos. */
+    private val client = Http.client.newBuilder().readTimeout(45, java.util.concurrent.TimeUnit.SECONDS).callTimeout(75, java.util.concurrent.TimeUnit.SECONDS).build()
+
+    private suspend fun http(req: Request, c: okhttp3.OkHttpClient = client): JsonObject = withContext(Dispatchers.IO) {
+        val resp = try { c.newCall(req).execute() } catch (e: java.net.SocketTimeoutException) {
+            throw GeminiError(-1, "El modelo «${settings.model.value}» no ha respondido a tiempo (timeout). Prueba otro modelo en Ajustes.")
+        } catch (e: java.io.InterruptedIOException) {
+            throw GeminiError(-1, "El modelo no ha respondido a tiempo (timeout). Prueba otro modelo en Ajustes.")
+        } catch (e: java.io.IOException) {
+            throw GeminiError(-2, "No puedo conectar con Gemini. Revisa tu conexión a internet.")
+        }
+        resp.use { resp ->
             val text = resp.body?.string().orEmpty()
             val j = runCatching { Http.json.parseToJsonElement(text).jsonObject }.getOrNull()
             if (!resp.isSuccessful) {
@@ -90,7 +106,7 @@ class Gemini(private val settings: Settings) {
      */
     private suspend fun <T> withRetry(call: suspend (model: String) -> T): T {
         val chosen = settings.model.value
-        val models = listOf(chosen, FALLBACK).distinct()
+        val models = listOf(chosen, FALLBACK, FALLBACK2).distinct()
         var last: GeminiError? = null
         for ((mi, model) in models.withIndex()) {
             val attempts = if (mi == 0) 3 else 2
@@ -101,7 +117,8 @@ class Gemini(private val settings: Settings) {
                 } catch (e: GeminiError) {
                     last = e
                     // Cupo agotado: no se insiste con este modelo, se pasa al siguiente (Flash-Lite tiene más cupo gratuito).
-                    if (e.code == 429) break
+                    // Sin respuesta (timeout): tampoco se insiste, se prueba el siguiente.
+                    if (e.code == 429 || e.code == -1) { if (mi < models.lastIndex) break else throw e }
                     if (e.code !in RETRYABLE) { if (e.code == 404 && mi < models.lastIndex) break else throw e }
                     delay(1200L * (attempt + 1)); attempt++
                 }
@@ -124,6 +141,25 @@ class Gemini(private val settings: Settings) {
         val text = cand?.obj("content")?.let { textOf(it) }.orEmpty()
         val sources = cand?.obj("groundingMetadata")?.arr("groundingChunks")?.mapNotNull { c -> c.jsonObject.obj("web")?.let { it.str("title") ?: it.str("uri") } }?.distinct()?.take(5).orEmpty()
         return text to sources
+    }
+
+    /** Prueba un modelo concreto, sin reintentos ni modelos de reserva. Devuelve (funciona, detalle: tiempo o motivo del fallo). */
+    suspend fun probe(model: String): Pair<Boolean, String> {
+        val t0 = System.currentTimeMillis()
+        return try {
+            val body = buildJsonObject {
+                put("contents", buildJsonArray { add(userContent("Responde solo con la palabra OK.")) })
+                putJsonObject("generationConfig") { put("maxOutputTokens", 256); put("temperature", 0.0) }
+            }
+            val c = Http.client.newBuilder().readTimeout(25, java.util.concurrent.TimeUnit.SECONDS).callTimeout(30, java.util.concurrent.TimeUnit.SECONDS).build()
+            val j = http(Request.Builder().url("$base/models/$model:generateContent").header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build(), c)
+            val text = j.arr("candidates").firstOrNull()?.jsonObject?.obj("content")?.let { textOf(it) }.orEmpty()
+            if (text.isBlank()) false to "respuesta vacía" else true to "%.1f s".format((System.currentTimeMillis() - t0) / 1000.0)
+        } catch (e: GeminiError) {
+            false to when (e.code) { -1 -> "sin respuesta en 25 s (timeout)"; 429 -> "cupo agotado (429)"; 404 -> "no existe (404)"; 503 -> "saturado (503)"; else -> "error ${e.code}" }
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            false to (e.message ?: "error").take(60)
+        }
     }
 
     suspend fun listModels(): List<String> {
@@ -151,6 +187,7 @@ class Gemini(private val settings: Settings) {
     companion object {
         private val RETRYABLE = setOf(500, 502, 503, 504)
         private const val FALLBACK = "gemini-flash-lite-latest"
+        private const val FALLBACK2 = "gemini-2.5-flash"
 
         fun textPart(t: String) = buildJsonObject { put("text", t) }
 
