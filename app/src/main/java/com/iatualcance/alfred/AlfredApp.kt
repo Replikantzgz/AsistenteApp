@@ -69,6 +69,7 @@ class Services(private val app: Application) {
     /** Vigila las tareas y los ajustes de avisos para reprogramar al instante. */
     fun start() {
         scope.launch { store.tasks.collectLatest { delay(400); refreshReminders(false) } }
+        scope.launch { store.notes.collectLatest { delay(400); refreshReminders(false) } }
         scope.launch {
             combine(listOf(settings.notifyEvents, settings.notifyTasks, settings.leadMin, settings.account, settings.dailySummary, settings.summaryMinutes)) { it.toList() }
                 .drop(1).collectLatest { delay(400); refreshReminders(true) }
@@ -85,6 +86,7 @@ class Services(private val app: Application) {
             val zone = java.time.ZoneId.systemDefault()
             val plan = mutableListOf<com.iatualcance.alfred.notify.Reminder>()
             if (settings.notifyTasks.value) store.tasks.value.mapNotNullTo(plan) { com.iatualcance.alfred.notify.Plan.taskReminder(it, now, zone) }
+            store.notes.value.mapNotNullTo(plan) { com.iatualcance.alfred.notify.Plan.noteReminder(it, now) }
             val wantEvents = settings.notifyEvents.value && hasGoogle
             var fetched: List<com.iatualcance.alfred.google.CalEvent>? = null
             if (hasGoogle && (events || now - lastFull > 60_000)) {
@@ -147,8 +149,16 @@ class Services(private val app: Application) {
         }.getOrDefault(emptyList())
         val today = now.toLocalDate().toString()
         val tasks = store.tasks.value.filter { !it.done && it.due != null && it.due <= today }.map { it.title }
-        val unread = if (!hasGoogle) 0 else runCatching { google.listMail("in:inbox is:unread", 20).size }.getOrDefault(0)
-        com.iatualcance.alfred.notify.Plan.summary(events, tasks, unread, settings.account.value?.name?.substringBefore(' '), now.hour)
+        val unread = if (!hasGoogle || !settings.sumMail.value) 0 else runCatching { google.listMail("in:inbox is:unread", 20).size }.getOrDefault(0)
+        val mails = if (!hasGoogle || !settings.sumMail.value) emptyList() else runCatching {
+            google.listMail("in:inbox is:unread is:important", 5).map { m -> m.from.substringBefore('<').trim().trim('"').ifBlank { m.from } + ": " + m.subject.take(50) }
+        }.getOrDefault(emptyList())
+        val dayStart = now.toLocalDate().atStartOfDay(zone).toInstant().toEpochMilli()
+        val dayEnd = dayStart + 86_400_000L
+        val notes = store.notes.value.filter { !it.done && it.remindAt != null && it.remindAt in dayStart until dayEnd }.map { it.title.ifBlank { "Sin título" } }
+        val weather = if (settings.sumWeather.value) runCatching { com.iatualcance.alfred.notify.Weather.today(settings.weatherCity.value, app) }.getOrNull() else null
+        val opts = com.iatualcance.alfred.notify.Plan.SummaryOpts(settings.sumEvents.value, settings.sumTasks.value, settings.sumNotes.value, settings.sumMail.value)
+        com.iatualcance.alfred.notify.Plan.summary(events, tasks, unread, settings.account.value?.name?.substringBefore(' '), now.hour, notes, mails, weather, opts)
     }
 
     val hasAi get() = settings.apiKey.value.isNotBlank()

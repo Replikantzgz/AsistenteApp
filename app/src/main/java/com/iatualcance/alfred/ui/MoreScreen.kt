@@ -311,9 +311,21 @@ private fun SettingsScreen() {
             val summary by sv.settings.dailySummary.collectAsStateCompat()
             val summaryMin by sv.settings.summaryMinutes.collectAsStateCompat()
             SwitchRow("Resumen del día", "Cada mañana: tus citas, tareas y correos sin leer.", summary) { sv.settings.setDailySummary(it) }
-            if (summary) Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("Hora del resumen", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                TimeButton(java.time.LocalTime.of(summaryMin / 60, summaryMin % 60)) { sv.settings.setSummaryMinutes(it.hour * 60 + it.minute) }
+            if (summary) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Hora del resumen", Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                    TimeButton(java.time.LocalTime.of(summaryMin / 60, summaryMin % 60)) { sv.settings.setSummaryMinutes(it.hour * 60 + it.minute) }
+                }
+                val sEv by sv.settings.sumEvents.collectAsStateCompat(); val sTk by sv.settings.sumTasks.collectAsStateCompat()
+                val sNo by sv.settings.sumNotes.collectAsStateCompat(); val sMa by sv.settings.sumMail.collectAsStateCompat()
+                val sWe by sv.settings.sumWeather.collectAsStateCompat(); val city by sv.settings.weatherCity.collectAsStateCompat()
+                Text("Qué incluye", style = MaterialTheme.typography.labelLarge)
+                SwitchRow("Citas del día", "Las de tu calendario de hoy.", sEv) { sv.settings.setSumEvents(it) }
+                SwitchRow("Tareas", "Las de hoy y las vencidas.", sTk) { sv.settings.setSumTasks(it) }
+                SwitchRow("Notas", "Las notas con aviso hoy.", sNo) { sv.settings.setSumNotes(it) }
+                SwitchRow("Correos importantes", "Los sin leer que Gmail marca como importantes.", sMa) { sv.settings.setSumMail(it) }
+                SwitchRow("El tiempo", "Si va a llover o no, y la máxima y la mínima.", sWe) { sv.settings.setSumWeather(it) }
+                if (sWe) androidx.compose.material3.OutlinedTextField(city, { sv.settings.setWeatherCity(it) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape, label = { Text("Tu ciudad") }, placeholder = { Text("Ej.: Zaragoza") })
             }
             SwitchRow("Avisar de las tareas", "A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", notifyTasks) { sv.settings.setNotifyTasks(it) }
             AppOutlinedButton(onClick = {

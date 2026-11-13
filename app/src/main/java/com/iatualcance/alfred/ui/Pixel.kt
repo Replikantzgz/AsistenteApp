@@ -31,10 +31,6 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -94,34 +90,35 @@ private val sideLeft = listOf(NavItem(Tab.MAIL, "CORREO", R.drawable.art_correo)
 private val sideRight = listOf(NavItem(Tab.NOTES, "NOTAS", R.drawable.art_notas), NavItem(Tab.DRIVE, "DRIVE", R.drawable.art_drive))
 private val BarShape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
 
-/** Correo · Agenda · ASISTENTE (Pikachu, grande, centro) · Notas · Drive. Va integrada en el marco rojo de la Pokédex. */
+/** Correo · Agenda · ASISTENTE (Pikachu, grande, centro) · Notas · Drive. Barra flotante con la pestaña activa subrayada. */
 @Composable
 fun PixelNavBar(selected: Tab, onSelect: (Tab) -> Unit) {
-    Row(Modifier.fillMaxWidth().navigationBarsPadding().height(100.dp).padding(horizontal = 6.dp)) {
-        sideLeft.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
-        CenterItem(selected == Tab.CHAT) { onSelect(Tab.CHAT) }
-        sideRight.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
+    Box(Modifier.fillMaxWidth().navigationBarsPadding().height(106.dp)) {
+        Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(78.dp)
+            .shadow(16.dp, BarShape, clip = false, ambientColor = ShadowAmbient, spotColor = ShadowSpot).background(Color.White, BarShape))
+        Row(Modifier.fillMaxWidth().height(106.dp)) {
+            sideLeft.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
+            CenterItem(selected == Tab.CHAT) { onSelect(Tab.CHAT) }
+            sideRight.forEach { SideItem(it, selected == it.tab) { onSelect(it.tab) } }
+        }
     }
 }
 
 @Composable
 private fun Underline(active: Boolean) {
-    Box(Modifier.padding(top = 3.dp).width(34.dp).height(3.dp).background(if (active) Color.White else Color.Transparent, RoundedCornerShape(2.dp)))
+    Box(Modifier.padding(top = 3.dp).width(34.dp).height(3.dp).background(if (active) Red else Color.Transparent, RoundedCornerShape(2.dp)))
 }
 
 @Composable
 private fun RowScope.SideItem(item: NavItem, active: Boolean, onClick: () -> Unit) {
     Column(
-        Modifier.weight(1f).height(100.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick).padding(top = 14.dp),
+        Modifier.weight(1f).height(106.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick).padding(top = 38.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Cada icono va sobre una placa blanca redonda para que se lea sobre el rojo.
-        Box(Modifier.size(46.dp).background(Color.White, CircleShape).border(if (active) 2.5.dp else 1.5.dp, if (active) Ink else Color(0xFF8E1B12), CircleShape), contentAlignment = Alignment.Center) {
-            Art(item.art, 36.dp, item.label)
-        }
+        Art(item.art, 38.dp, item.label)
         Text(
             item.label, fontSize = 10.sp, fontWeight = if (active) FontWeight.ExtraBold else FontWeight.SemiBold, maxLines = 1, textAlign = TextAlign.Center,
-            color = if (active) Color.White else Color(0xFFFFD9D4), letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 3.dp),
+            color = if (active) Ink else MaterialTheme.colorScheme.onSurfaceVariant, letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 2.dp),
         )
         Underline(active)
     }
@@ -130,39 +127,17 @@ private fun RowScope.SideItem(item: NavItem, active: Boolean, onClick: () -> Uni
 @Composable
 private fun RowScope.CenterItem(active: Boolean, onClick: () -> Unit) {
     Column(
-        Modifier.weight(1.2f).height(100.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick).padding(top = 8.dp),
+        Modifier.weight(1.25f).height(106.dp).clickable(remember { MutableInteractionSource() }, null, onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Botón sencillo: círculo blanco con una línea negra fina.
-        Box(Modifier.size(66.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) {
-            Art(R.drawable.art_pikachu_round, 58.dp, "Asistente")
+        // Botón sencillo: círculo blanco con una línea negra fina (la pestaña activa se marca con el subrayado, como las demás).
+        Box(Modifier.padding(top = 4.dp).size(76.dp).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape), contentAlignment = Alignment.Center) {
+            Art(R.drawable.art_pikachu_round, 68.dp, "Asistente")
         }
-        Text("ASISTENTE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Color.White, letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 3.dp))
+        Text("ASISTENTE", fontSize = 10.sp, fontWeight = FontWeight.ExtraBold, color = Ink, letterSpacing = 0.3.sp, modifier = Modifier.padding(top = 2.dp))
         Underline(active)
     }
 }
-
-// --------------------------------------------------------------------------- Marco de Pokédex
-val PokedexRed = Color(0xFFD93428)
-val PokedexEdge = Color(0xFF8E1B12)
-private val ScreenShape = RoundedCornerShape(bottomStart = 22.dp, bottomEnd = 22.dp)
-
-/** Carcasa roja: pinta el degradado superior (barra de estado + cabecera) y el rojo liso del resto. */
-@Composable
-fun Modifier.pokedexBody(): Modifier {
-    val top = with(androidx.compose.ui.platform.LocalDensity.current) { androidx.compose.foundation.layout.WindowInsets.statusBars.getTop(this).toFloat() + 64.dp.toPx() }
-    return this.drawBehind {
-        drawRect(Brush.verticalGradient(listOf(Color(0xFFF4493D), PokedexRed), 0f, top))
-        drawRect(PokedexRed, topLeft = Offset(0f, top), size = androidx.compose.ui.geometry.Size(size.width, size.height - top))
-    }
-}
-
-/** La pantalla blanca de la Pokédex: rails rojos a izquierda y derecha, esquinas inferiores redondeadas y filo oscuro. */
-@Composable
-fun Modifier.pokedexScreen(): Modifier = this
-    .windowInsetsPadding(androidx.compose.foundation.layout.WindowInsets.statusBars)
-    .padding(horizontal = 10.dp)
-    .clip(ScreenShape).background(Paper).texture().border(2.dp, PokedexEdge, ScreenShape)
 
 // --------------------------------------------------------------------------- Barra superior
 /** Cabecera roja de Pokédex con degradado, brillo, lente azul y tres luces. Misma firma que TopAppBar. */
@@ -176,7 +151,8 @@ fun PixelBar(
 ) {
     Column(Modifier.fillMaxWidth().statusBarsPadding()) {
         Box(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().shadow(8.dp, clip = false, ambientColor = ShadowAmbient, spotColor = ShadowSpot)
+                .background(Brush.verticalGradient(listOf(Color(0xFFF4493D), Color(0xFFCF2C20)))),
         ) {
             Box(Modifier.fillMaxWidth().height(30.dp).background(Brush.verticalGradient(listOf(Color.White.copy(alpha = 0.22f), Color.Transparent))))
             CompositionLocalProvider(LocalContentColor provides Color.White) {
@@ -189,7 +165,7 @@ fun PixelBar(
                     if (global) GlobalActions()
                 }
             }
-            
+            Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(Color(0x55801510)))
         }
     }
 }

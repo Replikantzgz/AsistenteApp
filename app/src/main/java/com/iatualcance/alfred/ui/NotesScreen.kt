@@ -9,6 +9,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -169,16 +170,18 @@ private fun NotesList() {
 private fun NoteCard(n: Note, onClick: () -> Unit) {
     val sv = LocalServices.current
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth().clickable(onClick = onClick)) {
-        Row(Modifier.padding(12.dp)) {
+        Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
+            if (n.remindAt != null) Checkbox(n.done, { sv.store.upsertNote(n.copy(done = it)) })
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (n.pinned) { Icon(Icons.Default.PushPin, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(4.dp)) }
-                    Text(n.title.ifBlank { "Sin título" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(n.title.ifBlank { "Sin título" }, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis, textDecoration = if (n.done) TextDecoration.LineThrough else null)
                 }
                 if (n.content.isNotBlank()) Text(n.content, maxLines = 2, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 val meta = buildList {
                     add(Instant.ofEpochMilli(n.updatedAt).atZone(ZoneId.systemDefault()).format(noteDate))
+                    n.remindAt?.let { add((if (n.done) "✔ " else "⏰ ") + Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).format(java.time.format.DateTimeFormatter.ofPattern("d MMM HH:mm", com.iatualcance.alfred.Util.ES))) }
                     if (n.attachments.isNotEmpty()) add("📎 ${n.attachments.size}")
                     if (n.driveFileId != null || n.attachments.any { !it.driveLink.isNullOrBlank() }) add("☁️")
                     addAll(n.tags.map { "#$it" })
@@ -275,6 +278,17 @@ private fun NoteEditor(id: String, onClose: () -> Unit) {
                 focusedContainerColor = Color.Transparent, unfocusedContainerColor = Color.Transparent,
                 focusedIndicatorColor = Color.Transparent, unfocusedIndicatorColor = Color.Transparent,
             )
+            // Aviso de la nota + check "hecho" (igual que en las tareas)
+            Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val at = note.remindAt?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()) }
+                if (at == null) com.iatualcance.alfred.ui.PillChip("⏰ Añadir aviso", { note = note.copy(remindAt = LocalDate.now().atTime(java.time.LocalTime.now().plusHours(1).withSecond(0).withNano(0)).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli(), done = false) })
+                else {
+                    Checkbox(note.done, { note = note.copy(done = it) })
+                    DateButton(at.toLocalDate(), Modifier.weight(1f)) { d -> note = note.copy(remindAt = d.atTime(at.toLocalTime()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) }
+                    TimeButton(at.toLocalTime()) { t -> note = note.copy(remindAt = at.toLocalDate().atTime(t).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()) }
+                    IconButton(onClick = { note = note.copy(remindAt = null, done = false) }) { Icon(Icons.Default.Close, "Quitar aviso") }
+                }
+            }
             TextField(title, { title = it }, Modifier.fillMaxWidth(), placeholder = { Text("Título", style = MaterialTheme.typography.headlineSmall) },
                 textStyle = MaterialTheme.typography.headlineSmall, colors = bare)
             if (note.attachments.isNotEmpty()) Row(Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {

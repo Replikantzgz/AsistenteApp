@@ -99,3 +99,20 @@ class SummaryPlanTest {
         assertEquals(listOf("Nada pendiente. ¡Buen día!"), Plan.widgetLines(emptyList(), emptyList(), now, z))
     }
 }
+
+class SummaryOptionsTest {
+    @Test fun weatherRain() {
+        assertEquals("☔ Hoy va a llover (70% de probabilidad) · 8°/14°", Plan.weatherLine(61, 70, 14, 8))
+        assertEquals("☀️ Hoy no llueve · 10°/22°", Plan.weatherLine(0, 5, 22, 10))
+    }
+    @Test fun optionsHideSections() {
+        val (_, x) = Plan.summary(listOf("10:00" to "Dentista"), listOf("Leche"), 2, null, 8, notes = listOf("Llamar"), mails = listOf("Ana: Factura"), weather = "☀️ Hoy no llueve · 10°/22°",
+            opts = Plan.SummaryOpts(events = false, tasks = false, notes = true, mail = true))
+        assertEquals("☀️ Hoy no llueve · 10°/22°\n📝 1 nota: Llamar\n✉️ Importantes: Ana: Factura", x)
+    }
+    @Test fun noteReminderStopsWhenDone() {
+        val n = com.iatualcance.alfred.data.Note(title = "X", remindAt = 5_000L)
+        org.junit.Assert.assertNotNull(Plan.noteReminder(n, 1_000L))
+        org.junit.Assert.assertNull(Plan.noteReminder(n.copy(done = true), 1_000L))
+    }
+}

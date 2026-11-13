@@ -91,11 +91,11 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
 
     CompositionLocalProvider(LocalUi provides ui) {
         Scaffold(
-            modifier = Modifier.pokedexBody(), containerColor = Color.Transparent,
+            containerColor = MaterialTheme.colorScheme.background,
             snackbarHost = { SnackbarHost(snack, Modifier.padding(bottom = 4.dp)) },
             bottomBar = { PixelNavBar(ui.tab) { ui.overlay = null; ui.tab = it } },
         ) { pad ->
-            Box(Modifier.fillMaxSize().padding(pad).consumeWindowInsets(pad).pokedexScreen().imePadding()) {
+            Box(Modifier.fillMaxSize().texture().padding(pad).consumeWindowInsets(pad).imePadding()) {
                 when {
                     ui.overlay != null -> OverlayScreen(ui.overlay!!)
                     else -> when (ui.tab) {

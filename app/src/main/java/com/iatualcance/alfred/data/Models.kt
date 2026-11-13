@@ -23,6 +23,8 @@ data class Note(
     val attachments: List<Attachment> = emptyList(),
     val pinned: Boolean = false,
     val driveFileId: String? = null,
+    val remindAt: Long? = null,    // aviso opcional de la nota (ms)
+    val done: Boolean = false,     // marcada como hecha: deja de avisar
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 )

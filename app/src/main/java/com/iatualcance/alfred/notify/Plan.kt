@@ -35,16 +35,39 @@ object Plan {
     fun dailyReminder(minutesOfDay: Int, now: Long, zone: ZoneId) =
         Reminder("daily", nextDailyAt(now, minutesOfDay, zone), "Resumen del día", "Preparando tu resumen…", "chat", kind = "summary")
 
-    /** Título y texto del resumen de la mañana. [events]: (hora, título) de hoy; [tasks]: títulos de las tareas de hoy o vencidas. */
-    fun summary(events: List<Pair<String, String>>, tasks: List<String>, unread: Int, name: String?, hour: Int): Pair<String, String> {
+    /** Qué secciones lleva el resumen (configurable en Ajustes). */
+    data class SummaryOpts(val events: Boolean = true, val tasks: Boolean = true, val notes: Boolean = true, val mail: Boolean = true)
+
+    /**
+     * Título y texto del resumen de la mañana. [events]: (hora, título) de hoy; [tasks]: tareas de hoy o vencidas;
+     * [notes]: notas con aviso hoy; [mails]: correos importantes sin leer ("Remitente: asunto"); [weather]: frase del tiempo.
+     */
+    fun summary(
+        events: List<Pair<String, String>>, tasks: List<String>, unread: Int, name: String?, hour: Int,
+        notes: List<String> = emptyList(), mails: List<String> = emptyList(), weather: String? = null, opts: SummaryOpts = SummaryOpts(),
+    ): Pair<String, String> {
         val greet = when { hour < 13 -> "Buenos días"; hour < 21 -> "Buenas tardes"; else -> "Buenas noches" }
         val title = if (name.isNullOrBlank()) greet else "$greet, $name"
-        if (events.isEmpty() && tasks.isEmpty() && unread == 0) return title to "Hoy tienes el día libre: sin citas, tareas ni correos pendientes."
         val lines = mutableListOf<String>()
-        lines += if (events.isEmpty()) "📅 Sin citas hoy" else "📅 " + (if (events.size == 1) "1 cita: " else "${events.size} citas: ") + events.take(4).joinToString(" · ") { (t, n) -> "$t $n".trim() } + if (events.size > 4) " …" else ""
-        lines += if (tasks.isEmpty()) "✅ Sin tareas para hoy" else "✅ " + (if (tasks.size == 1) "1 tarea: " else "${tasks.size} tareas: ") + tasks.take(4).joinToString(" · ") + if (tasks.size > 4) " …" else ""
-        if (unread > 0) lines += "✉️ " + (if (unread == 1) "1 correo sin leer" else "$unread correos sin leer")
+        weather?.let { lines += it }
+        if (opts.events) lines += if (events.isEmpty()) "📅 Sin citas hoy" else "📅 " + (if (events.size == 1) "1 cita: " else "${events.size} citas: ") + events.take(4).joinToString(" · ") { (t, n) -> "$t $n".trim() } + if (events.size > 4) " …" else ""
+        if (opts.tasks) lines += if (tasks.isEmpty()) "✅ Sin tareas para hoy" else "✅ " + (if (tasks.size == 1) "1 tarea: " else "${tasks.size} tareas: ") + tasks.take(4).joinToString(" · ") + if (tasks.size > 4) " …" else ""
+        if (opts.notes && notes.isNotEmpty()) lines += "📝 " + (if (notes.size == 1) "1 nota: " else "${notes.size} notas: ") + notes.take(3).joinToString(" · ") + if (notes.size > 3) " …" else ""
+        if (opts.mail) {
+            if (mails.isNotEmpty()) lines += "✉️ Importantes: " + mails.take(3).joinToString(" · ") + if (mails.size > 3) " …" else ""
+            else if (unread > 0) lines += "✉️ " + (if (unread == 1) "1 correo sin leer" else "$unread correos sin leer")
+        }
+        val nothing = (!opts.events || events.isEmpty()) && (!opts.tasks || tasks.isEmpty()) && (!opts.notes || notes.isEmpty()) && (!opts.mail || (mails.isEmpty() && unread == 0))
+        if (nothing) return title to ((listOfNotNull(weather) + "Hoy tienes el día libre: sin citas, tareas ni correos pendientes.").joinToString("\n"))
         return title to lines.joinToString("\n")
+    }
+
+    /** Frase corta del tiempo del día a partir de la previsión (código WMO, probabilidad de lluvia, máxima y mínima). */
+    fun weatherLine(code: Int, rainPct: Int, max: Int, min: Int): String {
+        val rain = rainPct >= 40 || code in 51..67 || code in 80..99
+        val icon = when { code >= 95 -> "⛈️"; rain -> "☔"; code in 71..77 -> "❄️"; code == 0 || code == 1 -> "☀️"; code == 45 || code == 48 -> "🌫️"; else -> "⛅" }
+        val text = if (rain) "Hoy va a llover (${rainPct}% de probabilidad)" else "Hoy no llueve"
+        return "$icon $text · $min°/$max°"
     }
 
     /** Líneas del widget: próximas citas y tareas pendientes. */
@@ -69,6 +92,13 @@ object Plan {
             ?: return null
         if (at <= now) return null
         return Reminder("task-${t.id}", at, "Recordatorio", t.title, "tareas", t.id)
+    }
+
+    fun noteReminder(n: com.iatualcance.alfred.data.Note, now: Long): Reminder? {
+        if (n.done) return null
+        val at = n.remindAt ?: return null
+        if (at <= now) return null
+        return Reminder("note-${n.id}", at, "Nota: " + n.title.ifBlank { "Sin título" }, n.content.take(120).ifBlank { "Tienes una nota pendiente" }, "notas")
     }
 
     fun eventReminder(e: CalEvent, leadMinutes: Int, now: Long): Reminder? {
