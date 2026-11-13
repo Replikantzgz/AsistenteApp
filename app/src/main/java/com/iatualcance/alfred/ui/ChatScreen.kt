@@ -133,8 +133,80 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         sv.voice.interrupt()
     }
 
+    /** Ejecuta un atajo directamente, sin pasar por la IA. */
+    private suspend fun execQuick(cmd: com.iatualcance.alfred.ai.Quick.Cmd): com.iatualcance.alfred.ai.Reply {
+        val zone = java.time.ZoneId.systemDefault()
+        val today = java.time.LocalDate.now()
+        val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        fun whenText(d: java.time.LocalDate?, t: java.time.LocalTime?): String {
+            val day = when (d) { null -> ""; today -> "hoy"; today.plusDays(1) -> "mañana"; else -> d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", com.iatualcance.alfred.Util.ES)) }
+            return listOfNotNull(day.ifBlank { null }, t?.let { "a las ${it.format(hm)}" }).joinToString(" ")
+        }
+        return when (cmd) {
+            is com.iatualcance.alfred.ai.Quick.NewTask -> {
+                val day = cmd.due ?: if (cmd.time != null) today else null
+                val remind = cmd.time?.let { (day ?: today).atTime(it).atZone(zone).toInstant().toEpochMilli() }
+                sv.store.upsertTask(com.iatualcance.alfred.data.Task(title = cmd.title, due = day?.toString(), remindAt = remind))
+                com.iatualcance.alfred.ai.Reply("«${cmd.title}»" + whenText(day, cmd.time).let { if (it.isBlank()) "" else " · $it" }, listOf("✅ Tarea creada"))
+            }
+            is com.iatualcance.alfred.ai.Quick.NewNote -> {
+                sv.store.upsertNote(com.iatualcance.alfred.data.Note(title = cmd.title, content = cmd.content))
+                com.iatualcance.alfred.ai.Reply("«${cmd.title}»", listOf("📝 Nota guardada"))
+            }
+            is com.iatualcance.alfred.ai.Quick.NewEvent -> {
+                if (!sv.hasGoogle) com.iatualcance.alfred.ai.Reply("Para crear citas necesito tu cuenta de Google. Conéctala en Ajustes.", emptyList())
+                else {
+                    val allDay = cmd.start == null
+                    val start = (if (allDay) cmd.date.atStartOfDay() else cmd.date.atTime(cmd.start)).atZone(zone)
+                    val end = if (allDay) start.plusDays(1) else start.plusMinutes(cmd.durationMin.toLong())
+                    sv.google.createEvent(cmd.title, start, end, allDay)
+                    com.iatualcance.alfred.ai.Reply("«${cmd.title}» · " + whenText(cmd.date, cmd.start).ifBlank { "todo el día" } + if (allDay) " (todo el día)" else "", listOf("📅 Cita creada"))
+                }
+            }
+            is com.iatualcance.alfred.ai.Quick.Done -> if (cmd.isNote) {
+                val n = com.iatualcance.alfred.ai.Quick.best(sv.store.notes.value.filter { !it.done }, cmd.query) { it.title }
+                if (n == null) com.iatualcance.alfred.ai.Reply("No encuentro ninguna nota que se parezca a «${cmd.query}».", emptyList())
+                else { sv.store.upsertNote(n.copy(done = true)); com.iatualcance.alfred.ai.Reply("«${n.title.ifBlank { "Sin título" }}»", listOf("✔ Nota hecha")) }
+            } else {
+                val t = com.iatualcance.alfred.ai.Quick.best(sv.store.tasks.value.filter { !it.done }, cmd.query) { it.title }
+                if (t == null) com.iatualcance.alfred.ai.Reply("No encuentro ninguna tarea pendiente que se parezca a «${cmd.query}».", emptyList())
+                else { sv.store.upsertTask(t.copy(done = true)); com.iatualcance.alfred.ai.Reply("«${t.title}»", listOf("✔ Tarea hecha")) }
+            }
+            is com.iatualcance.alfred.ai.Quick.Mail -> com.iatualcance.alfred.ai.Reply(
+                "Te dejo el correo preparado para ${cmd.to}. Revísalo y pulsa enviar.", listOf("✉️ Correo preparado"),
+                listOf(com.iatualcance.alfred.ai.Nav.Compose(cmd.to, cmd.subject, cmd.body)),
+            )
+            is com.iatualcance.alfred.ai.Quick.Open -> com.iatualcance.alfred.ai.Reply("Abriendo.", emptyList(), listOf(com.iatualcance.alfred.ai.Nav.Screen(cmd.screen)))
+            com.iatualcance.alfred.ai.Quick.Scan -> com.iatualcance.alfred.ai.Reply("Abriendo el escáner.", emptyList(), listOf(com.iatualcance.alfred.ai.Nav.Scan))
+            com.iatualcance.alfred.ai.Quick.Record -> com.iatualcance.alfred.ai.Reply("Listo para grabar.", emptyList(), listOf(com.iatualcance.alfred.ai.Nav.Record))
+        }
+    }
+
     fun send(text: String, image: Uri?) {
         if (busy || (text.isBlank() && image == null)) return
+        // Atajos: frases directas que se resuelven al instante, sin IA ni cuota.
+        val quick = if (image == null) com.iatualcance.alfred.ai.Quick.parse(text) else null
+        if (quick != null) {
+            val um = ChatMsg(fromUser = true, text = text)
+            sv.store.addChat(um); lastUser = um
+            busy = true
+            job = viewModelScope.launch {
+                try {
+                    val reply = execQuick(quick)
+                    sv.store.addChat(ChatMsg(fromUser = false, text = reply.text, actions = reply.actions))
+                    nav = reply.nav.lastOrNull()
+                    if (sv.voice.active) sv.voice.speak((reply.actions.firstOrNull()?.dropWhile { !it.isLetter() } ?: "") + ". " + reply.text) { sv.voice.relisten() }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    sv.store.addChat(ChatMsg(fromUser = false, text = e.message ?: e.toString(), error = true)); sv.voice.stop()
+                } finally {
+                    if (coroutineContext[kotlinx.coroutines.Job]?.isActive != false) { busy = false; lastUser = null }
+                    launch { runCatching { sv.refreshReminders(true) } }
+                }
+            }
+            return
+        }
         val history = sv.store.chat.value.filter { !it.error }.map { it.fromUser to it.text }
         val um = ChatMsg(fromUser = true, text = text.ifBlank { "(imagen)" } + if (image != null && text.isNotBlank()) "  🖼️" else "")
         sv.store.addChat(um); lastUser = um
@@ -197,6 +269,7 @@ fun ChatScreen(vm: ChatViewModel) {
     var input by rememberSaveable { mutableStateOf("") }
     var image by rememberSaveable { mutableStateOf<Uri?>(null) }
     var askClear by rememberSaveable { mutableStateOf(false) }
+    var showShortcuts by rememberSaveable { mutableStateOf(false) }
     val list = rememberLazyListState()
     val ctx = LocalContext.current
     var pendingOneShot by remember { mutableStateOf(false) }
@@ -278,6 +351,7 @@ fun ChatScreen(vm: ChatViewModel) {
 
         // Atajos
         Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillChip("⚡ Atajos", { showShortcuts = true })
             PillChip("Conversar", { if (voiceState == com.iatualcance.alfred.voice.VoiceController.State.IDLE) startConversation() else sv.voice.stop() })
             PillChip(if (speak) "Voz: sí" else "Voz: no", { sv.settings.setSpeakReplies(!speak); if (speak) sv.voice.stop() })
             quick.forEach { q -> PillChip(q.label, { vm.send(q.prompt, null) }, enabled = !vm.busy) }
@@ -323,6 +397,8 @@ fun ChatScreen(vm: ChatViewModel) {
             else AppIconButton(onClick = ::send) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
         }
     }
+
+    if (showShortcuts) ShortcutsSheet(onPick = { input = it; showShortcuts = false }, onClose = { showShortcuts = false })
 
     if (askClear) Confirm("Borrar conversación", "Se borrará el historial del chat. Tus notas y tareas no se tocan.", "Borrar", { askClear = false }) { sv.store.clearChat() }
 }

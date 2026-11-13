@@ -171,7 +171,7 @@ private fun NoteCard(n: Note, onClick: () -> Unit) {
     val sv = LocalServices.current
     Surface(color = MaterialTheme.colorScheme.surfaceContainer, shape = PxShape, modifier = Modifier.pxBorder().fillMaxWidth().clickable(onClick = onClick)) {
         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-            if (n.remindAt != null) Checkbox(n.done, { sv.store.upsertNote(n.copy(done = it)) })
+            if (n.remindAt != null || n.done) Checkbox(n.done, { sv.store.upsertNote(n.copy(done = it)) })
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if (n.pinned) { Icon(Icons.Default.PushPin, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.primary); Spacer(Modifier.width(4.dp)) }
