@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -51,6 +52,8 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.Composable
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Search
@@ -95,14 +98,30 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     /** Se pone a true cuando se agota la cuota gratis; AppRoot abre la pantalla Premium. */
     var needsPremium by mutableStateOf(false)
 
+    /** Texto de la petición que se ha parado, para volver a editarlo en la caja. La consume ChatScreen. */
+    var restored by mutableStateOf<String?>(null)
+    private var job: kotlinx.coroutines.Job? = null
+    private var lastUser: ChatMsg? = null
+
     init { sv.voice.onText = { send(it, null) } }
+
+    /** Para lo que Alfred esté haciendo: cancela la petición, quita tu mensaje y deja el texto para reformularlo. */
+    fun stop() {
+        if (!busy) { sv.voice.interrupt(); return }
+        job?.cancel(); job = null
+        pending?.answer?.complete(false)
+        lastUser?.let { m -> sv.store.removeChat(m.id); restored = m.text.removeSuffix("  🖼️").takeIf { it != "(imagen)" } }
+        lastUser = null; busy = false
+        sv.voice.interrupt()
+    }
 
     fun send(text: String, image: Uri?) {
         if (busy || (text.isBlank() && image == null)) return
         val history = sv.store.chat.value.filter { !it.error }.map { it.fromUser to it.text }
-        sv.store.addChat(ChatMsg(fromUser = true, text = text.ifBlank { "(imagen)" } + if (image != null && text.isNotBlank()) "  🖼️" else ""))
+        val um = ChatMsg(fromUser = true, text = text.ifBlank { "(imagen)" } + if (image != null && text.isNotBlank()) "  🖼️" else "")
+        sv.store.addChat(um); lastUser = um
         busy = true
-        viewModelScope.launch {
+        job = viewModelScope.launch {
             try {
                 val img = image?.let { uri ->
                     withContext(Dispatchers.IO) {
@@ -132,7 +151,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 sv.store.addChat(ChatMsg(fromUser = false, text = msg, error = true))
                 sv.voice.stop()
             } finally {
-                busy = false
+                if (coroutineContext[kotlinx.coroutines.Job]?.isActive != false) { busy = false; lastUser = null }
                 launch { runCatching { sv.refreshReminders(true) } }
             }
         }
@@ -162,15 +181,18 @@ fun ChatScreen(vm: ChatViewModel) {
     var askClear by rememberSaveable { mutableStateOf(false) }
     val list = rememberLazyListState()
     val ctx = LocalContext.current
+    var pendingOneShot by remember { mutableStateOf(false) }
     val voiceState by sv.voice.state.collectAsStateCompat()
+    val heard by sv.voice.heard.collectAsStateCompat()
     val speak by sv.settings.speakReplies.collectAsStateCompat()
     val micPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { ok ->
-        if (ok) { if (sv.voice.available()) sv.voice.startConversation() else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
+        if (ok) { if (sv.voice.available()) sv.voice.startConversation(pendingOneShot) else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
         else ui.say("Sin permiso de micrófono no puedo escucharte. Actívalo en los ajustes del móvil.")
     }
-    fun startConversation() {
+    fun startConversation(oneShot: Boolean = false) {
+        pendingOneShot = oneShot
         if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
-            if (sv.voice.available()) sv.voice.startConversation() else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado")
+            if (sv.voice.available()) sv.voice.startConversation(oneShot) else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado")
         } else micPermission.launch(android.Manifest.permission.RECORD_AUDIO)
     }
     androidx.compose.runtime.DisposableEffect(Unit) { onDispose { sv.voice.stop() } }
@@ -185,6 +207,7 @@ fun ChatScreen(vm: ChatViewModel) {
         }
     }
 
+    LaunchedEffect(vm.restored) { vm.restored?.let { input = if (input.isBlank()) it else "$it $input"; vm.restored = null } }
     LaunchedEffect(ui.chatDraft) { ui.chatDraft?.let { image = it.uri; input = it.text; ui.chatDraft = null } }
 
     fun send() { vm.send(input.trim(), image); input = ""; image = null }
@@ -246,8 +269,9 @@ fun ChatScreen(vm: ChatViewModel) {
         ) {
             CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
             Spacer(Modifier.width(10.dp))
-            Text(when (voiceState) { com.iatualcance.alfred.voice.VoiceController.State.LISTENING -> "Escuchando… habla ahora"; com.iatualcance.alfred.voice.VoiceController.State.THINKING -> "Pensando…"; else -> "Hablando…" },
-                style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+            Text(when (voiceState) { com.iatualcance.alfred.voice.VoiceController.State.LISTENING -> if (heard.isBlank()) "Escuchando… habla ahora" else "«$heard»"; com.iatualcance.alfred.voice.VoiceController.State.THINKING -> "Pensando…"; else -> "Hablando…" },
+                style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f), maxLines = 2)
+            if (voiceState != com.iatualcance.alfred.voice.VoiceController.State.LISTENING || heard.isNotBlank()) TextButton(onClick = { vm.stop() }) { Text("PARAR", fontWeight = FontWeight.Bold) }
             TextButton(onClick = { sv.voice.stop() }) { Text("TERMINAR", color = MaterialTheme.colorScheme.error, fontWeight = FontWeight.Bold) }
         }
         image?.let { uri ->
@@ -273,15 +297,11 @@ fun ChatScreen(vm: ChatViewModel) {
                 ),
             )
             Spacer(Modifier.width(8.dp))
-            if (input.isBlank() && image == null) AppIconButton(onClick = {
-                try {
-                    speech.launch(Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
-                        .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                        .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES")
-                        .putExtra(RecognizerIntent.EXTRA_PROMPT, "Dígame"))
-                } catch (_: Exception) { ui.say("Este móvil no tiene reconocimiento de voz de Google instalado") }
+            if (vm.busy) AppIconButton(onClick = { vm.stop() }) { Icon(Icons.Default.Stop, "Parar") }
+            else if (input.isBlank() && image == null) AppIconButton(onClick = {
+                if (voiceState != com.iatualcance.alfred.voice.VoiceController.State.IDLE) sv.voice.stop() else startConversation(oneShot = true)
             }) { Icon(Icons.Default.Mic, "Hablar") }
-            else AppIconButton(onClick = ::send, enabled = !vm.busy) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
+            else AppIconButton(onClick = ::send) { Icon(Icons.AutoMirrored.Filled.Send, "Enviar") }
         }
     }
 

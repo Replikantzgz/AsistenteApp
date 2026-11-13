@@ -33,6 +33,11 @@ class VoiceController(private val ctx: Context) {
     /** Lo que el usuario ha dicho. Se asigna desde el chat. */
     var onText: ((String) -> Unit)? = null
     @Volatile var active = false; private set
+    /** Lo entendido hasta ahora (mientras se espera por si sigues hablando). */
+    val heard = MutableStateFlow("")
+    private var oneShot = false
+    private var buffer = ""
+    private val flush = Runnable { flushNow() }
 
     private val main = Handler(Looper.getMainLooper())
     private var rec: SpeechRecognizer? = null
@@ -41,21 +46,44 @@ class VoiceController(private val ctx: Context) {
     private val ttsQueue = mutableListOf<(TextToSpeech?) -> Unit>()
     private var silences = 0
 
+    companion object { const val PATIENCE_MS = 2500L }
+
     fun available() = SpeechRecognizer.isRecognitionAvailable(ctx)
 
-    fun startConversation() { active = true; silences = 0; listen() }
+    /** [oneShot]: una sola frase (botón del micro); si no, conversación continua. */
+    fun startConversation(oneShot: Boolean = false) { this.oneShot = oneShot; active = true; silences = 0; buffer = ""; heard.value = ""; listen() }
 
     fun stop() {
         active = false
         main.post {
+            main.removeCallbacks(flush); buffer = ""; heard.value = ""
             runCatching { rec?.cancel(); rec?.destroy() }; rec = null
             runCatching { tts?.stop() }
             state.value = State.IDLE
         }
     }
 
-    /** Vuelve a escuchar (tras leer la respuesta) si el modo conversación sigue activo. */
-    fun relisten() { if (active) listen() }
+    /** Corta lo que Alfred esté pensando o leyendo y se pone a escuchar de nuevo (sin salir del modo voz). */
+    fun interrupt() {
+        main.post {
+            main.removeCallbacks(flush); buffer = ""; heard.value = ""
+            runCatching { rec?.cancel(); rec?.destroy() }; rec = null
+            runCatching { tts?.stop() }
+            if (active) listen() else state.value = State.IDLE
+        }
+    }
+
+    /** Vuelve a escuchar (tras leer la respuesta) si el modo conversación sigue activo; en una sola frase, termina. */
+    fun relisten() { if (active) { if (oneShot) stop() else listen() } }
+
+    /** Pasa lo dicho al asistente (tras la pausa de paciencia). */
+    private fun flushNow() {
+        main.removeCallbacks(flush)
+        val said = buffer.trim(); buffer = ""; heard.value = ""
+        if (said.isBlank() || !active) return
+        runCatching { rec?.cancel(); rec?.destroy() }; rec = null
+        silences = 0; state.value = State.THINKING; onText?.invoke(said)
+    }
 
     private fun listen() { main.post {
         if (!active) return@post
@@ -64,18 +92,21 @@ class VoiceController(private val ctx: Context) {
         r.setRecognitionListener(object : RecognitionListener {
             override fun onResults(results: Bundle?) {
                 val said = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)?.firstOrNull().orEmpty().trim()
-                if (said.isBlank()) { silence(); return }
-                silences = 0; state.value = State.THINKING; onText?.invoke(said)
+                if (said.isBlank()) { if (buffer.isNotBlank()) flushNow() else silence(); return }
+                // Paciencia: no se envía hasta que pasen PATIENCE_MS sin que sigas hablando; mientras, se sigue escuchando.
+                silences = 0; buffer = (buffer + " " + said).trim(); heard.value = buffer
+                main.removeCallbacks(flush); main.postDelayed(flush, PATIENCE_MS)
+                listen()
             }
             override fun onError(error: Int) {
                 when (error) {
-                    SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> silence()
+                    SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> if (buffer.isNotBlank()) flushNow() else silence()
                     SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> main.postDelayed({ if (active) listen() }, 600)
                     else -> stop()                         // sin permiso, sin red, servicio no disponible…
                 }
             }
             override fun onReadyForSpeech(params: Bundle?) {}
-            override fun onBeginningOfSpeech() {}
+            override fun onBeginningOfSpeech() { main.removeCallbacks(flush) }   // sigues hablando: se espera
             override fun onRmsChanged(rmsdB: Float) {}
             override fun onBufferReceived(buffer: ByteArray?) {}
             override fun onEndOfSpeech() {}
@@ -85,7 +116,10 @@ class VoiceController(private val ctx: Context) {
         r.startListening(
             Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
                 .putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES").putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, ctx.packageName),
+                .putExtra(RecognizerIntent.EXTRA_LANGUAGE, "es-ES").putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE, ctx.packageName)
+                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_COMPLETE_SILENCE_LENGTH_MILLIS, PATIENCE_MS)
+                .putExtra(RecognizerIntent.EXTRA_SPEECH_INPUT_POSSIBLY_COMPLETE_SILENCE_LENGTH_MILLIS, PATIENCE_MS)
+                .putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1),
         )
         state.value = State.LISTENING
     } }

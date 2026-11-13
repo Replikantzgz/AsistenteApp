@@ -93,6 +93,11 @@ class Store(private val ctx: Context) {
         save("chat.json", ChatMsg.serializer(), chat.value)
     }
 
+    fun removeChat(id: String) {
+        chat.update { l -> l.filterNot { it.id == id } }
+        save("chat.json", ChatMsg.serializer(), chat.value)
+    }
+
     fun clearChat() {
         chat.value = emptyList()
         save("chat.json", ChatMsg.serializer(), emptyList())
