@@ -196,7 +196,7 @@ private fun DriveBrowser(reloadKey: Int, requestReload: () -> Unit) {
                 }
             }
             if (err == null) Box(Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
-                FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { fabMenu = true }) { Icon(Icons.Default.Add, "Nuevo") }
+                FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { fabMenu = true }) { Icon(Icons.Default.Add, "Nuevo") }
                 DropdownMenu(fabMenu, { fabMenu = false }) {
                     if (mode == 2 && stack.isEmpty()) DropdownMenuItem({ Text("Nuevo proyecto compartido") }, { fabMenu = false; newProject = true }, leadingIcon = { Icon(Icons.Default.Group, null) })
                     DropdownMenuItem({ Text("Subir archivo") }, { fabMenu = false; pick.launch("*/*") }, leadingIcon = { Icon(Icons.Default.Add, null) })

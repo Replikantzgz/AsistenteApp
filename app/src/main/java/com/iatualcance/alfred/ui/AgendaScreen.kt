@@ -159,7 +159,7 @@ fun AgendaScreen() = GoogleGate("tu calendario", com.iatualcance.alfred.R.drawab
                 }
             }
         }
-        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo evento") }
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { creating = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo evento") }
     }
 
     if (creating || editing != null) EventDialog(
@@ -305,7 +305,7 @@ private fun MonthGrid(date: LocalDate, byDay: Map<LocalDate, List<CalEvent>>, on
                 val isToday = day == today
                 Column(
                     Modifier.weight(1f).height(68.dp).padding(2.dp)
-                        .background(if (isToday) Color(0xFFFFEDEA) else Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
+                        .background(if (isToday) Red.copy(alpha = 0.12f) else Color.Transparent, androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                         .border(1.dp, if (isToday) Red else SoftLine.copy(alpha = if (inMonth) 1f else 0.4f), androidx.compose.foundation.shape.RoundedCornerShape(10.dp))
                         .clickable { onDay(day) }.padding(vertical = 5.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,

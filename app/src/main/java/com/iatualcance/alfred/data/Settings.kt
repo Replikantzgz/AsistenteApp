@@ -30,6 +30,8 @@ class Settings(ctx: Context) {
     val leadMin = MutableStateFlow(p.getInt("leadMin", 15))
     val dailySummary = MutableStateFlow(p.getBoolean("dailySummary", true))
     val summaryMinutes = MutableStateFlow(p.getInt("summaryMinutes", 8 * 60))
+    val skin = MutableStateFlow(p.getString("skin", "pokemon") ?: "pokemon").also { com.iatualcance.alfred.ui.Skins.current = com.iatualcance.alfred.ui.Skins.byId(it.value) }
+    fun setSkin(id: String) { skin.value = id; p.edit().putString("skin", id).apply(); com.iatualcance.alfred.ui.Skins.current = com.iatualcance.alfred.ui.Skins.byId(id) }
     val sumEvents = MutableStateFlow(p.getBoolean("sumEvents", true))
     val sumTasks = MutableStateFlow(p.getBoolean("sumTasks", true))
     val sumNotes = MutableStateFlow(p.getBoolean("sumNotes", true))

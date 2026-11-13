@@ -135,7 +135,7 @@ private fun MailInner() = GoogleGate("tu correo", com.iatualcance.alfred.R.drawa
                     }
                 }
             }
-            FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { ui.compose = MailDraft() }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Edit, "Redactar") }
+            FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { ui.compose = MailDraft() }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Edit, "Redactar") }
         }
     }
 }

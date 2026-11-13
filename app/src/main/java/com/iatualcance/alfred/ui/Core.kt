@@ -70,23 +70,34 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.File
 
-// Tema claro de inspiración Pokémon GBC: blanco, rojo Pokédex, azul y amarillo.
-val Paper = Color(0xFFF4F5F9)
-val Surf = Color(0xFFFFFFFF)
-val SurfHigh = Color(0xFFEEF0F6)
-val Ink = Color(0xFF1F1D2B)
-val Red = Color(0xFFE63B2E)
+// Colores fijos (no cambian con la skin). Paper, Surf, Ink, Red y SoftLine están en Skin.kt.
 val Yellow = Color(0xFFFFCB05)
 val Blue = Color(0xFF3B6FE0)
 val Gold = Color(0xFFB07A00)
 
-private val Colors = lightColorScheme(
+private fun colorsFor(k: Skin) = if (k.dark) androidx.compose.material3.darkColorScheme(
+    primary = k.accent, onPrimary = k.onAccent, primaryContainer = k.surfHigh, onPrimaryContainer = k.ink,
+    secondary = k.accent, onSecondary = k.onAccent, secondaryContainer = k.surfHigh, onSecondaryContainer = k.ink,
+    tertiary = k.accent, background = k.paper, onBackground = k.ink, surface = k.paper, onSurface = k.ink,
+    surfaceVariant = k.surfHigh, onSurfaceVariant = k.muted, surfaceTint = Color.Transparent,
+    surfaceContainer = k.surf, surfaceContainerLow = k.surf, surfaceContainerHigh = k.surf, surfaceContainerHighest = k.surfHigh, surfaceContainerLowest = k.surf,
+    outline = k.muted, outlineVariant = k.line, error = Color(0xFFFF8A80), onError = Color(0xFF3B0A06),
+    errorContainer = Color(0xFF4A1A16), onErrorContainer = Color(0xFFFFDAD6),
+) else if (k.pokemon) lightColorScheme(
     primary = Color(0xFFD7301F), onPrimary = Color.White, primaryContainer = Color(0xFFFFF0A8), onPrimaryContainer = Color(0xFF3B2A00),
     secondary = Blue, onSecondary = Color.White, secondaryContainer = Color(0xFFE4ECFF), onSecondaryContainer = Color(0xFF0E1F66),
-    tertiary = Color(0xFF2F9E57), background = Paper, onBackground = Ink, surface = Paper, onSurface = Ink,
-    surfaceVariant = SurfHigh, onSurfaceVariant = Color(0xFF5A5870), surfaceTint = Color.Transparent,
-    surfaceContainer = Surf, surfaceContainerLow = Surf, surfaceContainerHigh = Surf, surfaceContainerHighest = SurfHigh, surfaceContainerLowest = Surf,
-    outline = Color(0xFF7A7890), outlineVariant = Color(0xFFD7DBE8), error = Color(0xFFB3261E), onError = Color.White,
+    tertiary = Color(0xFF2F9E57), background = k.paper, onBackground = k.ink, surface = k.paper, onSurface = k.ink,
+    surfaceVariant = k.surfHigh, onSurfaceVariant = k.muted, surfaceTint = Color.Transparent,
+    surfaceContainer = k.surf, surfaceContainerLow = k.surf, surfaceContainerHigh = k.surf, surfaceContainerHighest = k.surfHigh, surfaceContainerLowest = k.surf,
+    outline = Color(0xFF7A7890), outlineVariant = k.line, error = Color(0xFFB3261E), onError = Color.White,
+    errorContainer = Color(0xFFFBDAD6), onErrorContainer = Color(0xFF5C1512),
+) else lightColorScheme(
+    primary = k.accent, onPrimary = k.onAccent, primaryContainer = k.surfHigh, onPrimaryContainer = k.ink,
+    secondary = k.accent, onSecondary = k.onAccent, secondaryContainer = k.surfHigh, onSecondaryContainer = k.ink,
+    tertiary = k.accent, background = k.paper, onBackground = k.ink, surface = k.paper, onSurface = k.ink,
+    surfaceVariant = k.surfHigh, onSurfaceVariant = k.muted, surfaceTint = Color.Transparent,
+    surfaceContainer = k.surf, surfaceContainerLow = k.surf, surfaceContainerHigh = k.surf, surfaceContainerHighest = k.surfHigh, surfaceContainerLowest = k.surf,
+    outline = k.muted, outlineVariant = k.line, error = Color(0xFFB3261E), onError = Color.White,
     errorContainer = Color(0xFFFBDAD6), onErrorContainer = Color(0xFF5C1512),
 )
 
@@ -113,8 +124,25 @@ private val Pixel = Shapes(
     large = RoundedCornerShape(16.dp), extraLarge = RoundedCornerShape(20.dp),
 )
 
+/** Tipografía sobria: títulos con serifa. */
+private val TypeSerif = Type.copy(
+    headlineSmall = Type.headlineSmall.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold),
+    titleLarge = Type.titleLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp),
+    titleMedium = Type.titleMedium.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold),
+)
+
 @Composable
-fun AlfredTheme(content: @Composable () -> Unit) = MaterialTheme(colorScheme = Colors, typography = Type, shapes = Pixel, content = content)
+fun AlfredTheme(content: @Composable () -> Unit) {
+    val k = Skins.current
+    val view = androidx.compose.ui.platform.LocalView.current
+    androidx.compose.runtime.SideEffect {
+        (view.context as? android.app.Activity)?.window?.let { w ->
+            val c = androidx.core.view.WindowCompat.getInsetsController(w, view)
+            c.isAppearanceLightStatusBars = !k.dark; c.isAppearanceLightNavigationBars = !k.dark
+        }
+    }
+    MaterialTheme(colorScheme = colorsFor(k), typography = if (k.pokemon) Type else TypeSerif, shapes = Pixel, content = content)
+}
 
 /** Orden de la barra inferior: Correo · Agenda · ALFRED · Notas · Contactos. */
 enum class Tab { MAIL, AGENDA, CHAT, NOTES, DRIVE }
@@ -321,8 +349,8 @@ fun AppOutlinedButton(
     content: @Composable androidx.compose.foundation.layout.RowScope.() -> Unit,
 ) = androidx.compose.material3.OutlinedButton(
     onClick, modifier.heightIn(min = 46.dp), enabled, BtnShape,
-    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Color.White),
-    border = androidx.compose.foundation.BorderStroke(1.5.dp, if (enabled) Color(0xFFB9BFD3) else SoftLine), contentPadding = contentPadding, content = content,
+    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(containerColor = Surf),
+    border = androidx.compose.foundation.BorderStroke(1.5.dp, if (enabled) (if (Skins.current.pokemon) Color(0xFFB9BFD3) else Skins.current.muted.copy(alpha = 0.5f)) else SoftLine), contentPadding = contentPadding, content = content,
 )
 
 /** Botón cuadrado redondeado con degradado rojo (enviar, micrófono). */
@@ -330,18 +358,21 @@ fun AppOutlinedButton(
 fun AppIconButton(onClick: () -> Unit, enabled: Boolean = true, content: @Composable () -> Unit) {
     val src = remember { MutableInteractionSource() }
     Box(
-        Modifier.size(52.dp).shadow(4.dp, BtnShape, clip = false, ambientColor = Color(0x33C92A1F), spotColor = Color(0x55C92A1F))
-            .background(Brush.verticalGradient(if (enabled) listOf(Color(0xFFF2473B), Color(0xFFCB2B20)) else listOf(Color(0xFFBDBDC8), Color(0xFFA9A9B6))), BtnShape)
+        Modifier.size(52.dp).then(if (Skins.current.pokemon) Modifier.shadow(4.dp, BtnShape, clip = false, ambientColor = Color(0x33C92A1F), spotColor = Color(0x55C92A1F)) else Modifier)
+            .background(
+                if (!enabled) Brush.verticalGradient(listOf(Color(0xFFBDBDC8), Color(0xFFA9A9B6)))
+                else if (Skins.current.pokemon) Brush.verticalGradient(listOf(Color(0xFFF2473B), Color(0xFFCB2B20)))
+                else Brush.verticalGradient(listOf(Skins.current.accent, Skins.current.accent)), BtnShape)
             .clickable(src, null, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
-    ) { CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides Color.White) { content() } }
+    ) { CompositionLocalProvider(androidx.compose.material3.LocalContentColor provides (if (Skins.current.pokemon) Color.White else Skins.current.onAccent)) { content() } }
 }
 
 /** Chip en forma de pastilla, blanco con sombra suave. */
 @Composable
 fun PillChip(text: String, onClick: () -> Unit, enabled: Boolean = true) = androidx.compose.material3.AssistChip(
     onClick = onClick, enabled = enabled, label = { Text(text, fontWeight = FontWeight.SemiBold) }, shape = RoundedCornerShape(50),
-    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = Color.White),
+    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = Surf),
     border = androidx.compose.foundation.BorderStroke(1.5.dp, SoftLine),
     elevation = androidx.compose.material3.AssistChipDefaults.assistChipElevation(elevation = 2.dp),
 )

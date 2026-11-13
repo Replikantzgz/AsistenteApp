@@ -9,6 +9,14 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.outlined.Cloud
+import androidx.compose.material.icons.outlined.MailOutline
+import androidx.compose.material.icons.outlined.StickyNote2
+import androidx.compose.material.icons.outlined.WaterDrop
+import androidx.compose.material.icons.outlined.WbSunny
+import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.border
@@ -20,6 +28,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -102,6 +111,15 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     var restored by mutableStateOf<String?>(null)
     private var job: kotlinx.coroutines.Job? = null
     private var lastUser: ChatMsg? = null
+
+    /** Resumen del día para la cabecera de las skins sobrias (título, líneas). Se refresca como mucho cada 10 minutos. */
+    var home by mutableStateOf<Pair<String, String>?>(null)
+    private var homeAt = 0L
+    fun loadHome() {
+        if (home != null && System.currentTimeMillis() - homeAt < 10 * 60_000) return
+        homeAt = System.currentTimeMillis()
+        viewModelScope.launch { home = runCatching { sv.buildSummary() }.getOrNull() ?: home }
+    }
 
     init { sv.voice.onText = { send(it, null) } }
 
@@ -216,7 +234,7 @@ fun ChatScreen(vm: ChatViewModel) {
         PixelBar(
             title = { Text("ALFRED") },
             actions = {
-                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación", tint = Color.White) }
+                if (msgs.isNotEmpty()) IconButton(onClick = { askClear = true }) { Icon(Icons.Default.DeleteSweep, "Borrar conversación") }
             },
         )
 
@@ -237,9 +255,9 @@ fun ChatScreen(vm: ChatViewModel) {
         }
 
         if (msgs.isEmpty()) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.Center, horizontalAlignment = Alignment.CenterHorizontally) {
-                Art(R.drawable.art_pikachu, 150.dp, "Asistente")
-                VSpace(16)
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = if (Skins.current.pokemon) Arrangement.Center else Arrangement.Top, horizontalAlignment = Alignment.CenterHorizontally) {
+                if (Skins.current.pokemon) Art(R.drawable.art_pikachu, 150.dp, "Asistente") else { HomeHeader(vm); VSpace(8) }
+                if (Skins.current.pokemon) VSpace(16)
                 Text("¿En qué te ayudo?", style = MaterialTheme.typography.headlineSmall, color = Ink, textAlign = TextAlign.Center)
                 VSpace(8)
                 Hint("Pregúntame lo que quieras o simplemente charla conmigo. Y si quieres, también manejo tu correo, agenda, notas, tareas, contactos y Drive. Escribe, usa el micrófono o pulsa «Conversar».")
@@ -249,6 +267,7 @@ fun ChatScreen(vm: ChatViewModel) {
                 }
             }
         } else LazyColumn(Modifier.weight(1f).fillMaxWidth(), state = list, contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            if (!Skins.current.pokemon) item(key = "home") { HomeHeader(vm) }
             items(msgs, key = { it.id }) { Bubble(it) }
             if (vm.busy) item {
                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(8.dp)) {
@@ -289,10 +308,10 @@ fun ChatScreen(vm: ChatViewModel) {
                 Icon(Icons.Default.Image, "Adjuntar imagen")
             }
             OutlinedTextField(
-                value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f).shadow(3.dp, PxShape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)),
-                placeholder = { Text("Escribe a Alfred…") }, maxLines = 5, shape = PxShape,
+                value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f).then(if (Skins.current.pokemon) Modifier.shadow(3.dp, PxShape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)) else Modifier),
+                placeholder = { Text("Escribe a Alfred…") }, maxLines = 5, shape = if (Skins.current.pokemon) PxShape else RoundedCornerShape(26.dp),
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White, unfocusedContainerColor = Color.White,
+                    focusedContainerColor = Surf, unfocusedContainerColor = Surf,
                     focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = SoftLine,
                 ),
             )
@@ -311,25 +330,67 @@ fun ChatScreen(vm: ChatViewModel) {
 @Composable
 private fun Bubble(m: ChatMsg) {
     val cs = MaterialTheme.colorScheme
+    val k = Skins.current
     val shape = RoundedCornerShape(18.dp)
-    val bg = when { m.error -> cs.errorContainer; m.fromUser -> cs.secondaryContainer; else -> Color.White }
-    val line = when { m.error -> cs.error.copy(alpha = 0.7f); m.fromUser -> Blue.copy(alpha = 0.75f); else -> SoftLine }
+    val bg = when { m.error -> cs.errorContainer; m.fromUser -> if (k.pokemon) cs.secondaryContainer else k.ink; else -> Surf }
+    val line = when { m.error -> cs.error.copy(alpha = 0.7f); m.fromUser -> if (k.pokemon) Blue.copy(alpha = 0.75f) else k.ink; else -> SoftLine }
+    val textColor = when { m.error -> cs.onErrorContainer; m.fromUser && !k.pokemon -> k.onInk; else -> cs.onSurface }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
         if (!m.fromUser) {
-            Box(
-                Modifier.size(44.dp).shadow(3.dp, CircleShape, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)).background(Color.White, CircleShape).border(2.dp, Ink, CircleShape),
+            if (k.pokemon) Box(
+                Modifier.size(44.dp).shadow(3.dp, CircleShape, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)).background(Surf, CircleShape).border(2.dp, Ink, CircleShape),
                 contentAlignment = Alignment.Center,
             ) { Art(R.drawable.art_pikachu_round, 40.dp) }
+            else AlfredMark(34.dp)
             Spacer(Modifier.width(10.dp))
         }
         Column(
             Modifier.widthIn(max = 310.dp)
-                .shadow(3.dp, shape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E))
-                .background(bg, shape).border(1.5.dp, line, shape).padding(horizontal = 16.dp, vertical = 12.dp),
+                .then(if (k.pokemon) Modifier.shadow(3.dp, shape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)) else Modifier)
+                .background(bg, shape).border(if (k.pokemon) 1.5.dp else 1.dp, line, shape).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = cs.primary, fontWeight = FontWeight.Bold) }
-            SelectionContainer { Text(m.text, style = MaterialTheme.typography.bodyLarge, color = if (m.error) cs.onErrorContainer else cs.onSurface) }
+            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = if (m.fromUser && !k.pokemon) k.star.takeIf { !k.dark } ?: k.accent else cs.primary, fontWeight = FontWeight.Bold) }
+            SelectionContainer { Text(m.text, style = MaterialTheme.typography.bodyLarge, color = textColor) }
+        }
+    }
+}
+
+/** Cabecera de las skins sobrias: saludo y tarjeta "Tu día" (citas, tareas, notas, correos y tiempo). */
+@Composable
+private fun HomeHeader(vm: ChatViewModel) {
+    val k = Skins.current
+    LaunchedEffect(Unit) { vm.loadHome() }
+    val date = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", com.iatualcance.alfred.Util.ES)).uppercase()
+    val home = vm.home
+    Column(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+        Text(date, style = MaterialTheme.typography.labelMedium, color = k.accent, letterSpacing = 1.sp)
+        Text(home?.first ?: "Hola", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Normal), color = k.ink, modifier = Modifier.padding(top = 2.dp))
+        Text(if (home == null) "Preparando tu día…" else "Esto es lo que tienes hoy.", color = k.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp))
+        if (home != null) Column(Modifier.fillMaxWidth().card(RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 6.dp)) {
+            val lines = home.second.lines().filter { it.isNotBlank() }
+            lines.forEachIndexed { i, raw ->
+                val icon = when {
+                    raw.startsWith("📅") -> Icons.Outlined.CalendarMonth
+                    raw.startsWith("✅") -> Icons.Outlined.CheckCircle
+                    raw.startsWith("📝") -> Icons.Outlined.StickyNote2
+                    raw.startsWith("✉") -> Icons.Outlined.MailOutline
+                    raw.startsWith("☀") -> Icons.Outlined.WbSunny
+                    raw.startsWith("☔") || raw.startsWith("⛈") || raw.startsWith("❄") -> Icons.Outlined.WaterDrop
+                    else -> Icons.Outlined.Cloud
+                }
+                val body = raw.dropWhile { !it.isLetterOrDigit() }.trim()
+                val head = body.substringBefore(": "); val tail = if (": " in body) body.substringAfter(": ") else ""
+                Row(Modifier.fillMaxWidth().padding(vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, Modifier.size(22.dp), tint = k.accent)
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        Text(head, style = MaterialTheme.typography.titleSmall, color = k.ink)
+                        if (tail.isNotBlank()) Text(tail, style = MaterialTheme.typography.bodySmall, color = k.muted, maxLines = 2)
+                    }
+                }
+                if (i < lines.lastIndex) Box(Modifier.fillMaxWidth().padding(start = 36.dp).height(1.dp).background(k.line))
+            }
         }
     }
 }

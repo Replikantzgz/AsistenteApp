@@ -160,7 +160,7 @@ private fun NotesList() {
                 items(shown, key = { it.id }) { n -> NoteCard(n) { ui.openNoteId = n.id } }
             }
         }
-        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { ui.openNoteId = sv.store.upsertNote(Note()).id }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { ui.openNoteId = sv.store.upsertNote(Note()).id }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) {
             Icon(Icons.Default.Add, "Nueva nota")
         }
     }
@@ -446,7 +446,7 @@ private fun TemplatesList() {
                 }
             }
         }
-        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { editing = Template(name = "", content = "") }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nueva plantilla") }
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { editing = Template(name = "", content = "") }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nueva plantilla") }
     }
     editing?.let { t ->
         var name by remember(t.id) { mutableStateOf(t.name) }

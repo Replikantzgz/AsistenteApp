@@ -122,7 +122,7 @@ fun SearchScreen() {
             placeholder = { Text("Busca en todo: notas, correo, agenda, contactos, Drive…") }, leadingIcon = { Icon(Icons.Default.Search, null) },
             trailingIcon = { if (q.isNotEmpty()) IconButton(onClick = { q = "" }) { Icon(Icons.Default.Close, "Borrar") } },
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search), keyboardActions = KeyboardActions(onSearch = {}),
-            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedContainerColor = androidx.compose.ui.graphics.Color.White, unfocusedContainerColor = androidx.compose.ui.graphics.Color.White),
+            colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(focusedContainerColor = Surf, unfocusedContainerColor = Surf),
         )
         val f = found
         when {

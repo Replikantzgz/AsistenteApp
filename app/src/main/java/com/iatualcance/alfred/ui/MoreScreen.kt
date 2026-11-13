@@ -68,6 +68,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
@@ -91,7 +92,7 @@ fun OverlayScreen(which: String) {
     Column(Modifier.fillMaxSize()) {
         PixelBar(
             title = { Text(when (which) { "premium" -> "PREMIUM"; "search" -> "BUSCAR"; else -> "AJUSTES" }) },
-            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver", tint = Color.White) } },
+            navigationIcon = { IconButton(onClick = { ui.overlay = null }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Volver") } },
         )
         when (which) { "premium" -> PremiumScreen(); "search" -> SearchScreen(); else -> SettingsScreen() }
     }
@@ -139,7 +140,7 @@ fun ContactsScreen() = GoogleGate("tus contactos", com.iatualcance.alfred.R.draw
                 }
             }
         }
-        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = Color.White, shape = PxShape, onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo contacto") }
+        FloatingActionButton(containerColor = MaterialTheme.colorScheme.primary, contentColor = MaterialTheme.colorScheme.onPrimary, shape = PxShape, onClick = { adding = true }, modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)) { Icon(Icons.Default.Add, "Nuevo contacto") }
     }
 
     selected?.let { c ->
@@ -212,6 +213,27 @@ private fun SettingsScreen() {
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // ------------------------------------------------------------------ Cuenta
+        // ------------------------------------------------------------------ Apariencia
+        Section("Apariencia") {
+            val skinId by sv.settings.skin.collectAsStateCompat()
+            var skinMenu by remember { mutableStateOf(false) }
+            val cur = Skins.byId(skinId)
+            Text("Skin", style = MaterialTheme.typography.titleSmall)
+            Text("El aspecto de toda la app. Se aplica al instante.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Box {
+                AppOutlinedButton(onClick = { skinMenu = true }, modifier = Modifier.fillMaxWidth()) {
+                    Text(cur.label, Modifier.weight(1f)); Icon(Icons.Default.ArrowDropDown, null)
+                }
+                DropdownMenu(skinMenu, { skinMenu = false }) {
+                    Skins.all.forEach { k ->
+                        DropdownMenuItem(
+                            { Column { Text(k.label + if (k.id == skinId) "  ✔" else "", fontWeight = FontWeight.SemiBold); Text(k.sub, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) } },
+                            { sv.settings.setSkin(k.id); skinMenu = false },
+                        )
+                    }
+                }
+            }
+        }
         Section("Cuenta de Google") {
             val a = account
             if (a == null) {
