@@ -59,6 +59,7 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -125,6 +126,12 @@ private val Pixel = Shapes(
 )
 
 /** Tipografía sobria: títulos con serifa. */
+private fun Typography.mono(): Typography { val m = FontFamily.Monospace; return copy(
+    headlineSmall = headlineSmall.copy(fontFamily = m), titleLarge = titleLarge.copy(fontFamily = m, letterSpacing = 0.sp), titleMedium = titleMedium.copy(fontFamily = m), titleSmall = titleSmall.copy(fontFamily = m),
+    bodyLarge = bodyLarge.copy(fontFamily = m, fontSize = 15.sp), bodyMedium = bodyMedium.copy(fontFamily = m, fontSize = 13.sp), bodySmall = bodySmall.copy(fontFamily = m, fontSize = 11.5.sp),
+    labelLarge = labelLarge.copy(fontFamily = m), labelMedium = labelMedium.copy(fontFamily = m), labelSmall = labelSmall.copy(fontFamily = m),
+) }
+
 private val TypeSerif = Type.copy(
     headlineSmall = Type.headlineSmall.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold),
     titleLarge = Type.titleLarge.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp),
@@ -138,10 +145,17 @@ fun AlfredTheme(content: @Composable () -> Unit) {
     androidx.compose.runtime.SideEffect {
         (view.context as? android.app.Activity)?.window?.let { w ->
             val c = androidx.core.view.WindowCompat.getInsetsController(w, view)
-            c.isAppearanceLightStatusBars = !k.dark; c.isAppearanceLightNavigationBars = !k.dark
+            c.isAppearanceLightStatusBars = !k.dark && k.look != Look.MARVEL; c.isAppearanceLightNavigationBars = k.pokemon || k.barBg.luminance() > 0.5f
         }
     }
-    MaterialTheme(colorScheme = colorsFor(k), typography = if (k.pokemon) Type else TypeSerif, shapes = Pixel, content = content)
+    val typo = when (k.look) {
+        Look.POKEMON -> Type
+        Look.MARVEL -> Type.copy(headlineSmall = Type.headlineSmall.copy(fontWeight = FontWeight.Black), titleLarge = Type.titleLarge.copy(fontWeight = FontWeight.Black), titleMedium = Type.titleMedium.copy(fontWeight = FontWeight.ExtraBold))
+        Look.RETRO -> Type.copy(headlineSmall = Type.headlineSmall.copy(fontWeight = FontWeight.ExtraBold), titleLarge = Type.titleLarge.copy(fontWeight = FontWeight.ExtraBold))
+        Look.CYBER -> Type.mono()
+        else -> TypeSerif
+    }
+    MaterialTheme(colorScheme = colorsFor(k), typography = typo, shapes = Pixel, content = content)
 }
 
 /** Orden de la barra inferior: Correo · Agenda · ALFRED · Notas · Contactos. */
@@ -371,9 +385,12 @@ fun AppIconButton(onClick: () -> Unit, enabled: Boolean = true, content: @Compos
 /** Chip en forma de pastilla, blanco con sombra suave. */
 @Composable
 fun PillChip(text: String, onClick: () -> Unit, enabled: Boolean = true) = androidx.compose.material3.AssistChip(
-    onClick = onClick, enabled = enabled, label = { Text(text, fontWeight = FontWeight.SemiBold) }, shape = RoundedCornerShape(50),
-    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = Surf),
-    border = androidx.compose.foundation.BorderStroke(1.5.dp, SoftLine),
+    onClick = onClick, enabled = enabled, label = { Text(text, fontWeight = FontWeight.SemiBold) }, shape = Skins.current.chipShape,
+    colors = androidx.compose.material3.AssistChipDefaults.assistChipColors(containerColor = Skins.current.chipBg, labelColor = Skins.current.chipFg),
+    border = androidx.compose.foundation.BorderStroke(
+        when (Skins.current.look) { Look.MARVEL -> 2.dp; Look.POKEMON -> 1.5.dp; else -> 1.dp },
+        when (Skins.current.look) { Look.MARVEL -> Skins.current.cardBorder; Look.RETRO, Look.CYBER -> Skins.current.accent2; else -> SoftLine },
+    ),
     elevation = androidx.compose.material3.AssistChipDefaults.assistChipElevation(elevation = 2.dp),
 )
 

@@ -309,10 +309,10 @@ fun ChatScreen(vm: ChatViewModel) {
             }
             OutlinedTextField(
                 value = input, onValueChange = { input = it }, modifier = Modifier.weight(1f).then(if (Skins.current.pokemon) Modifier.shadow(3.dp, PxShape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)) else Modifier),
-                placeholder = { Text("Escribe a Alfred…") }, maxLines = 5, shape = if (Skins.current.pokemon) PxShape else RoundedCornerShape(26.dp),
+                placeholder = { Text("Escribe a Alfred…") }, maxLines = 5, shape = Skins.current.inputShape,
                 colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                     focusedContainerColor = Surf, unfocusedContainerColor = Surf,
-                    focusedBorderColor = MaterialTheme.colorScheme.primary, unfocusedBorderColor = SoftLine,
+                    focusedBorderColor = if (Skins.current.look == Look.CYBER || Skins.current.look == Look.RETRO) Skins.current.accent2 else MaterialTheme.colorScheme.primary, unfocusedBorderColor = Skins.current.cardBorder,
                 ),
             )
             Spacer(Modifier.width(8.dp))
@@ -331,10 +331,17 @@ fun ChatScreen(vm: ChatViewModel) {
 private fun Bubble(m: ChatMsg) {
     val cs = MaterialTheme.colorScheme
     val k = Skins.current
-    val shape = RoundedCornerShape(18.dp)
-    val bg = when { m.error -> cs.errorContainer; m.fromUser -> if (k.pokemon) cs.secondaryContainer else k.ink; else -> Surf }
-    val line = when { m.error -> cs.error.copy(alpha = 0.7f); m.fromUser -> if (k.pokemon) Blue.copy(alpha = 0.75f) else k.ink; else -> SoftLine }
-    val textColor = when { m.error -> cs.onErrorContainer; m.fromUser && !k.pokemon -> k.onInk; else -> cs.onSurface }
+    val shape: androidx.compose.ui.graphics.Shape = when (k.look) {
+        Look.CYBER -> androidx.compose.foundation.shape.CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp)
+        Look.DC -> RoundedCornerShape(8.dp); Look.MARVEL -> RoundedCornerShape(14.dp); else -> RoundedCornerShape(18.dp)
+    }
+    val bg = when { m.error -> cs.errorContainer; m.fromUser -> if (k.pokemon) cs.secondaryContainer else k.userBubble; else -> Surf }
+    val line = when {
+        m.error -> cs.error.copy(alpha = 0.7f)
+        m.fromUser -> if (k.pokemon) Blue.copy(alpha = 0.75f) else if (k.look == Look.MARVEL) k.cardBorder else k.userBubble
+        else -> if (k.pokemon) SoftLine else k.cardBorder
+    }
+    val textColor = when { m.error -> cs.onErrorContainer; m.fromUser && !k.pokemon -> k.onUserBubble; else -> cs.onSurface }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = if (m.fromUser) Arrangement.End else Arrangement.Start, verticalAlignment = Alignment.Top) {
         if (!m.fromUser) {
             if (k.pokemon) Box(
@@ -347,10 +354,10 @@ private fun Bubble(m: ChatMsg) {
         Column(
             Modifier.widthIn(max = 310.dp)
                 .then(if (k.pokemon) Modifier.shadow(3.dp, shape, clip = false, ambientColor = Color(0x221B2A5E), spotColor = Color(0x331B2A5E)) else Modifier)
-                .background(bg, shape).border(if (k.pokemon) 1.5.dp else 1.dp, line, shape).padding(horizontal = 16.dp, vertical = 12.dp),
+                .background(bg, shape).border(if (k.pokemon) 1.5.dp else k.cardBorderW.dp, line, shape).padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = if (m.fromUser && !k.pokemon) k.star.takeIf { !k.dark } ?: k.accent else cs.primary, fontWeight = FontWeight.Bold) }
+            m.actions.forEach { Text(it, style = MaterialTheme.typography.labelLarge, color = if (m.fromUser && !k.pokemon) k.onUserBubble else cs.primary, fontWeight = FontWeight.Bold) }
             SelectionContainer { Text(m.text, style = MaterialTheme.typography.bodyLarge, color = textColor) }
         }
     }
@@ -367,7 +374,7 @@ private fun HomeHeader(vm: ChatViewModel) {
         Text(date, style = MaterialTheme.typography.labelMedium, color = k.accent, letterSpacing = 1.sp)
         Text(home?.first ?: "Hola", style = MaterialTheme.typography.headlineSmall.copy(fontSize = 30.sp, lineHeight = 36.sp, fontWeight = FontWeight.Normal), color = k.ink, modifier = Modifier.padding(top = 2.dp))
         Text(if (home == null) "Preparando tu día…" else "Esto es lo que tienes hoy.", color = k.muted, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp, bottom = 14.dp))
-        if (home != null) Column(Modifier.fillMaxWidth().card(RoundedCornerShape(16.dp)).padding(horizontal = 16.dp, vertical = 6.dp)) {
+        if (home != null) Column(Modifier.fillMaxWidth().card().padding(horizontal = 16.dp, vertical = 6.dp)) {
             val lines = home.second.lines().filter { it.isNotBlank() }
             lines.forEachIndexed { i, raw ->
                 val icon = when {

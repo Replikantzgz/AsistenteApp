@@ -14,6 +14,12 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.StickyNote2
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.material.icons.outlined.PersonOutline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -60,35 +66,118 @@ import com.iatualcance.alfred.R
 
 // Sistema visual: tema Pokémon claro con tarjetas blancas de sombra suave, cabecera roja de Pokédex y barra flotante.
 
-val PxShape = RoundedCornerShape(14.dp)
+val PxShape: androidx.compose.ui.graphics.Shape get() = Skins.current.shape
 val PxLine: Color get() = SoftLine
 private val ShadowAmbient = Color(0x221B2A5E)
 private val ShadowSpot = Color(0x331B2A5E)
 
-/** Sombra suave + borde fino. El color de fondo lo pone quien lo usa (Surface, Column, etc.). */
-fun Modifier.pxBorder(color: Color = SoftLine) = this
-    .then(if (Skins.current.pokemon) Modifier.shadow(3.dp, PxShape, clip = false, ambientColor = ShadowAmbient, spotColor = ShadowSpot) else Modifier)
-    .border(if (Skins.current.pokemon) 1.5.dp else 1.dp, color, PxShape)
+/** Borde y sombra de la skin: Pokémon, sombra suave; Marvel, sombra dura de viñeta; el resto, solo borde. */
+private fun Modifier.skinShadow(shape: androidx.compose.ui.graphics.Shape, elevation: Dp): Modifier {
+    val k = Skins.current
+    return when (k.look) {
+        Look.POKEMON -> this.shadow(elevation, shape, clip = false, ambientColor = ShadowAmbient, spotColor = ShadowSpot)
+        Look.MARVEL -> this.drawBehind {
+            val o = shape.createOutline(size, layoutDirection, this)
+            val c = Color(0xFF111111)
+            translate(4.dp.toPx(), 4.dp.toPx()) {
+                when (o) {
+                    is androidx.compose.ui.graphics.Outline.Rectangle -> drawRect(c, o.rect.topLeft, o.rect.size)
+                    is androidx.compose.ui.graphics.Outline.Rounded -> drawPath(Path().apply { addRoundRect(o.roundRect) }, c)
+                    is androidx.compose.ui.graphics.Outline.Generic -> drawPath(o.path, c)
+                }
+            }
+        }
+        else -> this
+    }
+}
 
-/** Tarjeta blanca completa: sombra, fondo y borde. */
-fun Modifier.card(shape: androidx.compose.ui.graphics.Shape = PxShape, borderColor: Color = SoftLine, elevation: Dp = 3.dp) = this
-    .then(if (Skins.current.pokemon) Modifier.shadow(elevation, shape, clip = false, ambientColor = ShadowAmbient, spotColor = ShadowSpot) else Modifier)
+/** Sombra + borde. El color de fondo lo pone quien lo usa (Surface, Column, etc.). */
+fun Modifier.pxBorder(color: Color = Skins.current.cardBorder) = this
+    .skinShadow(PxShape, 3.dp)
+    .border(Skins.current.cardBorderW.dp, color, PxShape)
+
+/** Tarjeta completa: sombra, fondo y borde de la skin. */
+fun Modifier.card(shape: androidx.compose.ui.graphics.Shape = PxShape, borderColor: Color = Skins.current.cardBorder, elevation: Dp = 3.dp) = this
+    .skinShadow(shape, elevation)
     .background(Surf, shape)
-    .border(if (Skins.current.pokemon) 1.5.dp else 1.dp, borderColor, shape)
+    .border(Skins.current.cardBorderW.dp, borderColor, shape)
 
-/** Ilustración de la app (PNG con fondo transparente). */
+/** Ilustración de la app. En Pokémon, tus PNG; en las demás skins, el emblema o icono equivalente. */
 @Composable
 fun Art(@DrawableRes id: Int, size: Dp, description: String? = null, modifier: Modifier = Modifier) {
+    if (!Skins.current.pokemon) { SkinArt(id, size, modifier); return }
     Image(painterResource(id), description, modifier.size(size), contentScale = ContentScale.Fit)
 }
 
-/** Fondo con una textura de iconos de juego casi invisible. */
+private fun emblemFor(look: Look, tab: Tab): Emblem? = when (look) {
+    Look.MARVEL -> when (tab) { Tab.MAIL -> Emblem.BOW; Tab.AGENDA -> Emblem.HOURGLASS; Tab.NOTES -> Emblem.HAMMER; Tab.DRIVE -> Emblem.SHIELD; else -> null }
+    Look.DC -> when (tab) { Tab.MAIL -> Emblem.BOLT; Tab.AGENDA -> Emblem.RING; Tab.NOTES -> Emblem.TRIDENT; Tab.DRIVE -> Emblem.SUPER; else -> null }
+    Look.CYBER -> when (tab) { Tab.MAIL -> Emblem.PACKET; Tab.AGENDA -> Emblem.CLOCK; Tab.NOTES -> Emblem.CHIP; Tab.DRIVE -> Emblem.CUBE; else -> null }
+    else -> null
+}
+
+@Composable
+private fun SkinArt(@DrawableRes id: Int, size: Dp, modifier: Modifier) {
+    val k = Skins.current
+    val tab = when (id) { R.drawable.art_correo -> Tab.MAIL; R.drawable.art_agenda -> Tab.AGENDA; R.drawable.art_notas -> Tab.NOTES; R.drawable.art_drive -> Tab.DRIVE; else -> null }
+    Box(modifier.size(size), contentAlignment = Alignment.Center) {
+        when {
+            tab == null && (id == R.drawable.art_pikachu || id == R.drawable.art_pikachu_round) -> AlfredMark(size * 0.8f)
+            tab != null && emblemFor(k.look, tab) != null -> EmblemIcon(emblemFor(k.look, tab)!!, size * 0.8f, k.paper)
+            else -> androidx.compose.material3.Icon(
+                when (tab) { Tab.MAIL -> Icons.Outlined.MailOutline; Tab.AGENDA -> Icons.Outlined.CalendarMonth; Tab.NOTES -> Icons.Outlined.StickyNote2; Tab.DRIVE -> Icons.Outlined.FolderOpen
+                    else -> if (id == R.drawable.art_ajustes) Icons.Outlined.Settings else Icons.Outlined.PersonOutline },
+                null, Modifier.size(size * 0.6f), tint = k.accent,
+            )
+        }
+    }
+}
+
+/** Fondo de la skin: Pokémon, textura de iconos; Marvel, puntos de cómic; DC, haz de luz; Retro, atardecer sintético; Cyberpunk, rejilla. */
 @Composable
 fun Modifier.texture(): Modifier {
-    if (!Skins.current.pokemon) return this.background(Paper)
-    val tile = ImageBitmap.imageResource(R.drawable.bg_pattern)
-    val brush = remember(tile) { ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated)) }
-    return this.drawBehind { drawRect(brush) }
+    val k = Skins.current
+    if (k.pokemon) {
+        val tile = ImageBitmap.imageResource(R.drawable.bg_pattern)
+        val brush = remember(tile) { ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated)) }
+        return this.drawBehind { drawRect(brush) }
+    }
+    return this.background(k.paper).drawBehind {
+        val w = size.width; val h = size.height
+        when (k.look) {
+            Look.MARVEL -> {
+                val step = 9.dp.toPx(); val reach = 260.dp.toPx(); var y = 0f
+                while (y < reach) { var x = w - reach; while (x < w) {
+                    val r = (1f - kotlin.math.hypot(x - w, y) / reach).coerceAtLeast(0f) * 2.6.dp.toPx()
+                    if (r > .3.dp.toPx()) drawCircle(Color(0xFFE9CFCB), r, Offset(x, y)); x += step }; y += step }
+            }
+            Look.DC -> {
+                val p = Path().apply { moveTo(w * .72f, 0f); lineTo(w, 0f); lineTo(w, h * .38f); lineTo(w * .36f, h * .38f); close() }
+                drawPath(p, Color(0x0FF5C400))
+            }
+            Look.CYBER -> {
+                val g = 26.dp.toPx(); var x = 0f; while (x < w) { drawLine(Color(0xFF0F1020), Offset(x, 0f), Offset(x, h), 1f); x += g }
+                var y = 0f; while (y < h) { drawLine(Color(0xFF0F1020), Offset(0f, y), Offset(w, y), 1f); y += g }
+            }
+            Look.RETRO -> {
+                drawRect(Brush.verticalGradient(0f to Color(0xFF12053A), .6f to Color(0xFF4B1478), 1f to Color(0xFF8A2A9E)))
+                val cx = w / 2f; val sy = h * .78f; val sr = 92.dp.toPx(); val pink = Color(0xFFFF3CAC)
+                val sun = Brush.verticalGradient(listOf(Color(0xFFFFD25A), Color(0xFFFF5FA2)), startY = sy - sr, endY = sy + sr)
+                val circle = Path().apply { addOval(androidx.compose.ui.geometry.Rect(Offset(cx, sy), sr)) }
+                val band = sr * 2 / 22f
+                for (i in 0 until 22) {
+                    if (i > 11 && i % 2 == 0) continue
+                    val top = sy - sr + i * band
+                    clipPath(circle) { drawRect(sun, Offset(cx - sr, top), Size(sr * 2, band)) }
+                }
+                val horizon = sy + 10.dp.toPx()
+                drawRect(Color(0xFF1A0838), Offset(0f, horizon), Size(w, h - horizon))
+                for (i in -12..12) drawLine(pink.copy(alpha = .7f), Offset(cx + i * 8.dp.toPx(), horizon), Offset(cx + i * 80.dp.toPx(), h), 1f)
+                for (j in 1..8) { val yy = horizon + (j * j) * 3.2.dp.toPx(); if (yy < h) drawLine(pink.copy(alpha = .7f), Offset(0f, yy), Offset(w, yy), 1f) }
+            }
+            else -> {}
+        }
+    }
 }
 
 // --------------------------------------------------------------------------- Barra inferior
@@ -185,11 +274,11 @@ fun PixelBar(
 internal fun GlobalActions() {
     val ui = LocalUi.current
     androidx.compose.material3.IconButton(onClick = { ui.overlay = "search" }) {
-        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Search, "Buscar", tint = if (Skins.current.pokemon) Color.White else Ink)
+        androidx.compose.material3.Icon(androidx.compose.material.icons.Icons.Default.Search, "Buscar", tint = if (Skins.current.pokemon) Color.White else LocalContentColor.current)
     }
     androidx.compose.material3.IconButton(onClick = { ui.overlay = "settings" }) {
         if (Skins.current.pokemon) Art(R.drawable.art_ajustes, 34.dp, "Ajustes")
-        else androidx.compose.material3.Icon(Icons.Outlined.Settings, "Ajustes", tint = Ink)
+        else androidx.compose.material3.Icon(Icons.Outlined.Settings, "Ajustes", tint = LocalContentColor.current)
     }
 }
 
@@ -210,7 +299,7 @@ private fun Lens() {
     }
 }
 
-// --------------------------------------------------------------------------- Skins sobrias (Alfred)
+// --------------------------------------------------------------------------- Skins no Pokémon
 /** Estrella de cuatro puntas, el símbolo del asistente en las skins sobrias. */
 @Composable
 fun AlfredStar(size: Dp, color: Color) {
@@ -224,61 +313,113 @@ fun AlfredStar(size: Dp, color: Color) {
     }
 }
 
-/** Círculo oscuro con la estrella: botón central y avatar del asistente. */
+private val CutBadge = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+
+/** Distintivo del asistente (botón central y avatar): cada skin tiene el suyo. */
 @Composable
 fun AlfredMark(size: Dp) {
     val k = Skins.current
-    Box(Modifier.size(size).background(k.ink, CircleShape), contentAlignment = Alignment.Center) { AlfredStar(size * 0.46f, k.star) }
+    val bw = (size.value * 0.055f).coerceAtLeast(1.5f).dp
+    when (k.look) {
+        Look.MARVEL -> Box(Modifier.size(size).background(Color(0xFF0B0B0B), CircleShape).border(bw, Color.White, CircleShape), Alignment.Center) { EmblemIcon(Emblem.REACTOR, size * 0.66f) }
+        Look.DC -> Box(Modifier.size(size).background(k.paper, CircleShape).border(bw, k.accent, CircleShape), Alignment.Center) { EmblemIcon(Emblem.BAT, size * 0.7f, k.paper) }
+        Look.CYBER -> Box(Modifier.size(size).background(k.paper, CutBadge).border(bw, k.accent, CutBadge), Alignment.Center) { EmblemIcon(Emblem.EYE, size * 0.66f) }
+        Look.RETRO -> Box(Modifier.size(size).background(k.barBg, CircleShape).border(bw, k.accent, CircleShape), Alignment.Center) { AlfredStar(size * 0.46f, k.accent2) }
+        else -> Box(Modifier.size(size).background(k.ink, CircleShape), Alignment.Center) { AlfredStar(size * 0.46f, k.star) }
+    }
 }
 
 private data class LineNav(val tab: Tab, val label: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
+/** Placa que enmarca el emblema de una pestaña. */
+@Composable
+private fun Badge(k: Skin, active: Boolean, content: @Composable () -> Unit) {
+    when (k.look) {
+        Look.MARVEL -> Box(Modifier.size(44.dp).background(Color.White, CircleShape).border(2.4.dp, if (active) k.star else k.accent, CircleShape), Alignment.Center) { content() }
+        Look.DC -> Box(Modifier.size(44.dp).background(k.surfHigh, CircleShape).border(if (active) 2.dp else 1.4.dp, if (active) k.accent else Color(0xFF3A3E49), CircleShape), Alignment.Center) { content() }
+        else -> Box(Modifier.size(44.dp).background(Color(0xFF10121C), CutBadge).border(1.4.dp, if (active) k.accent else Color(0xFF1E5760), CutBadge), Alignment.Center) { content() }
+    }
+}
+
 @Composable
 private fun AlfredNavBar(selected: Tab, onSelect: (Tab) -> Unit) {
     val k = Skins.current
+    val emblems = k.look == Look.MARVEL || k.look == Look.DC || k.look == Look.CYBER
+    val upper = k.look == Look.MARVEL || k.look == Look.CYBER
+    val mono = k.look == Look.CYBER
     val left = listOf(LineNav(Tab.MAIL, "Correo", Icons.Outlined.MailOutline), LineNav(Tab.AGENDA, "Agenda", Icons.Outlined.CalendarMonth))
     val right = listOf(LineNav(Tab.NOTES, "Notas", Icons.Outlined.StickyNote2), LineNav(Tab.DRIVE, "Drive", Icons.Outlined.FolderOpen))
-    Column(Modifier.fillMaxWidth().background(k.surf).navigationBarsPadding()) {
-        Box(Modifier.fillMaxWidth().height(1.dp).background(k.line))
-        Row(Modifier.fillMaxWidth().height(70.dp)) {
+    val h = if (emblems) 80.dp else 70.dp
+    fun label(s: String) = if (upper) s.uppercase() else s
+    Column(Modifier.fillMaxWidth().background(k.barBg).navigationBarsPadding()) {
+        if (k.barLineW > 0f) Box(Modifier.fillMaxWidth().height(k.barLineW.dp).background(k.barLine))
+        Row(Modifier.fillMaxWidth().height(h)) {
             @Composable fun RowScope.Item(n: LineNav) {
                 val on = selected == n.tab
                 Column(Modifier.weight(1f).fillMaxHeight().clickable(remember { MutableInteractionSource() }, null) { onSelect(n.tab) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    androidx.compose.material3.Icon(n.icon, n.label, Modifier.size(24.dp), tint = if (on) k.accent else k.muted)
-                    Text(n.label, fontSize = 11.sp, fontWeight = if (on) FontWeight.SemiBold else FontWeight.Normal, color = if (on) k.accent else k.muted, modifier = Modifier.padding(top = 3.dp))
+                    val em = emblemFor(k.look, n.tab)
+                    if (em != null) Badge(k, on) { EmblemIcon(em, 28.dp, k.paper) }
+                    else androidx.compose.material3.Icon(n.icon, n.label, Modifier.size(24.dp), tint = if (on) k.navActive else if (k.look == Look.RETRO) k.accent2 else k.navIdle)
+                    Text(
+                        label(n.label), fontSize = if (mono) 9.5.sp else 10.5.sp, fontWeight = if (on) FontWeight.Bold else FontWeight.Normal, maxLines = 1,
+                        fontFamily = if (mono) androidx.compose.ui.text.font.FontFamily.Monospace else null,
+                        color = if (on) k.navActive else k.navIdle, modifier = Modifier.padding(top = 3.dp),
+                    )
                 }
             }
             left.forEach { Item(it) }
             val on = selected == Tab.CHAT
             Column(Modifier.weight(1.1f).fillMaxHeight().clickable(remember { MutableInteractionSource() }, null) { onSelect(Tab.CHAT) }, horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                Box(Modifier.offset(y = (-14).dp)) {
-                    Box(Modifier.size(62.dp).background(k.surf, CircleShape).padding(3.dp)) { AlfredMark(56.dp) }
-                }
-                Text("Alfred", fontSize = 11.sp, fontWeight = FontWeight.SemiBold, color = if (on) k.accent else k.ink, modifier = Modifier.offset(y = (-12).dp))
-                Box(Modifier.offset(y = (-10).dp).width(24.dp).height(2.dp).background(if (on) k.accent else Color.Transparent))
+                Box(Modifier.offset(y = (-12).dp)) { Box(Modifier.size(62.dp).background(k.barBg, CircleShape).padding(3.dp)) { AlfredMark(56.dp) } }
+                Text(label("Alfred"), fontSize = 10.5.sp, fontWeight = FontWeight.Bold, color = if (on) k.navActive else if (k.look == Look.SOBER) k.ink else k.navActive.takeIf { emblems } ?: k.navIdle, modifier = Modifier.offset(y = (-10).dp),
+                    fontFamily = if (mono) androidx.compose.ui.text.font.FontFamily.Monospace else null)
+                Box(Modifier.offset(y = (-8).dp).width(24.dp).height(2.dp).background(if (on) k.navActive else Color.Transparent))
             }
             right.forEach { Item(it) }
         }
     }
 }
 
-/** Cabecera sobria: título con serifa sobre el fondo, acciones de línea fina y un filete inferior. */
+/** Cabecera de las skins no Pokémon: cada una con su estilo (sobria, cómic, Gotham, neón, terminal). */
 @Composable
 private fun AlfredBar(title: @Composable () -> Unit, navigationIcon: (@Composable () -> Unit)?, actions: @Composable RowScope.() -> Unit, global: Boolean) {
     val k = Skins.current
-    Column(Modifier.fillMaxWidth().background(k.paper).statusBarsPadding()) {
-        CompositionLocalProvider(LocalContentColor provides k.ink) {
-            Row(Modifier.fillMaxWidth().height(60.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+    val bg = if (k.look == Look.MARVEL) k.accent else if (k.look == Look.RETRO) Color.Transparent else k.paper
+    val fg = when (k.look) { Look.MARVEL -> Color.White; Look.CYBER -> k.accent; else -> k.ink }
+    Column(Modifier.fillMaxWidth().background(bg).statusBarsPadding()) {
+        CompositionLocalProvider(LocalContentColor provides fg) {
+            Row(Modifier.fillMaxWidth().height(if (k.look == Look.MARVEL) 62.dp else 60.dp).padding(horizontal = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 navigationIcon?.invoke()
-                if (navigationIcon == null) {
-                    Box(Modifier.padding(start = 8.dp).size(30.dp).border(1.4.dp, k.accent, CircleShape), contentAlignment = Alignment.Center) { Text("A", color = k.accent, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
-                    Spacer(Modifier.width(10.dp))
+                if (navigationIcon == null) when (k.look) {
+                    Look.DC -> { Spacer(Modifier.width(6.dp)); EmblemIcon(Emblem.BAT, 44.dp, k.paper); Spacer(Modifier.width(8.dp)) }
+                    Look.SOBER -> {
+                        Box(Modifier.padding(start = 8.dp).size(30.dp).border(1.4.dp, k.accent, CircleShape), contentAlignment = Alignment.Center) { Text("A", color = k.accent, fontFamily = androidx.compose.ui.text.font.FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 15.sp) }
+                        Spacer(Modifier.width(10.dp))
+                    }
+                    else -> Spacer(Modifier.width(8.dp))
                 }
-                Box(Modifier.weight(1f)) { ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, letterSpacing = 0.sp)) { title() } }
+                Box(Modifier.weight(1f)) {
+                    when (k.look) {
+                        Look.MARVEL -> ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 26.sp, letterSpacing = 0.5.sp)) { title() }
+                        Look.RETRO -> ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, shadow = androidx.compose.ui.graphics.Shadow(k.accent, Offset(3f, 3f), 8f))) { title() }
+                        Look.CYBER -> Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("[ ", color = fg, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                            ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, letterSpacing = 0.sp)) { title() }
+                            Text(" ]", color = fg, fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace, fontWeight = FontWeight.Bold, fontSize = 20.sp)
+                        }
+                        else -> ProvideTextStyle(MaterialTheme.typography.titleLarge.copy(fontSize = 22.sp, letterSpacing = 0.sp)) { title() }
+                    }
+                }
                 actions()
                 if (global) GlobalActions()
             }
         }
-        Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(k.line))
+        when (k.look) {
+            Look.MARVEL -> Box(Modifier.fillMaxWidth().height(3.dp).background(Color(0xFF111111)))
+            Look.DC -> Box(Modifier.fillMaxWidth().height(3.dp).background(k.accent))
+            Look.RETRO -> Box(Modifier.fillMaxWidth().height(1.5.dp).background(k.accent2))
+            Look.CYBER -> Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp)) { Box(Modifier.width(40.dp).height(3.dp).background(k.accent)); Box(Modifier.weight(1f).height(1.dp).align(Alignment.Bottom).background(k.accent2)) }
+            else -> Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp).height(1.dp).background(k.line))
+        }
     }
 }
