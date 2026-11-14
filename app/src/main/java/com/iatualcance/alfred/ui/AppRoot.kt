@@ -76,7 +76,7 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
             "grabar" -> ui.navigate(com.iatualcance.alfred.ai.Nav.Record)
             "escanear" -> ui.navigate(com.iatualcance.alfred.ai.Nav.Scan)
             "nota" -> ui.openNote(sv.store.upsertNote(com.iatualcance.alfred.data.Note()).id)
-            else -> ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(r))
+            else -> if (r.startsWith("dia:")) runCatching { java.time.LocalDate.parse(r.removePrefix("dia:")) }.getOrNull()?.let { ui.navigate(com.iatualcance.alfred.ai.Nav.Calendar(it)) } else ui.navigate(com.iatualcance.alfred.ai.Nav.Screen(r))
         }
     }
 

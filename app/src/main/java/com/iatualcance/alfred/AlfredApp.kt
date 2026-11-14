@@ -103,6 +103,7 @@ class Services(private val app: Application) {
             reminders.apply(plan.sortedBy { it.at })
             updateWidget(fetched, now, zone)
         }
+        runCatching { refreshWidgetMonth() }
     }
 
     // ---- Premium (apagado mientras BillingConfig.ENABLED sea false: todo ilimitado)
@@ -139,13 +140,25 @@ class Services(private val app: Application) {
         return r
     }
 
-    /** Texto del widget: citas (de la última lectura del calendario) y tareas pendientes. */
-    private fun updateWidget(events: List<com.iatualcance.alfred.google.CalEvent>?, now: Long, zone: java.time.ZoneId) {
+    /** Notas y tareas del widget: las tareas pendientes más próximas y las últimas notas (3 líneas). */
+    private fun updateWidget(@Suppress("UNUSED_PARAMETER") events: List<com.iatualcance.alfred.google.CalEvent>?, @Suppress("UNUSED_PARAMETER") now: Long, @Suppress("UNUSED_PARAMETER") zone: java.time.ZoneId) {
         val prefs = app.getSharedPreferences("widget", android.content.Context.MODE_PRIVATE)
-        if (events != null) prefs.edit().putString("events", com.iatualcance.alfred.notify.Plan.widgetLines(events, emptyList(), now, zone).filter { it.startsWith("📅") }.joinToString("\n")).apply()
-        val ev = prefs.getString("events", "").orEmpty().lines().filter { it.isNotBlank() }
-        val tk = com.iatualcance.alfred.notify.Plan.widgetLines(emptyList(), store.tasks.value, now, zone).filter { it.startsWith("☐") }
-        prefs.edit().putString("text", (ev + tk).ifEmpty { listOf("Nada pendiente. ¡Buen día!") }.joinToString("\n")).apply()
+        val tasks = store.tasks.value.filter { !it.done }.sortedWith(compareBy({ it.due ?: "9999" }, { it.createdAt })).take(2).map { "☐ " + it.title }
+        val notes = store.notes.value.filter { !it.done }.sortedWith(compareByDescending<com.iatualcance.alfred.data.Note> { it.pinned }.thenByDescending { it.updatedAt })
+            .take(3 - tasks.size).map { "📝 " + it.title.ifBlank { it.content.take(40).ifBlank { "Sin título" } } }
+        prefs.edit().putString("notes", (tasks + notes).ifEmpty { listOf("Aún no hay notas ni tareas.") }.joinToString("\n")).apply()
+        com.iatualcance.alfred.widget.AlfredWidget.refresh(app)
+    }
+
+    /** Lee las citas del mes que muestra el widget y guarda cuántas hay cada día. */
+    suspend fun refreshWidgetMonth() = withContext(Dispatchers.IO) {
+        if (!hasGoogle) return@withContext
+        val prefs = app.getSharedPreferences("widget", android.content.Context.MODE_PRIVATE)
+        val ym = java.time.YearMonth.now().plusMonths(prefs.getInt("monthOffset", 0).toLong())
+        val zone = java.time.ZoneId.systemDefault()
+        val ev = runCatching { google.listEvents(ym.atDay(1).atStartOfDay(zone), ym.plusMonths(1).atDay(1).atStartOfDay(zone)) }.getOrNull() ?: return@withContext
+        val counts = ev.groupingBy { it.start.toLocalDate() }.eachCount()
+        prefs.edit().putString("cal:$ym", counts.entries.joinToString(",") { "${it.key}=${it.value}" }).apply()
         com.iatualcance.alfred.widget.AlfredWidget.refresh(app)
     }
 
