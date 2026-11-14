@@ -273,24 +273,28 @@ private fun SettingsScreen() {
                 }) { Text("Guardar y probar") }
                 TextButton(onClick = { ctx.openUrl("https://aistudio.google.com/apikey") }) { Text("Obtener clave gratis") }
             }
-            // ---- Consumo del mes y límite
+            // ---- Consumo del mes y tope en euros
             val usage by sv.settings.usage.collectAsStateCompat()
-            val limit by sv.settings.monthlyLimit.collectAsStateCompat()
+            val budgetOwner by sv.settings.monthlyBudget.collectAsStateCompat()
             val cityNow by sv.settings.weatherCity.collectAsStateCompat()
-            Text("Consumo de este mes", style = MaterialTheme.typography.titleSmall)
+            val budget = sv.settings.effectiveBudget()
+            Text("Consumo de IA de este mes", style = MaterialTheme.typography.titleSmall)
+            fun eur(v: Double) = "%.2f".format(v).replace('.', ',') + " €"
             Text(
-                "${usage.msgs} mensajes con IA" + (if (limit > 0) " de $limit" else "") + " · ${usage.tokens / 1000} mil tokens · ≈ " + "%.2f".format(usage.costEur).replace('.', ',') + " € (estimado)" +
+                eur(usage.costEur) + (if (budget > 0) " de ${eur(budget)}" else "") + " (estimado) · ${usage.msgs} mensajes · ${usage.tokens / 1000} mil tokens" +
                     (if (usage.advanced > 0) " · ${usage.advanced} consultas avanzadas" else ""),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            if (limit > 0) androidx.compose.material3.LinearProgressIndicator(progress = { (usage.msgs.toFloat() / limit).coerceIn(0f, 1f) }, Modifier.fillMaxWidth(), color = if (usage.msgs >= limit * 0.8) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
-            var limitText by remember(limit) { mutableStateOf(limit.toString()) }
-            androidx.compose.material3.OutlinedTextField(
-                limitText, { t -> limitText = t.filter { it.isDigit() }.take(6); sv.settings.setMonthlyLimit(limitText.toIntOrNull() ?: 0) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape,
-                label = { Text("Límite mensual de mensajes (0 = sin límite)") },
-                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
-            )
-            Text("Los atajos no gastan IA. Se avisa al llegar al 80 % y al 100 % del límite.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (budget > 0) androidx.compose.material3.LinearProgressIndicator(progress = { (usage.costEur / budget).toFloat().coerceIn(0f, 1f) }, Modifier.fillMaxWidth(), color = if (usage.costEur >= budget * 0.8) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+            if (!BillingConfig.ENABLED) {
+                var budgetText by remember(budgetOwner) { mutableStateOf(if (budgetOwner == 0.0) "0" else "%.2f".format(budgetOwner).trimEnd('0').trimEnd('.').replace('.', ',')) }
+                androidx.compose.material3.OutlinedTextField(
+                    budgetText, { t -> budgetText = t.filter { it.isDigit() || it == ',' || it == '.' }.take(7); sv.settings.setMonthlyBudget(budgetText.replace(',', '.').toDoubleOrNull() ?: 0.0) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape,
+                    label = { Text("Tope mensual de coste en € (0 = sin tope)") },
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Decimal),
+                )
+            }
+            Text("Los atajos no gastan IA. Se avisa al llegar al 80 % y al 100 % del tope. El coste es una estimación con precios prudentes.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             androidx.compose.material3.OutlinedTextField(cityNow, { sv.settings.setWeatherCity(it) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape, label = { Text("Tu ciudad (tiempo y búsquedas «cerca de mí»)") }, placeholder = { Text("Ej.: Zaragoza") })
             Text("Modelo en uso: $model (${ModelInfo.label(model).ifBlank { "gratis" }})", style = MaterialTheme.typography.titleSmall)
             Box {

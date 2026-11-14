@@ -40,29 +40,32 @@ class Settings(ctx: Context) {
     }
     private fun readUsage(): Usage { val m = month(); return Usage(p.getInt("u:$m:msgs", 0), p.getInt("u:$m:adv", 0), p.getLong("u:$m:li", 0), p.getLong("u:$m:lo", 0), p.getLong("u:$m:pi", 0), p.getLong("u:$m:po", 0)) }
     val usage = MutableStateFlow(readUsage())
-    /** Límite mensual de mensajes con IA (0 = sin límite). */
-    val monthlyLimit = MutableStateFlow(p.getInt("monthlyLimit", 1500))
-    fun setMonthlyLimit(v: Int) { monthlyLimit.value = v.coerceAtLeast(0); p.edit().putInt("monthlyLimit", monthlyLimit.value).apply() }
+    /** Tope mensual de coste de IA en euros que fija el propietario (0 = sin tope). Con los cobros activados manda el del plan. */
+    val monthlyBudget = MutableStateFlow(p.getFloat("monthlyBudgetEur", 6f).toDouble())
+    fun setMonthlyBudget(v: Double) { monthlyBudget.value = v.coerceAtLeast(0.0); p.edit().putFloat("monthlyBudgetEur", monthlyBudget.value.toFloat()).apply() }
     /** Aviso pendiente de mostrar al usuario (por ejemplo, "vas por el 80 %"). */
     val notice = MutableStateFlow<String?>(null)
+    /** Plan efectivo y su tope; los pone Services según la licencia. */
+    @Volatile var effectiveBudget: () -> Double = { monthlyBudget.value }
     @Synchronized fun addMessageUse(advanced: Boolean) {
         val m = month(); val u = readUsage()
         p.edit().putInt("u:$m:msgs", u.msgs + 1).apply { if (advanced) putInt("u:$m:adv", u.advanced + 1) }.apply()
         usage.value = readUsage()
-        val lim = monthlyLimit.value; val n = usage.value.msgs
-        if (lim > 0) {
-            if (n == lim) notice.value = "Has llegado al límite de este mes ($lim mensajes con IA). Puedes cambiarlo en Ajustes → IA."
-            else if (n == (lim * 0.8).toInt()) notice.value = "Llevas el 80 % del límite mensual de IA ($n de $lim mensajes)."
-        }
     }
     @Synchronized fun addTokens(model: String, input: Long, output: Long) {
         val m = month(); val lite = "lite" in model
+        val before = readUsage().costEur
         val e = p.edit()
         if (lite) { e.putLong("u:$m:li", p.getLong("u:$m:li", 0) + input); e.putLong("u:$m:lo", p.getLong("u:$m:lo", 0) + output) }
         else { e.putLong("u:$m:pi", p.getLong("u:$m:pi", 0) + input); e.putLong("u:$m:po", p.getLong("u:$m:po", 0) + output) }
         e.apply(); usage.value = readUsage()
+        val budget = effectiveBudget()
+        when (com.iatualcance.alfred.billing.Entitlements.threshold(before, usage.value.costEur, budget)) {
+            80 -> notice.value = "Llevas el 80 % del tope de IA de este mes (%.2f de %.2f €).".format(usage.value.costEur, budget).replace('.', ',')
+            100 -> notice.value = "Has llegado al tope de IA de este mes (%.2f €). Cambia el tope en Ajustes → IA o espera al mes que viene.".format(budget).replace('.', ',')
+        }
     }
-    fun limitReached(): Boolean = monthlyLimit.value > 0 && readUsage().msgs >= monthlyLimit.value
+    fun limitReached(): Boolean { val b = effectiveBudget(); return b > 0 && readUsage().costEur >= b }
 
     fun setSkin(id: String) { skin.value = id; p.edit().putString("skin", id).apply(); com.iatualcance.alfred.ui.Skins.current = com.iatualcance.alfred.ui.Skins.byId(id) }
     val sumEvents = MutableStateFlow(p.getBoolean("sumEvents", true))

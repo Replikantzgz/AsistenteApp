@@ -44,6 +44,7 @@ data class Reply(val text: String, val actions: List<String>, val nav: List<Nav>
  */
 class Assistant(
     private val gemini: Gemini, private val google: GoogleApi, private val store: Store, private val settings: Settings,
+    private val allows: (com.iatualcance.alfred.billing.Feature) -> Boolean = { true },
     private val uploadNote: suspend (Note, String?) -> Note, private val backup: suspend () -> String,
 ) {
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
@@ -192,7 +193,20 @@ Cuando el usuario pida hacer algo en su cuenta, eres el CENTRO DE MANDO de la ap
     private fun when_(s: String?) = s?.takeIf { it.isNotBlank() }?.let { Util.parseDateTime(it) }
     private fun ok(msg: String, extra: JsonObject? = null): JsonElement = buildJsonObject { put("ok", true); put("mensaje", msg); extra?.let { put("datos", it) } }
 
-    private suspend fun run(name: String, a: JsonObject, actions: MutableList<String>, nav: MutableList<Nav>, confirm: suspend (String, String) -> Boolean): JsonElement = when (name) {
+    /** Función que exige un plan superior, o null si [name] está permitida. */
+    private fun lockedFeature(name: String): com.iatualcance.alfred.billing.Feature? = when {
+        name in setOf("buscar_en_internet", "consulta_avanzada") -> com.iatualcance.alfred.billing.Feature.SEARCH
+        "drive" in name || name == "crear_proyecto" || name == "compartir_en_drive" -> com.iatualcance.alfred.billing.Feature.DRIVE
+        listOf("nota", "tarea", "plantilla").any { it in name } && !name.startsWith("abrir_") -> com.iatualcance.alfred.billing.Feature.NOTES
+        else -> null
+    }?.takeIf { !allows(it) }
+
+    private suspend fun run(name: String, a: JsonObject, actions: MutableList<String>, nav: MutableList<Nav>, confirm: suspend (String, String) -> Boolean): JsonElement {
+        lockedFeature(name)?.let { throw Exception("${com.iatualcance.alfred.billing.Entitlements.featureName(it)} no está incluido en tu plan. Dile al usuario que es una función del plan Premium.") }
+        return runTool(name, a, actions, nav, confirm)
+    }
+
+    private suspend fun runTool(name: String, a: JsonObject, actions: MutableList<String>, nav: MutableList<Nav>, confirm: suspend (String, String) -> Boolean): JsonElement = when (name) {
         "crear_evento" -> {
             val start = when_(a.str("inicio")) ?: throw Exception("Falta la fecha de inicio")
             val allDay = a.bool("todo_el_dia") || (a.str("inicio")?.trim()?.length ?: 0) <= 10

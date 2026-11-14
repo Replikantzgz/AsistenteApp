@@ -138,6 +138,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         val zone = java.time.ZoneId.systemDefault()
         val today = java.time.LocalDate.now()
         val hm = java.time.format.DateTimeFormatter.ofPattern("HH:mm")
+        val needsNotes = cmd is com.iatualcance.alfred.ai.Quick.NewTask || cmd is com.iatualcance.alfred.ai.Quick.NewNote || cmd is com.iatualcance.alfred.ai.Quick.Done
+        if (needsNotes && !sv.allows(com.iatualcance.alfred.billing.Feature.NOTES)) return com.iatualcance.alfred.ai.Reply("Las notas y tareas son del plan Premium.", emptyList())
         fun whenText(d: java.time.LocalDate?, t: java.time.LocalTime?): String {
             val day = when (d) { null -> ""; today -> "hoy"; today.plusDays(1) -> "mañana"; else -> d.format(java.time.format.DateTimeFormatter.ofPattern("EEEE d 'de' MMMM", com.iatualcance.alfred.Util.ES)) }
             return listOfNotNull(day.ifBlank { null }, t?.let { "a las ${it.format(hm)}" }).joinToString(" ")
@@ -281,6 +283,7 @@ fun ChatScreen(vm: ChatViewModel) {
         else ui.say("Sin permiso de micrófono no puedo escucharte. Actívalo en los ajustes del móvil.")
     }
     fun startConversation(oneShot: Boolean = false) {
+        if (!sv.allows(com.iatualcance.alfred.billing.Feature.VOICE)) { ui.say("La voz es del plan Premium"); ui.overlay = "premium"; return }
         pendingOneShot = oneShot
         if (androidx.core.content.ContextCompat.checkSelfPermission(ctx, android.Manifest.permission.RECORD_AUDIO) == android.content.pm.PackageManager.PERMISSION_GRANTED) {
             if (sv.voice.available()) sv.voice.startConversation(oneShot) else ui.say("Este móvil no tiene reconocimiento de voz de Google instalado")

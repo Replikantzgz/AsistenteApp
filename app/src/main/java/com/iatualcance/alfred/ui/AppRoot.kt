@@ -103,9 +103,9 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
                     else -> when (ui.tab) {
                         Tab.CHAT -> ChatScreen(chat)
                         Tab.AGENDA -> AgendaScreen()
-                        Tab.NOTES -> NotesScreen()
+                        Tab.NOTES -> if (sv.allows(com.iatualcance.alfred.billing.Feature.NOTES)) NotesScreen() else LockedTab("Notas y tareas")
                         Tab.MAIL -> MailScreen()
-                        Tab.DRIVE -> DriveTab()
+                        Tab.DRIVE -> if (sv.allows(com.iatualcance.alfred.billing.Feature.DRIVE)) DriveTab() else LockedTab("Drive")
                     }
                 }
             }
@@ -188,4 +188,17 @@ private fun ShareChoice(d: SharedDraft, onDismiss: () -> Unit, sv: Services, ui:
         },
         confirmButton = {}, dismissButton = { TextButton(onClick = onDismiss) { Text("CANCELAR") } },
     )
+}
+
+/** Pantalla de una función que el plan del usuario no incluye. */
+@Composable
+private fun LockedTab(name: String) {
+    val ui = LocalUi.current
+    PixelBar(title = { Text(name.uppercase()) })
+    Centered {
+        Art(com.iatualcance.alfred.R.drawable.art_pikachu, 120.dp)
+        Text("$name es del plan Premium", style = MaterialTheme.typography.titleMedium, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Hint("Tu plan Básico incluye correo y agenda. Con Premium se desbloquea también la voz, las notas, las tareas y Drive.")
+        AppButton(onClick = { ui.overlay = "premium" }) { Text("Ver Premium") }
+    }
 }

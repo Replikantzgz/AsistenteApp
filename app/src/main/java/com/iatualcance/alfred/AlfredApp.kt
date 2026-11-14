@@ -59,7 +59,7 @@ class Services(private val app: Application) {
     val gemini = Gemini(settings)
     val voice = com.iatualcance.alfred.voice.VoiceController(app)
     val updater = com.iatualcance.alfred.update.Updater(app, com.iatualcance.alfred.google.Http.client)
-    val assistant = Assistant(gemini, google, store, settings, uploadNote = { n, p -> uploadNote(n, p) }, backup = { backupToDrive() })
+    val assistant = Assistant(gemini, google, store, settings, allows = { allows(it) }, uploadNote = { n, p -> uploadNote(n, p) }, backup = { backupToDrive() })
 
     private val scope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.Default)
     private val reminders = com.iatualcance.alfred.notify.ReminderCenter(app)
@@ -110,6 +110,14 @@ class Services(private val app: Application) {
     fun licenseData(code: String = settings.license.value): com.iatualcance.alfred.billing.LicenseData? =
         (com.iatualcance.alfred.billing.Licenses.verify(code) as? com.iatualcance.alfred.billing.LicenseResult.Valid)?.data
 
+    /** Plan de la licencia activa (null = sin licencia). */
+    fun plan(): com.iatualcance.alfred.billing.Plan? = licenseData()?.let { com.iatualcance.alfred.billing.Plan.fromId(it.p) }
+
+    /** ¿Puede usarse [f]? Con los cobros apagados, siempre. */
+    fun allows(f: com.iatualcance.alfred.billing.Feature) = com.iatualcance.alfred.billing.Entitlements.allows(com.iatualcance.alfred.billing.BillingConfig.ENABLED, plan(), f)
+
+    init { settings.effectiveBudget = { com.iatualcance.alfred.billing.Entitlements.budgetEur(com.iatualcance.alfred.billing.BillingConfig.ENABLED, plan(), settings.monthlyBudget.value) } }
+
     fun isPremium(code: String = settings.license.value): Boolean = !com.iatualcance.alfred.billing.BillingConfig.ENABLED || licenseData(code) != null
 
     /** Devuelve null si el código se ha activado, o el motivo por el que no vale. */
@@ -123,7 +131,7 @@ class Services(private val app: Application) {
     /** Ejecuta una operación con IA descontándola de la cuota diaria si el usuario no es Premium. */
     suspend fun <T> metered(block: suspend () -> T): T {
         if (!isPremium() && aiLeftToday() <= 0) throw QuotaExceeded()
-        if (settings.limitReached()) throw Exception("Has llegado al límite de este mes (${settings.monthlyLimit.value} mensajes con IA). Puedes cambiarlo en Ajustes → IA.")
+        if (settings.limitReached()) throw Exception("Has llegado al tope de IA de este mes (%.2f €). Puedes cambiarlo en Ajustes → IA.".format(settings.effectiveBudget()).replace('.', ','))
         assistant.advancedUsed = false
         val r = block()
         settings.addMessageUse(assistant.advancedUsed)
