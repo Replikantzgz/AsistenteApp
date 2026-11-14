@@ -96,12 +96,15 @@ class VoiceController(private val ctx: Context) {
                 // Paciencia: no se envía hasta que pasen PATIENCE_MS sin que sigas hablando; mientras, se sigue escuchando.
                 silences = 0; buffer = (buffer + " " + said).trim(); heard.value = buffer
                 main.removeCallbacks(flush); main.postDelayed(flush, PATIENCE_MS)
-                listen()
+                // Se sigue escuchando por si continúas, pero tras una pausa: crear otro reconocedor al instante suele dar error.
+                main.postDelayed({ if (active && buffer.isNotBlank()) listen() }, 400)
             }
             override fun onError(error: Int) {
+                // Si ya había algo dicho, un fallo al seguir escuchando NO debe perderlo: se envía tal cual.
+                if (buffer.isNotBlank()) { flushNow(); return }
                 when (error) {
-                    SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> if (buffer.isNotBlank()) flushNow() else silence()
-                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> main.postDelayed({ if (active) listen() }, 600)
+                    SpeechRecognizer.ERROR_NO_MATCH, SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> silence()
+                    SpeechRecognizer.ERROR_RECOGNIZER_BUSY, SpeechRecognizer.ERROR_CLIENT -> main.postDelayed({ if (active) listen() }, 600)
                     else -> stop()                         // sin permiso, sin red, servicio no disponible…
                 }
             }
