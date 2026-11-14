@@ -8,10 +8,10 @@
         android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="7" android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="match_parent" android:layout_height="26dp"
+            android:layout_width="match_parent" android:layout_height="32dp"
             android:background="@drawable/widget_header_left_bg" android:gravity="center_vertical" android:orientation="horizontal"
             android:paddingStart="6dp" android:paddingEnd="6dp">
-            <ImageView android:layout_width="20dp" android:layout_height="20dp" android:contentDescription="@null" android:src="@drawable/art_pikachu" />
+            <ImageView android:layout_width="26dp" android:layout_height="26dp" android:background="@drawable/widget_lens_bg" android:contentDescription="Asistente" android:padding="4dp" android:src="@drawable/art_pikachu_round" />
             <TextView
                 android:id="@+id/cal_prev" android:layout_width="28dp" android:layout_height="match_parent" android:gravity="center"
                 android:text="‹" android:textColor="#FFFFFF" android:textSize="20sp" android:textStyle="bold" />
