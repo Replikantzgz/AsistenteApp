@@ -87,6 +87,8 @@ fun AppRoot(shared: MutableStateFlow<Intent?>, route: MutableStateFlow<String?>)
     }
     // Alfred (el asistente) manda a la interfaz: abrir pantallas, notas, redactar…
     LaunchedEffect(chat.needsPremium) { if (chat.needsPremium) { ui.overlay = "premium"; chat.needsPremium = false } }
+    val usageNotice by sv.settings.notice.collectAsState()
+    LaunchedEffect(usageNotice) { usageNotice?.let { ui.say(it); sv.settings.notice.value = null } }
     LaunchedEffect(chat.nav) { chat.nav?.let { ui.navigate(it); chat.nav = null } }
 
     CompositionLocalProvider(LocalUi provides ui) {

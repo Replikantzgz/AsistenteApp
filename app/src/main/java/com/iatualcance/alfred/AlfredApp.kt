@@ -123,7 +123,10 @@ class Services(private val app: Application) {
     /** Ejecuta una operación con IA descontándola de la cuota diaria si el usuario no es Premium. */
     suspend fun <T> metered(block: suspend () -> T): T {
         if (!isPremium() && aiLeftToday() <= 0) throw QuotaExceeded()
+        if (settings.limitReached()) throw Exception("Has llegado al límite de este mes (${settings.monthlyLimit.value} mensajes con IA). Puedes cambiarlo en Ajustes → IA.")
+        assistant.advancedUsed = false
         val r = block()
+        settings.addMessageUse(assistant.advancedUsed)
         if (com.iatualcance.alfred.billing.BillingConfig.ENABLED && !isPremium()) settings.addAiUse()
         return r
     }

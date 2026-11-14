@@ -31,6 +31,39 @@ class Settings(ctx: Context) {
     val dailySummary = MutableStateFlow(p.getBoolean("dailySummary", true))
     val summaryMinutes = MutableStateFlow(p.getInt("summaryMinutes", 8 * 60))
     val skin = MutableStateFlow(p.getString("skin", "pokemon") ?: "pokemon").also { com.iatualcance.alfred.ui.Skins.current = com.iatualcance.alfred.ui.Skins.byId(it.value) }
+    // ---- Consumo de IA del mes (en el propio móvil). Los precios son una estimación y hay que contrastarlos con la página de Gemini.
+    private fun month() = java.time.YearMonth.now().toString()
+    data class Usage(val msgs: Int = 0, val advanced: Int = 0, val liteIn: Long = 0, val liteOut: Long = 0, val proIn: Long = 0, val proOut: Long = 0) {
+        val tokens get() = liteIn + liteOut + proIn + proOut
+        /** Coste estimado en euros: Flash-Lite a 0,25/1,50 $ y Flash a 0,30/2,50 $ por millón (cifras prudentes), a 0,93 €/$. */
+        val costEur get() = (liteIn * 0.25 + liteOut * 1.5 + proIn * 0.30 + proOut * 2.5) / 1e6 * 0.93
+    }
+    private fun readUsage(): Usage { val m = month(); return Usage(p.getInt("u:$m:msgs", 0), p.getInt("u:$m:adv", 0), p.getLong("u:$m:li", 0), p.getLong("u:$m:lo", 0), p.getLong("u:$m:pi", 0), p.getLong("u:$m:po", 0)) }
+    val usage = MutableStateFlow(readUsage())
+    /** Límite mensual de mensajes con IA (0 = sin límite). */
+    val monthlyLimit = MutableStateFlow(p.getInt("monthlyLimit", 1500))
+    fun setMonthlyLimit(v: Int) { monthlyLimit.value = v.coerceAtLeast(0); p.edit().putInt("monthlyLimit", monthlyLimit.value).apply() }
+    /** Aviso pendiente de mostrar al usuario (por ejemplo, "vas por el 80 %"). */
+    val notice = MutableStateFlow<String?>(null)
+    @Synchronized fun addMessageUse(advanced: Boolean) {
+        val m = month(); val u = readUsage()
+        p.edit().putInt("u:$m:msgs", u.msgs + 1).apply { if (advanced) putInt("u:$m:adv", u.advanced + 1) }.apply()
+        usage.value = readUsage()
+        val lim = monthlyLimit.value; val n = usage.value.msgs
+        if (lim > 0) {
+            if (n == lim) notice.value = "Has llegado al límite de este mes ($lim mensajes con IA). Puedes cambiarlo en Ajustes → IA."
+            else if (n == (lim * 0.8).toInt()) notice.value = "Llevas el 80 % del límite mensual de IA ($n de $lim mensajes)."
+        }
+    }
+    @Synchronized fun addTokens(model: String, input: Long, output: Long) {
+        val m = month(); val lite = "lite" in model
+        val e = p.edit()
+        if (lite) { e.putLong("u:$m:li", p.getLong("u:$m:li", 0) + input); e.putLong("u:$m:lo", p.getLong("u:$m:lo", 0) + output) }
+        else { e.putLong("u:$m:pi", p.getLong("u:$m:pi", 0) + input); e.putLong("u:$m:po", p.getLong("u:$m:po", 0) + output) }
+        e.apply(); usage.value = readUsage()
+    }
+    fun limitReached(): Boolean = monthlyLimit.value > 0 && readUsage().msgs >= monthlyLimit.value
+
     fun setSkin(id: String) { skin.value = id; p.edit().putString("skin", id).apply(); com.iatualcance.alfred.ui.Skins.current = com.iatualcance.alfred.ui.Skins.byId(id) }
     val sumEvents = MutableStateFlow(p.getBoolean("sumEvents", true))
     val sumTasks = MutableStateFlow(p.getBoolean("sumTasks", true))

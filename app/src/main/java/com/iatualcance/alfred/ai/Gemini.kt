@@ -12,6 +12,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonObjectBuilder
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
@@ -84,20 +85,34 @@ class Gemini(private val settings: Settings) {
         }
     }
 
+    /** Apunta los tokens que Gemini dice haber usado en esta llamada. */
+    private fun track(model: String, j: JsonObject) {
+        val u = j.obj("usageMetadata") ?: return
+        val inp = u["promptTokenCount"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L
+        val out = (u["candidatesTokenCount"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L) + (u["thoughtsTokenCount"]?.jsonPrimitive?.content?.toLongOrNull() ?: 0L)
+        if (inp + out > 0) settings.addTokens(model, inp, out)
+    }
+
+    /** Los modelos 2.5 Flash piensan por defecto (y se cobra como salida); para órdenes no hace falta, así que se apaga. */
+    private fun JsonObjectBuilder.noThinking(model: String) {
+        if (model.startsWith("gemini-2.5-flash")) putJsonObject("thinkingConfig") { put("thinkingBudget", 0) }
+    }
+
     /** Una llamada a generateContent. Devuelve el objeto `content` del modelo tal cual (hay que reenviarlo íntegro en el historial). */
     suspend fun generate(contents: List<JsonObject>, system: String? = null, tools: JsonArray? = null, jsonOut: Boolean = false): JsonObject {
-        val body = buildJsonObject {
+        fun body(model: String) = buildJsonObject {
             system?.let { putJsonObject("systemInstruction") { putJsonArray("parts") { add(buildJsonObject { put("text", it) }) } } }
             put("contents", JsonArray(contents))
             tools?.let { putJsonArray("tools") { add(buildJsonObject { put("functionDeclarations", it) }) } }
             putJsonObject("generationConfig") {
                 put("temperature", 0.3)
                 if (jsonOut) put("responseMimeType", "application/json")
+                noThinking(model)
             }
         }
         val j = withRetry { model ->
             http(Request.Builder().url("$base/models/$model:generateContent")
-                .header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build())
+                .header("x-goog-api-key", key()).post(body(model).toString().toRequestBody(Http.JSON_TYPE)).build()).also { track(model, it) }
         }
         val cand = j.arr("candidates").firstOrNull()?.jsonObject
         val content = cand?.obj("content")
@@ -137,18 +152,42 @@ class Gemini(private val settings: Settings) {
 
     /** Búsqueda en internet con "Grounding with Google Search". Devuelve el texto y los títulos de las fuentes. */
     suspend fun searchWeb(query: String): Pair<String, List<String>> {
-        val body = buildJsonObject {
+        fun body(model: String) = buildJsonObject {
             put("contents", buildJsonArray { add(userContent("Busca en internet y responde en español, con datos actuales y concretos y de forma breve: $query")) })
             putJsonArray("tools") { add(buildJsonObject { putJsonObject("google_search") {} }) }
-            putJsonObject("generationConfig") { put("temperature", 0.2) }
+            putJsonObject("generationConfig") { put("temperature", 0.2); noThinking(model) }
         }
         val j = withRetry { model ->
-            http(Request.Builder().url("$base/models/$model:generateContent").header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build())
+            http(Request.Builder().url("$base/models/$model:generateContent").header("x-goog-api-key", key()).post(body(model).toString().toRequestBody(Http.JSON_TYPE)).build()).also { track(model, it) }
         }
         val cand = j.arr("candidates").firstOrNull()?.jsonObject
         val text = cand?.obj("content")?.let { textOf(it) }.orEmpty()
         val sources = cand?.obj("groundingMetadata")?.arr("groundingChunks")?.mapNotNull { c -> c.jsonObject.obj("web")?.let { it.str("title") ?: it.str("uri") } }?.distinct()?.take(5).orEmpty()
         return text to sources
+    }
+
+    /**
+     * Consulta que necesita razonar o investigar (comparar, planear, cuentas largas, "dónde está lo más cercano"…):
+     * salta a un modelo más capaz, con búsqueda en Google y razonamiento acotado. Solo se usa cuando el asistente lo pide.
+     * Si ese modelo no está disponible, se resuelve con el modelo normal.
+     */
+    suspend fun advanced(question: String, place: String): Pair<String, List<String>> {
+        val ctx = if (place.isNotBlank()) " El usuario está en $place; úsalo como ubicación si la pregunta es sobre algo cercano." else ""
+        val body = buildJsonObject {
+            put("contents", buildJsonArray { add(userContent("Responde en español, de forma clara y breve, con datos actuales y concretos. Razona con cuidado si hace falta.$ctx\n\nConsulta: $question")) })
+            putJsonArray("tools") { add(buildJsonObject { putJsonObject("google_search") {} }) }
+            putJsonObject("generationConfig") { put("temperature", 0.2); putJsonObject("thinkingConfig") { put("thinkingBudget", 1024) } }
+        }
+        return try {
+            val j = http(Request.Builder().url("$base/models/$ADVANCED:generateContent").header("x-goog-api-key", key()).post(body.toString().toRequestBody(Http.JSON_TYPE)).build())
+            track(ADVANCED, j)
+            val cand = j.arr("candidates").firstOrNull()?.jsonObject
+            val text = cand?.obj("content")?.let { textOf(it) }.orEmpty()
+            if (text.isBlank()) throw GeminiError(-3, "vacío")
+            text to cand?.obj("groundingMetadata")?.arr("groundingChunks")?.mapNotNull { c -> c.jsonObject.obj("web")?.let { it.str("title") ?: it.str("uri") } }?.distinct()?.take(5).orEmpty()
+        } catch (e: kotlinx.coroutines.CancellationException) { throw e } catch (e: Exception) {
+            searchWeb(question)
+        }
     }
 
     /** Prueba un modelo concreto, sin reintentos ni modelos de reserva. Devuelve (funciona, detalle: tiempo o motivo del fallo). */
@@ -196,6 +235,7 @@ class Gemini(private val settings: Settings) {
         private val RETRYABLE = setOf(500, 502, 503, 504)
         private const val FALLBACK = "gemini-flash-lite-latest"
         private const val FALLBACK2 = "gemini-2.5-flash"
+        private const val ADVANCED = "gemini-2.5-flash"
 
         fun textPart(t: String) = buildJsonObject { put("text", t) }
 

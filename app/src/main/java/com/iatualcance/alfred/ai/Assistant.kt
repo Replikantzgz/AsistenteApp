@@ -47,6 +47,8 @@ class Assistant(
     private val uploadNote: suspend (Note, String?) -> Note, private val backup: suspend () -> String,
 ) {
     private val fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm")
+    /** Se pone a true si en la petición en curso se ha saltado al modelo avanzado (para contarlo en el consumo). */
+    @Volatile var advancedUsed = false
 
     private fun system(voice: Boolean): String {
         val now = ZonedDateTime.now()
@@ -62,6 +64,7 @@ Cómo conversar:
 - Adapta la longitud: breve para acciones y datos sueltos; completa y bien explicada cuando pida explicar, comparar o aconsejar. Puedes usar listas y negritas con moderación.
 - Haz preguntas de seguimiento cuando ayuden (aclarar qué quiere, ofrecer opciones, proponer el siguiente paso), una o dos como mucho, sin interrogatorios.
 - Recuerda lo hablado antes en esta conversación y úsalo.
+- Para cualquier cuenta, porcentaje o conversión usa SIEMPRE la herramienta calcular. Si la pregunta exige razonar o investigar a fondo (comparar, planear, buscar lo más cercano) usa consulta_avanzada; el resto lo resuelves tú sin ella.
 - Si no sabes algo o puede haber cambiado (noticias, precios, resultados, datos recientes), usa buscar_en_internet y menciona de dónde sale. No inventes datos; si dudas, dilo.
 - En opiniones o decisiones personales, da tu criterio razonado y deja la decisión al usuario.
 ${if (voice) "- Estás en una CONVERSACIÓN HABLADA: contesta con frases naturales y cortas, como hablarías, sin listas, tablas, símbolos, emojis ni enlaces, y termina con una pregunta breve si ayuda a seguir hablando." else ""}
@@ -171,6 +174,8 @@ Cuando el usuario pida hacer algo en su cuenta, eres el CENTRO DE MANDO de la ap
 
         // --- interfaz
         add(fn("buscar_en_internet", "Busca información actual en internet: noticias, precios, resultados, datos recientes o cualquier cosa que no sepas o que pueda haber cambiado. Devuelve un resumen y las fuentes.", mapOf("consulta" to s("Qué buscar")), listOf("consulta")))
+        add(fn("calcular", "Calculadora exacta. Úsala SIEMPRE para cuentas, porcentajes, conversiones o raíces en lugar de calcular de cabeza. Admite + - * / ^ ( ) %, decimales y sqrt()/raiz().", mapOf("expresion" to s("Operación, p. ej. 5+7*25-48*raiz(3)")), listOf("expresion")))
+        add(fn("consulta_avanzada", "Solo para preguntas que de verdad exigen razonar o investigar a fondo: comparar opciones con datos actuales, planificar, analizar, o buscar algo cercano a la ubicación del usuario (por ejemplo la tienda más cercana). Usa un modelo más potente y busca en internet. Para búsquedas simples usa buscar_en_internet; para cuentas usa calcular.", mapOf("pregunta" to s("La pregunta completa, con todo el contexto necesario")), listOf("pregunta")))
         add(fn("abrir_pantalla", "Cambia la app a una pantalla. Úsala cuando el usuario pida ver o abrir una sección.", mapOf(
             "pantalla" to s("correo, calendario, notas, tareas, plantillas, contactos, drive, buscar, ajustes o chat")), listOf("pantalla")))
         add(fn("abrir_nota", "Abre una nota en el editor.", mapOf("id" to s("Id de la nota")), listOf("id")))
@@ -445,8 +450,21 @@ Cuando el usuario pida hacer algo en su cuenta, eres el CENTRO DE MANDO de la ap
         }
         "copia_seguridad_drive" -> { backup(); actions += "☁️ Copia de seguridad guardada en Drive"; ok("Copia de seguridad guardada") }
 
+        "calcular" -> {
+            val e = a.str("expresion").orEmpty().ifBlank { throw Exception("Falta la operación") }
+            try { val v = Calc.eval(e); buildJsonObject { put("resultado", Calc.format(v)) } } catch (x: Calc.CalcError) { throw Exception("No he podido calcular «$e»: ${x.message}") }
+        }
+        "consulta_avanzada" -> {
+            val q = a.str("pregunta").orEmpty().ifBlank { throw Exception("Falta la pregunta") }
+            advancedUsed = true
+            val (text, sources) = gemini.advanced(q, settings.weatherCity.value)
+            actions += "🧠 Consulta avanzada"
+            buildJsonObject { put("respuesta", text); put("fuentes", sources.joinToString("; ")) }
+        }
         "buscar_en_internet" -> {
-            val q = a.str("consulta").orEmpty().ifBlank { throw Exception("Falta qué buscar") }
+            var q = a.str("consulta").orEmpty().ifBlank { throw Exception("Falta qué buscar") }
+            val place = settings.weatherCity.value
+            if (place.isNotBlank() && Regex("""(?i)cerca|cercan|por aqu|mi zona|alrededor""").containsMatchIn(q)) q += " (zona: $place)"
             val (text, sources) = gemini.searchWeb(q)
             actions += "🔎 Buscado en internet: $q"
             buildJsonObject { put("respuesta", text); put("fuentes", sources.joinToString("; ")) }

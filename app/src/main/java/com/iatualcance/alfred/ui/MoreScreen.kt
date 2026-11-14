@@ -273,6 +273,25 @@ private fun SettingsScreen() {
                 }) { Text("Guardar y probar") }
                 TextButton(onClick = { ctx.openUrl("https://aistudio.google.com/apikey") }) { Text("Obtener clave gratis") }
             }
+            // ---- Consumo del mes y límite
+            val usage by sv.settings.usage.collectAsStateCompat()
+            val limit by sv.settings.monthlyLimit.collectAsStateCompat()
+            val cityNow by sv.settings.weatherCity.collectAsStateCompat()
+            Text("Consumo de este mes", style = MaterialTheme.typography.titleSmall)
+            Text(
+                "${usage.msgs} mensajes con IA" + (if (limit > 0) " de $limit" else "") + " · ${usage.tokens / 1000} mil tokens · ≈ " + "%.2f".format(usage.costEur).replace('.', ',') + " € (estimado)" +
+                    (if (usage.advanced > 0) " · ${usage.advanced} consultas avanzadas" else ""),
+                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (limit > 0) androidx.compose.material3.LinearProgressIndicator(progress = { (usage.msgs.toFloat() / limit).coerceIn(0f, 1f) }, Modifier.fillMaxWidth(), color = if (usage.msgs >= limit * 0.8) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary)
+            var limitText by remember(limit) { mutableStateOf(limit.toString()) }
+            androidx.compose.material3.OutlinedTextField(
+                limitText, { t -> limitText = t.filter { it.isDigit() }.take(6); sv.settings.setMonthlyLimit(limitText.toIntOrNull() ?: 0) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape,
+                label = { Text("Límite mensual de mensajes (0 = sin límite)") },
+                keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = androidx.compose.ui.text.input.KeyboardType.Number),
+            )
+            Text("Los atajos no gastan IA. Se avisa al llegar al 80 % y al 100 % del límite.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            androidx.compose.material3.OutlinedTextField(cityNow, { sv.settings.setWeatherCity(it) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape, label = { Text("Tu ciudad (tiempo y búsquedas «cerca de mí»)") }, placeholder = { Text("Ej.: Zaragoza") })
             Text("Modelo en uso: $model (${ModelInfo.label(model).ifBlank { "gratis" }})", style = MaterialTheme.typography.titleSmall)
             Box {
                 AppOutlinedButton(onClick = {
@@ -347,7 +366,7 @@ private fun SettingsScreen() {
                 SwitchRow("Notas", "Las notas con aviso hoy.", sNo) { sv.settings.setSumNotes(it) }
                 SwitchRow("Correos importantes", "Los sin leer que Gmail marca como importantes.", sMa) { sv.settings.setSumMail(it) }
                 SwitchRow("El tiempo", "Si va a llover o no, y la máxima y la mínima.", sWe) { sv.settings.setSumWeather(it) }
-                if (sWe) androidx.compose.material3.OutlinedTextField(city, { sv.settings.setWeatherCity(it) }, Modifier.fillMaxWidth(), singleLine = true, shape = PxShape, label = { Text("Tu ciudad") }, placeholder = { Text("Ej.: Zaragoza") })
+                if (sWe && city.isBlank()) Text("Pon tu ciudad más arriba, en la sección de inteligencia artificial, para ver el tiempo.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             SwitchRow("Avisar de las tareas", "A la hora que indique la tarea; si solo tiene fecha, a las 9:00.", notifyTasks) { sv.settings.setNotifyTasks(it) }
             AppOutlinedButton(onClick = {
