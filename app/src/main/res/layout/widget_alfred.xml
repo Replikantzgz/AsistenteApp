@@ -91,9 +91,9 @@
             android:ellipsize="end" android:maxLines="3" android:textColor="#1F1D2B" android:textSize="11sp" />
         <ImageButton
             android:id="@+id/widget_mic" android:layout_width="34dp" android:layout_height="34dp" android:background="@android:color/transparent"
-            android:contentDescription="Nota de voz" android:src="@drawable/ic_widget_mic" android:tint="#D7301F" />
+            android:contentDescription="Nota de voz" android:src="@drawable/ic_widget_mic_red" />
         <ImageButton
             android:id="@+id/widget_add" android:layout_width="34dp" android:layout_height="34dp" android:background="@android:color/transparent"
-            android:contentDescription="Nueva nota" android:src="@drawable/ic_widget_add" android:tint="#D7301F" />
+            android:contentDescription="Nueva nota" android:src="@drawable/ic_widget_add_red" />
     </LinearLayout>
 </LinearLayout>
