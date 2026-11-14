@@ -143,10 +143,10 @@ class Services(private val app: Application) {
     /** Notas y tareas del widget: las tareas pendientes más próximas y las últimas notas (3 líneas). */
     private fun updateWidget(@Suppress("UNUSED_PARAMETER") events: List<com.iatualcance.alfred.google.CalEvent>?, @Suppress("UNUSED_PARAMETER") now: Long, @Suppress("UNUSED_PARAMETER") zone: java.time.ZoneId) {
         val prefs = app.getSharedPreferences("widget", android.content.Context.MODE_PRIVATE)
-        val tasks = store.tasks.value.filter { !it.done }.sortedWith(compareBy({ it.due ?: "9999" }, { it.createdAt })).take(2).map { "☐ " + it.title }
+        val tasks = store.tasks.value.filter { !it.done }.sortedWith(compareBy({ it.due ?: "9999" }, { it.createdAt })).take(3).map { "☐ " + it.title }
         val notes = store.notes.value.filter { !it.done }.sortedWith(compareByDescending<com.iatualcance.alfred.data.Note> { it.pinned }.thenByDescending { it.updatedAt })
-            .take(3 - tasks.size).map { "📝 " + it.title.ifBlank { it.content.take(40).ifBlank { "Sin título" } } }
-        prefs.edit().putString("notes", (tasks + notes).ifEmpty { listOf("Aún no hay notas ni tareas.") }.joinToString("\n")).apply()
+            .take(6 - tasks.size).map { "📝 " + it.title.ifBlank { it.content.take(40).ifBlank { "Sin título" } } }
+        prefs.edit().putString("notes", (tasks + notes).ifEmpty { listOf("Aún no hay notas ni tareas.") }.joinToString("\n\n")).apply()
         com.iatualcance.alfred.widget.AlfredWidget.refresh(app)
     }
 

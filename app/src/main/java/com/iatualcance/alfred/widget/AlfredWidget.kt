@@ -25,8 +25,8 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 /**
- * Widget de la pantalla de inicio: 3/4 calendario del mes (una raya roja por cita, toque en un día = abrir ese día,
- * flechas para cambiar de mes) y 1/4 notas y tareas, con botones para dictar o crear una nota.
+ * Widget de la pantalla de inicio: a la izquierda, 3/4 calendario del mes (una raya roja por cita, toque en un día = abrir ese día,
+ * flechas para cambiar de mes) y a la derecha 1/4 notas y tareas, con botones para dictar o crear una nota.
  */
 class AlfredWidget : AppWidgetProvider() {
     override fun onUpdate(ctx: Context, manager: AppWidgetManager, ids: IntArray) {
