@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_bar_bg" android:gravity="center_vertical"
+    android:orientation="horizontal" android:paddingStart="6dp" android:paddingEnd="10dp">
+
+    <ImageView
+        android:id="@+id/bar_agent"
+        android:layout_width="48dp" android:layout_height="48dp"
+        android:background="@drawable/widget_bar_agent_bg" android:contentDescription="Asistente"
+        android:padding="3dp" android:src="@drawable/art_pikachu_round" />
+
+    <LinearLayout
+        android:id="@+id/bar_mail" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:gravity="center" android:orientation="vertical">
+        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:contentDescription="@null" android:src="@drawable/art_correo" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Correo" android:textColor="#3A3850" android:textSize="10sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bar_agenda" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:gravity="center" android:orientation="vertical">
+        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:contentDescription="@null" android:src="@drawable/art_agenda" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Agenda" android:textColor="#3A3850" android:textSize="10sp" android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/bar_notes" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1"
+        android:gravity="center" android:orientation="vertical">
+        <ImageView android:layout_width="30dp" android:layout_height="30dp" android:contentDescription="@null" android:src="@drawable/art_notas" />
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Notas" android:textColor="#3A3850" android:textSize="10sp" android:textStyle="bold" />
+    </LinearLayout>
+</LinearLayout>
