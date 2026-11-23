@@ -1,0 +1,443 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vende tu coche al mejor precio – Gestión de venta | Imperium Cars</title>
+<meta name="description" content="Te gestionamos la venta de tu coche: lavado profesional, fotografía, anuncios en plataformas profesionales y mantenimiento. Tú cobras el precio de mercado y nosotros una tarifa fija.">
+<meta name="theme-color" content="#2c2c2c">
+<link rel="icon" href="assets/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- META PIXEL: pega aquí tu código base del píxel. El formulario ya dispara fbq('track','Lead') si existe. -->
+
+<style>
+:root{
+  --primary:#ff4605; --primary-dark:#e63d00; --primary-light:#fff0eb;
+  --dark:#2c2c2c; --card-dark:#3a3a3a; --bg-light:#f5f5f5;
+  --text:#1a1a1a; --muted:#555; --border:#e0e0e0;
+  --font:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;scroll-padding-top:80px}
+body{font-family:var(--font);color:var(--text);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+.container{width:100%;max-width:1200px;margin:0 auto;padding:0 20px}
+section{padding:80px 0}
+.eyebrow{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
+h2.title{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:600;letter-spacing:-.3px;line-height:1.3}
+.lead{color:var(--muted);max-width:680px;margin-top:14px;font-size:1.05rem}
+.center{text-align:center}.center .lead{margin-left:auto;margin-right:auto}
+
+/* Botones */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.9rem 1.8rem;border-radius:50px;border:2px solid var(--primary);background:var(--primary);color:#fff;font:600 .95rem var(--font);cursor:pointer;transition:all .2s ease}
+.btn:hover{background:var(--primary-dark);border-color:var(--primary-dark);transform:translateY(-2px);box-shadow:0 8px 20px rgba(255,70,5,.3)}
+.btn-ghost{background:transparent;border-color:rgba(255,255,255,.6)}
+.btn-ghost:hover{background:rgba(255,255,255,.12);border-color:#fff;box-shadow:none}
+.btn-lg{padding:1.1rem 2.2rem;font-size:1.05rem}
+.btn-block{width:100%}
+
+/* Header */
+.header{position:fixed;inset:0 0 auto 0;z-index:1000;background:var(--dark);border-bottom:1px solid rgba(255,255,255,.1)}
+.nav{display:flex;align-items:center;justify-content:space-between;height:72px;gap:16px}
+.nav img{height:64px;width:64px;object-fit:contain}
+.nav-links{display:flex;gap:28px;font-size:.9rem;font-weight:500;color:#fff}
+.nav-links a{opacity:.85;transition:.2s}.nav-links a:hover{opacity:1;color:var(--primary)}
+.nav .btn{padding:.65rem 1.3rem;font-size:.88rem}
+.nav-phone{color:#fff;font-weight:600;font-size:.9rem}
+
+/* Hero */
+.hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:130px 0 70px;color:#fff;overflow:hidden;
+  background:radial-gradient(900px 500px at 85% 10%,rgba(255,70,5,.35),transparent 60%),linear-gradient(135deg,#1c1c1c 0%,#2c2c2c 55%,#3a3a3a 100%)}
+.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 22px);pointer-events:none}
+.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem 1.1rem;background:var(--primary-light);border:1px solid rgba(255,70,5,.3);border-radius:50px;font-size:.82rem;font-weight:600;color:var(--primary);margin-bottom:22px}
+.hero h1{font-size:clamp(2.1rem,5.2vw,3.5rem);font-weight:700;line-height:1.15;letter-spacing:-.5px;margin-bottom:20px}
+.hero h1 .hl{color:var(--primary)}
+.hero p.sub{font-size:1.15rem;color:#e6e6e6;max-width:560px;margin-bottom:30px}
+.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:34px}
+.hero-checks{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:.92rem;color:#ddd;list-style:none}
+.hero-checks li::before{content:"✓";color:var(--primary);font-weight:800;margin-right:8px}
+
+/* Formulario */
+.form-card{background:#fff;color:var(--text);border-radius:20px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.form-card h3{font-size:1.3rem;font-weight:700;line-height:1.3}
+.form-card .hint{color:var(--muted);font-size:.9rem;margin:6px 0 18px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)}
+.field input,.field select{width:100%;padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:12px;font:500 .95rem var(--font);background:#fff;color:var(--text);transition:.2s}
+.field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,70,5,.15)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:.78rem;color:var(--muted);margin:6px 0 16px}
+.check input{margin-top:3px;accent-color:var(--primary)}
+.check a{color:var(--primary);text-decoration:underline}
+.form-note{font-size:.76rem;color:var(--muted);text-align:center;margin-top:10px}
+
+/* Franja confianza */
+.strip{background:var(--dark);color:#fff;padding:26px 0}
+.strip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+.strip b{display:block;font-size:1.05rem;color:var(--primary)}
+.strip span{font-size:.85rem;color:#ccc}
+
+/* Problema vs solución */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:44px}
+.cmp{border-radius:20px;padding:34px}
+.cmp h3{font-size:1.25rem;margin-bottom:18px}
+.cmp ul{list-style:none;display:grid;gap:12px}
+.cmp li{display:flex;gap:12px;font-size:.98rem}
+.cmp.bad{background:var(--bg-light);border:1px solid var(--border)}
+.cmp.bad li::before{content:"✕";color:#b00020;font-weight:800}
+.cmp.good{background:var(--dark);color:#fff;border:2px solid var(--primary)}
+.cmp.good li::before{content:"✓";color:var(--primary);font-weight:800}
+
+/* Servicios */
+.bg-light{background:var(--bg-light)}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:44px}
+.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px;transition:.25s}
+.card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.1);border-color:var(--primary)}
+.ico{width:56px;height:56px;border-radius:16px;background:var(--primary-light);display:grid;place-items:center;font-size:1.6rem;margin-bottom:18px}
+.card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
+.card p{color:var(--muted);font-size:.95rem}
+
+/* Pasos */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px;margin-top:44px;counter-reset:s}
+.step{background:var(--card-dark);color:#fff;border-radius:20px;padding:30px;position:relative}
+.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--primary);font-weight:800;margin-bottom:16px}
+.step h3{font-size:1.05rem;margin-bottom:8px}
+.step p{font-size:.92rem;color:#ccc}
+.dark{background:var(--dark);color:#fff}
+.dark .lead{color:#ccc}
+
+/* Calculadora */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;margin-top:44px}
+.calc-box{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px}
+.result{background:var(--dark);color:#fff;border-radius:20px;padding:30px}
+.result .line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:.95rem}
+.result .total{border:0;padding-top:18px;font-size:1.15rem;font-weight:700}
+.result .gain{font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.1}
+.disclaimer{font-size:.75rem;color:var(--muted);margin-top:14px}
+.result .disclaimer{color:#aaa}
+
+/* FAQ */
+.faq{max-width:820px;margin:44px auto 0;display:grid;gap:12px}
+details{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px 24px}
+details[open]{border-color:var(--primary)}
+summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
+summary::after{content:"+";color:var(--primary);font-size:1.4rem;line-height:1}
+details[open] summary::after{content:"–"}
+details p{margin-top:12px;color:var(--muted);font-size:.95rem}
+
+/* CTA final */
+.final{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;text-align:center;padding:70px 0}
+.final h2{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:700;margin-bottom:12px}
+.final .btn{background:#fff;color:var(--primary);border-color:#fff;margin-top:22px}
+.final .btn:hover{background:var(--dark);color:#fff;border-color:var(--dark)}
+
+/* Footer */
+footer{background:var(--dark);color:#ccc;padding:56px 0 28px;font-size:.9rem}
+.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:36px}
+footer h4{color:#fff;margin-bottom:12px;font-size:1rem}
+footer li{list-style:none;margin-bottom:6px}
+footer a:hover{color:var(--primary)}
+.copy{border-top:1px solid rgba(255,255,255,.1);margin-top:36px;padding-top:20px;text-align:center;font-size:.8rem}
+
+/* WhatsApp flotante */
+.wa{position:fixed;right:18px;bottom:18px;z-index:999;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:.2s}
+.wa:hover{transform:scale(1.08)}
+.wa svg{width:30px;height:30px;fill:#fff}
+
+/* Barra móvil */
+.mbar{display:none}
+
+@media(max-width:900px){
+  section{padding:56px 0}
+  .nav-links,.nav-phone{display:none}
+  .hero{padding-top:110px;min-height:auto}
+  .hero-grid,.compare,.calc,.f-grid{grid-template-columns:1fr}
+  .strip-grid{grid-template-columns:1fr 1fr}
+  .nav img{height:54px;width:54px}
+}
+@media(max-width:480px){
+  .row2{grid-template-columns:1fr}
+  .form-card{padding:22px}
+  .hero-cta .btn{width:100%}
+  .wa{bottom:78px}
+  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:998;background:var(--dark);padding:10px 14px;gap:10px;border-top:1px solid rgba(255,255,255,.12)}
+  .mbar .btn{flex:1;padding:.8rem}
+  body{padding-bottom:70px}
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container nav">
+    <a href="#top"><img src="assets/logo.png" alt="Imperium Cars"></a>
+    <nav class="nav-links">
+      <a href="#que-incluye">Qué incluye</a>
+      <a href="#como-funciona">Cómo funciona</a>
+      <a href="#calculadora">Calculadora</a>
+      <a href="#faq">Preguntas</a>
+    </nav>
+    <a class="nav-phone" href="tel:+34672938336">672 93 83 36</a>
+    <a class="btn" href="#formulario">Quiero vender mi coche</a>
+  </div>
+</header>
+
+<main id="top">
+<!-- HERO -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="badge">★ Gestión integral de venta de vehículos</span>
+      <h1>Vende tu coche por <span class="hl">lo que realmente vale</span>, no por lo que te ofrece un comprador al por mayor</h1>
+      <p class="sub">Nos encargamos de todo: lavado profesional, fotografía, anuncios en plataformas profesionales y mantenimiento. Tú cobras el precio de venta y nosotros, una tarifa fija. Sin comisiones sorpresa.</p>
+      <div class="hero-cta">
+        <a class="btn btn-lg" href="#formulario">Quiero sacar más por mi coche</a>
+        <a class="btn btn-lg btn-ghost" href="#calculadora">Calcula tu diferencia</a>
+      </div>
+      <ul class="hero-checks">
+        <li>Tarifa fija y transparente</li>
+        <li>Tu coche, cuidado en nuestras instalaciones</li>
+        <li>Sin presiones ni papeleos</li>
+      </ul>
+    </div>
+
+    <form class="form-card" id="formulario" novalidate>
+      <h3>Cuéntanos tu coche y te llamamos hoy</h3>
+      <p class="hint">Te decimos en cuánto podemos venderlo y qué ganarías de más.</p>
+      <div class="field"><label for="nombre">Nombre</label><input id="nombre" name="nombre" autocomplete="name" required placeholder="Tu nombre"></div>
+      <div class="field"><label for="tel">Teléfono</label><input id="tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" required placeholder="600 000 000"></div>
+      <div class="row2">
+        <div class="field"><label for="marca">Marca y modelo</label><input id="marca" name="marca" required placeholder="Ej. Seat León"></div>
+        <div class="field"><label for="anio">Año</label><input id="anio" name="anio" inputmode="numeric" maxlength="4" required placeholder="2019"></div>
+      </div>
+      <div class="row2">
+        <div class="field"><label for="km">Kilómetros</label><input id="km" name="km" inputmode="numeric" required placeholder="85.000"></div>
+        <div class="field"><label for="oferta">¿Qué te han ofrecido? (opcional)</label><input id="oferta" name="oferta" inputmode="numeric" placeholder="€"></div>
+      </div>
+      <label class="check"><input type="checkbox" id="priv" required> <span>Acepto la <a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">política de privacidad</a> y que me contacten sobre mi vehículo.</span></label>
+      <button class="btn btn-block btn-lg" type="submit">Enviar por WhatsApp</button>
+      <p class="form-note" id="formMsg">Respuesta en menos de 24 h laborables.</p>
+    </form>
+  </div>
+</section>
+
+<!-- CONFIANZA -->
+<div class="strip">
+  <div class="container strip-grid">
+    <div><b>Tarifa fija</b><span>Sabes lo que pagas desde el primer día</span></div>
+    <div><b>Todo incluido</b><span>Lavado, fotos, anuncios y mantenimiento</span></div>
+    <div><b>Cobras tú</b><span>El comprador te paga a ti directamente</span></div>
+    <div><b>Trato directo</b><span>Concesionario en Cuarte de Huerva, Zaragoza</span></div>
+  </div>
+</div>
+
+<!-- PROBLEMA / SOLUCIÓN -->
+<section>
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">La diferencia</span>
+      <h2 class="title">¿Por qué malvender tu coche a un comprador al por mayor?</h2>
+      <p class="lead">Las empresas de compra inmediata necesitan margen: te ofrecen menos para revenderlo ellas con beneficio. Con nosotros, ese margen se queda en tu bolsillo.</p>
+    </div>
+    <div class="compare">
+      <div class="cmp bad">
+        <h3>Vender a una compraventa online</h3>
+        <ul>
+          <li>Ofertas por debajo del valor real de mercado</li>
+          <li>Descuentos de última hora tras la “revisión”</li>
+          <li>Se quedan con el margen de la reventa</li>
+          <li>Tú no controlas el precio final</li>
+        </ul>
+      </div>
+      <div class="cmp good">
+        <h3>Gestión de venta con Imperium Cars</h3>
+        <ul>
+          <li>Tu coche se anuncia a precio de mercado</li>
+          <li>Presentación profesional que justifica un mejor precio</li>
+          <li>Tarifa fija conocida de antemano, sin porcentajes</li>
+          <li>Cobras directamente del comprador</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- QUÉ INCLUYE -->
+<section class="bg-light" id="que-incluye">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Todo incluido</span>
+      <h2 class="title">Lo que hacemos por tu coche</h2>
+      <p class="lead">Un coche bien presentado y bien publicitado se vende antes y mejor. Nosotros ponemos los medios y el trabajo.</p>
+    </div>
+    <div class="grid3">
+      <div class="card"><div class="ico">🧼</div><h3>Lavado profesional</h3><p>Limpieza interior y exterior completa para que tu coche luzca como el primer día.</p></div>
+      <div class="card"><div class="ico">📸</div><h3>Fotografía profesional</h3><p>Reportaje fotográfico que destaca tu coche entre cientos de anuncios y atrae más contactos.</p></div>
+      <div class="card"><div class="ico">🌐</div><h3>Plataformas con perfil profesional</h3><p>Publicamos en portales con cuentas profesionales de pago, con más visibilidad y compradores reales.</p></div>
+      <div class="card"><div class="ico">🔧</div><h3>Mantenimiento mientras esté con nosotros</h3><p>Cuidamos el vehículo en nuestras instalaciones: batería, niveles y puesta a punto para mantenerlo en condiciones.</p></div>
+      <div class="card"><div class="ico">🛡️</div><h3>Seguro si hace falta</h3><p>Si tu coche lo necesita mientras está en nuestras instalaciones, lo cubrimos.</p></div>
+      <div class="card"><div class="ico">💶</div><h3>Una tarifa fija, sin sorpresas</h3><p>Tú cobras la venta y nos abonas nuestra tarifa. Sin porcentajes ni letra pequeña.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CÓMO FUNCIONA -->
+<section class="dark" id="como-funciona">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Sencillo</span>
+      <h2 class="title">Así de fácil es venderlo con nosotros</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>Nos cuentas tu coche</h3><p>Rellenas el formulario o nos escribes por WhatsApp. Te orientamos sobre el precio realista de venta.</p></div>
+      <div class="step"><h3>Lo preparamos</h3><p>Lo traes a nuestras instalaciones: lavado, fotos profesionales y revisión de mantenimiento.</p></div>
+      <div class="step"><h3>Lo publicamos y lo vendemos</h3><p>Lo anunciamos en plataformas profesionales y atendemos a los compradores por ti.</p></div>
+      <div class="step"><h3>Tú cobras</h3><p>El comprador te paga a ti. Después, nos abonas la tarifa fija acordada. Todo claro desde el principio.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- CALCULADORA -->
+<section id="calculadora">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Compruébalo</span>
+      <h2 class="title">¿Cuánto más podrías sacar?</h2>
+      <p class="lead">Compara la oferta que te han hecho con el precio al que se vende un coche como el tuyo.</p>
+    </div>
+    <div class="calc">
+      <div class="calc-box">
+        <div class="field"><label for="cPrecio">Precio al que se venden coches como el tuyo (€)</label><input id="cPrecio" inputmode="numeric" value="15000"></div>
+        <div class="field"><label for="cOferta">Oferta que te han hecho (€)</label><input id="cOferta" inputmode="numeric" value="12000"></div>
+        <a class="btn btn-block" href="#formulario">Quiero esta diferencia</a>
+        <p class="disclaimer">Herramienta orientativa. El precio final de venta depende del mercado y del estado del vehículo; no constituye una garantía de venta.</p>
+      </div>
+      <div class="result">
+        <div class="line"><span>Precio de venta estimado</span><b id="rPrecio">–</b></div>
+        <div class="line"><span>Nuestra tarifa fija</span><b id="rTarifa">–</b></div>
+        <div class="line"><span>Tú recibes</span><b id="rNeto">–</b></div>
+        <div class="line"><span>Oferta de la compraventa</span><b id="rOferta">–</b></div>
+        <div class="line total"><span>Diferencia a tu favor</span></div>
+        <div class="gain" id="rGain">–</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="bg-light" id="faq">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Dudas</span>
+      <h2 class="title">Preguntas frecuentes</h2>
+    </div>
+    <div class="faq">
+      <details><summary>¿Cuánto cuesta el servicio?</summary><p>Una tarifa fija que te confirmamos antes de empezar. No cobramos porcentaje sobre la venta, así que cuanto más se venda tu coche, más te quedas tú.</p></details>
+      <details><summary>¿Quién cobra la venta?</summary><p>Cobras tú directamente del comprador. Después nos abonas la tarifa fija acordada.</p></details>
+      <details><summary>¿Y si mi coche no se vende?</summary><p>Te explicamos las condiciones por escrito antes de empezar, incluido qué ocurre si no se concreta la venta. Pregúntanos y te lo detallamos para tu caso.</p></details>
+      <details><summary>¿Dónde está el coche mientras se vende?</summary><p>En nuestras instalaciones de Cuarte de Huerva (Zaragoza), cuidado, mantenido y, si hace falta, asegurado.</p></details>
+      <details><summary>¿Tengo que gestionar papeles o compradores?</summary><p>No. Atendemos a los interesados y te acompañamos en el proceso hasta el cambio de titularidad.</p></details>
+      <details><summary>¿Qué coches aceptáis?</summary><p>Vehículos de ocasión de cualquier marca. Cuéntanos modelo, año y kilómetros y te decimos si encaja.</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="final">
+  <div class="container">
+    <h2>No regales el valor de tu coche</h2>
+    <p>Cuéntanos tu caso y te decimos, sin compromiso, cuánto podrías sacar.</p>
+    <a class="btn btn-lg" href="#formulario">Empezar ahora</a>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="container f-grid">
+    <div>
+      <img src="assets/logo.png" alt="Imperium Cars" style="height:90px;width:90px;margin-bottom:10px;object-fit:contain">
+      <p>Tu concesionario de vehículos de ocasión con el mejor servicio al cliente.</p>
+    </div>
+    <div>
+      <h4>Contacto</h4>
+      <ul>
+        <li><a href="tel:+34672938336">672 93 83 36</a></li>
+        <li><a href="tel:+34681029934">681 02 99 34</a></li>
+        <li><a href="mailto:info@imperiumcars.com">info@imperiumcars.com</a></li>
+        <li>C. Valencia, km 6, 5, 50410 Cuarte de Huerva, Zaragoza</li>
+      </ul>
+    </div>
+    <div>
+      <h4>Horario</h4>
+      <ul>
+        <li>Lun–Vie: 8:30–13:30 y 16:00–19:00</li>
+        <li>Sábado: 9:00–14:00</li>
+        <li>Domingo: cerrado</li>
+      </ul>
+      <h4 style="margin-top:16px">Legal</h4>
+      <ul>
+        <li><a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">Política de privacidad</a></li>
+        <li><a href="https://imperiumcars.es/politica-cookies.php" target="_blank" rel="noopener">Política de cookies</a></li>
+        <li><a href="https://imperiumcars.es/aviso-legal.php" target="_blank" rel="noopener">Aviso legal</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container copy">© <span id="yr"></span> Imperium Cars. Todos los derechos reservados.</div>
+</footer>
+
+<a class="wa" href="https://wa.me/34672938336?text=Hola%2C%20quiero%20vender%20mi%20coche%20con%20vuestra%20gesti%C3%B3n" target="_blank" rel="noopener" aria-label="WhatsApp">
+  <svg viewBox="0 0 32 32"><path d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.4.7 4.6 1.9 6.5L3 29l7.2-2.1c1.8 1 3.8 1.5 5.8 1.5 7 0 12.7-5.6 12.7-12.5S23 3 16 3zm0 22.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.2 1.2 1.2-4.1-.3-.4a10 10 0 0 1-1.6-5.4C5.6 10 10.3 5.4 16 5.4S26.4 10 26.4 15.6 21.700 25.800 16 25.800zm5.700-7.600c-.3-.2-1.800-.9-2.100-1-.3-.1-.5-.2-.7.2-.2.300-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.300-.5-2.500-1.500-.9-.8-1.500-1.800-1.700-2.100-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.400s1 2.800 1.200 3c.1.200 2 3.100 4.900 4.300.7.300 1.200.5 1.600.6.700.2 1.300.2 1.800.1.500-.1 1.800-.7 2-1.400.3-.7.300-1.300.2-1.400-.1-.1-.3-.2-.6-.3z"/></svg>
+</a>
+
+<div class="mbar">
+  <a class="btn btn-ghost" href="tel:+34672938336">Llamar</a>
+  <a class="btn" href="#formulario">Vender mi coche</a>
+</div>
+
+<script>
+/* ====== CONFIGURACIÓN ====== */
+const TARIFA_FIJA = 600;           // ← PON AQUÍ TU TARIFA REAL (€). Se usa en la calculadora.
+const WHATSAPP = '34672938336';    // número que recibe los leads
+
+/* ====== Calculadora ====== */
+const $ = id => document.getElementById(id);
+const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const num = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
+function calc(){
+  const precio = num($('cPrecio').value), oferta = num($('cOferta').value);
+  const neto = Math.max(precio - TARIFA_FIJA, 0), gain = neto - oferta;
+  $('rPrecio').textContent = eur(precio);
+  $('rTarifa').textContent = '− ' + eur(TARIFA_FIJA);
+  $('rNeto').textContent = eur(neto);
+  $('rOferta').textContent = eur(oferta);
+  $('rGain').textContent = (gain >= 0 ? '+ ' : '− ') + eur(Math.abs(gain));
+}
+['cPrecio','cOferta'].forEach(i => $(i).addEventListener('input', calc));
+calc();
+
+/* ====== Formulario → WhatsApp (+ evento Lead de Meta) ====== */
+$('formulario').addEventListener('submit', e => {
+  e.preventDefault();
+  const f = e.target, msg = $('formMsg');
+  const v = n => f.elements[n].value.trim();
+  if(!v('nombre') || v('tel').replace(/\D/g,'').length < 9 || !v('marca') || !v('anio') || !v('km')){
+    msg.textContent = 'Revisa los campos: nombre, teléfono, marca/modelo, año y kilómetros.'; msg.style.color = '#b00020'; return;
+  }
+  if(!$('priv').checked){ msg.textContent = 'Debes aceptar la política de privacidad.'; msg.style.color = '#b00020'; return; }
+  try{ if(window.fbq) fbq('track','Lead'); }catch(_){}
+  const text = `Hola, quiero vender mi coche con vuestra gestión.%0A` +
+    `Nombre: ${encodeURIComponent(v('nombre'))}%0ATeléfono: ${encodeURIComponent(v('tel'))}%0A` +
+    `Coche: ${encodeURIComponent(v('marca'))} (${encodeURIComponent(v('anio'))}), ${encodeURIComponent(v('km'))} km` +
+    (v('oferta') ? `%0AOferta recibida: ${encodeURIComponent(v('oferta'))} €` : '');
+  msg.textContent = 'Abriendo WhatsApp…'; msg.style.color = '';
+  window.open(`https://wa.me/${WHATSAPP}?text=${text}`, '_blank', 'noopener');
+});
+$('yr').textContent = new Date().getFullYear();
+</script>
+</body>
+</html>
