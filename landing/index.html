@@ -319,10 +319,9 @@ footer a:hover{color:var(--primary)}
       </div>
       <div class="result">
         <div class="line"><span>Precio de venta estimado</span><b id="rPrecio">–</b></div>
-        <div class="line"><span>Nuestra tarifa fija</span><b id="rTarifa">–</b></div>
-        <div class="line"><span>Tú recibes</span><b id="rNeto">–</b></div>
+        <div class="line"><span>Nuestra tarifa fija</span><b>Te la confirmamos antes</b></div>
         <div class="line"><span>Oferta de la compraventa</span><b id="rOferta">–</b></div>
-        <div class="line total"><span>Diferencia a tu favor</span></div>
+        <div class="line total"><span>Diferencia (antes de la tarifa fija)</span></div>
         <div class="gain" id="rGain">–</div>
       </div>
     </div>
@@ -368,7 +367,7 @@ footer a:hover{color:var(--primary)}
       <ul>
         <li><a href="tel:+34672938336">672 93 83 36</a></li>
         <li><a href="tel:+34681029934">681 02 99 34</a></li>
-        <li><a href="mailto:info@imperiumcars.com">info@imperiumcars.com</a></li>
+        <li><a href="mailto:imperiumcars.santi@gmail.com">imperiumcars.santi@gmail.com</a></li>
         <li>C. Valencia, km 6, 5, 50410 Cuarte de Huerva, Zaragoza</li>
       </ul>
     </div>
@@ -401,7 +400,6 @@ footer a:hover{color:var(--primary)}
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
-const TARIFA_FIJA = 600;           // ← PON AQUÍ TU TARIFA REAL (€). Se usa en la calculadora.
 const WHATSAPP = '34672938336';    // número que recibe los leads
 
 /* ====== Calculadora ====== */
@@ -410,10 +408,8 @@ const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',
 const num = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
 function calc(){
   const precio = num($('cPrecio').value), oferta = num($('cOferta').value);
-  const neto = Math.max(precio - TARIFA_FIJA, 0), gain = neto - oferta;
+  const gain = precio - oferta;
   $('rPrecio').textContent = eur(precio);
-  $('rTarifa').textContent = '− ' + eur(TARIFA_FIJA);
-  $('rNeto').textContent = eur(neto);
   $('rOferta').textContent = eur(oferta);
   $('rGain').textContent = (gain >= 0 ? '+ ' : '− ') + eur(Math.abs(gain));
 }
