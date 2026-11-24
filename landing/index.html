@@ -111,6 +111,20 @@ h2.title{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:600;letter-spacing:-.3px
 .dark{background:var(--dark);color:#fff}
 .dark .lead{color:#ccc}
 
+
+/* Tarifa: qué incluye + ventajas */
+.tarifa{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:44px}
+.tbox{border-radius:20px;padding:34px}
+.tbox h3{font-size:1.25rem;font-weight:700;margin-bottom:20px}
+.tbox ul{list-style:none;display:grid;gap:14px}
+.tbox li{display:flex;gap:12px;font-size:.98rem}
+.tbox li::before{content:"✓";color:var(--primary);font-weight:800}
+.tbox.inc{background:var(--dark);color:#fff;border:2px solid var(--primary)}
+.tbox.adv{background:var(--bg-light);border:1px solid var(--border)}
+.tbox li b{font-weight:700}
+.time{margin-top:24px;background:var(--primary);color:#fff;border-radius:20px;padding:26px 30px;text-align:center;font-size:1.25rem;font-weight:700;line-height:1.4}
+.time small{display:block;font-size:.95rem;font-weight:500;opacity:.92;margin-top:4px}
+
 /* Calculadora */
 .calc{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;margin-top:44px}
 .calc-box{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px}
@@ -156,7 +170,7 @@ footer a:hover{color:var(--primary)}
   section{padding:56px 0}
   .nav-links,.nav-phone{display:none}
   .hero{padding-top:110px;min-height:auto}
-  .hero-grid,.compare,.calc,.f-grid{grid-template-columns:1fr}
+  .hero-grid,.compare,.calc,.f-grid,.tarifa{grid-template-columns:1fr}
   .strip-grid{grid-template-columns:1fr 1fr}
   .nav img{height:54px;width:54px}
 }
@@ -302,8 +316,40 @@ footer a:hover{color:var(--primary)}
   </div>
 </section>
 
+<!-- TARIFA FIJA -->
+<section id="tarifa">
+  <div class="container">
+    <div class="center">
+      <span class="eyebrow">Tu tarifa fija</span>
+      <h2 class="title">Una sola tarifa. Todo resuelto.</h2>
+      <p class="lead">Tú no pones nada más: ni tiempo, ni esfuerzo, ni sorpresas. Esto es lo que incluye.</p>
+    </div>
+    <div class="tarifa">
+      <div class="tbox inc">
+        <h3>Qué incluye nuestra tarifa fija</h3>
+        <ul>
+          <li><span><b>Lavado profesional</b> interior y exterior</span></li>
+          <li><span><b>Fotografía profesional</b> de tu vehículo</span></li>
+          <li><span><b>Publicado en plataformas de pago</b> y con perfil profesional</span></li>
+          <li><span><b>Mantenimiento adecuado del vehículo</b>, de forma permanente en nuestras instalaciones hasta que se venda</span></li>
+        </ul>
+      </div>
+      <div class="tbox adv">
+        <h3>Ventajas de venderlo con nosotros</h3>
+        <ul>
+          <li><span><b>Defendemos el precio</b> de tu coche</span></li>
+          <li><span><b>No te peleas con los negociadores</b> de las páginas de segunda mano: nos encargamos nosotros</span></li>
+          <li><span><b>Evitas intentos de estafa</b></span></li>
+          <li><span><b>Nos encargamos de todo:</b> papeleos, trámites, etc.</span></li>
+        </ul>
+      </div>
+    </div>
+    <div class="time">Tu tiempo es tuyo.<small>Tú solo esperas a cobrar. Del resto nos ocupamos nosotros.</small></div>
+  </div>
+</section>
+
 <!-- CALCULADORA -->
-<section id="calculadora">
+<section class="bg-light" id="calculadora">
   <div class="container">
     <div class="center">
       <span class="eyebrow">Compruébalo</span>
@@ -319,9 +365,10 @@ footer a:hover{color:var(--primary)}
       </div>
       <div class="result">
         <div class="line"><span>Precio de venta estimado</span><b id="rPrecio">–</b></div>
-        <div class="line"><span>Nuestra tarifa fija</span><b>Te la confirmamos antes</b></div>
+        <div class="line"><span>Nuestra tarifa fija</span><b id="rTarifa">–</b></div>
+        <div class="line"><span>Tú recibes</span><b id="rNeto">–</b></div>
         <div class="line"><span>Oferta de la compraventa</span><b id="rOferta">–</b></div>
-        <div class="line total"><span>Diferencia (antes de la tarifa fija)</span></div>
+        <div class="line total"><span>Diferencia a tu favor</span></div>
         <div class="gain" id="rGain">–</div>
       </div>
     </div>
@@ -329,14 +376,14 @@ footer a:hover{color:var(--primary)}
 </section>
 
 <!-- FAQ -->
-<section class="bg-light" id="faq">
+<section id="faq">
   <div class="container">
     <div class="center">
       <span class="eyebrow">Dudas</span>
       <h2 class="title">Preguntas frecuentes</h2>
     </div>
     <div class="faq">
-      <details><summary>¿Cuánto cuesta el servicio?</summary><p>Una tarifa fija que te confirmamos antes de empezar. No cobramos porcentaje sobre la venta, así que cuanto más se venda tu coche, más te quedas tú.</p></details>
+      <details><summary>¿Cuánto cuesta el servicio?</summary><p>Una tarifa fija de 1.500 €, que incluye lavado, fotografía, publicación en plataformas de pago y mantenimiento hasta la venta. No cobramos porcentaje sobre la venta, así que cuanto más se venda tu coche, más te quedas tú.</p></details>
       <details><summary>¿Quién cobra la venta?</summary><p>Cobras tú directamente del comprador. Después nos abonas la tarifa fija acordada.</p></details>
       <details><summary>¿Y si mi coche no se vende?</summary><p>Te explicamos las condiciones por escrito antes de empezar, incluido qué ocurre si no se concreta la venta. Pregúntanos y te lo detallamos para tu caso.</p></details>
       <details><summary>¿Dónde está el coche mientras se vende?</summary><p>En nuestras instalaciones de Cuarte de Huerva (Zaragoza), cuidado, mantenido y, si hace falta, asegurado.</p></details>
@@ -400,16 +447,19 @@ footer a:hover{color:var(--primary)}
 
 <script>
 /* ====== CONFIGURACIÓN ====== */
+const TARIFA_FIJA = 1500;          // tarifa fija en €
 const WHATSAPP = '34672938336';    // número que recibe los leads
 
 /* ====== Calculadora ====== */
 const $ = id => document.getElementById(id);
-const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0}).format(n);
+const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0,useGrouping:'always'}).format(n);
 const num = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
 function calc(){
   const precio = num($('cPrecio').value), oferta = num($('cOferta').value);
-  const gain = precio - oferta;
+  const neto = Math.max(precio - TARIFA_FIJA, 0), gain = neto - oferta;
   $('rPrecio').textContent = eur(precio);
+  $('rTarifa').textContent = '− ' + eur(TARIFA_FIJA);
+  $('rNeto').textContent = eur(neto);
   $('rOferta').textContent = eur(oferta);
   $('rGain').textContent = (gain >= 0 ? '+ ' : '− ') + eur(Math.abs(gain));
 }
