@@ -3,455 +3,654 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Vende tu coche al mejor precio – Gestión de venta | Imperium Cars</title>
-<meta name="description" content="Te gestionamos la venta de tu coche: lavado profesional, fotografía, anuncios en plataformas profesionales y mantenimiento. Tú cobras el precio de mercado y nosotros una tarifa fija.">
+<title>Gestionamos la venta de tu coche al mejor precio | Imperium Cars</title>
+<meta name="description" content="Lavado profesional, fotografía, anuncios en plataformas de pago y mantenimiento hasta que se venda. Tú cobras el precio de mercado y nosotros una tarifa fija de 1.500 €.">
 <meta name="theme-color" content="#2c2c2c">
 <link rel="icon" href="assets/logo.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<!-- META PIXEL: pega aquí tu código base del píxel. El formulario ya dispara fbq('track','Lead') si existe. -->
+<!-- META PIXEL: pega aquí tu código base del píxel (idealmente cargándolo tras aceptar cookies).
+     Los formularios ya disparan fbq('track','Lead') si existe. -->
 
 <style>
 :root{
-  --primary:#ff4605; --primary-dark:#e63d00; --primary-light:#fff0eb;
-  --dark:#2c2c2c; --card-dark:#3a3a3a; --bg-light:#f5f5f5;
-  --text:#1a1a1a; --muted:#555; --border:#e0e0e0;
+  --color-primary:#ff4605; --color-primary-dark:#e63d00; --color-primary-light:#fff0eb;
+  --ctc-primary:#ff4605; --ctc-dark:#1a1a1a; --ctc-grey:#f4f4f6; --ctc-text:#222; --ctc-muted:#666;
+  --ctc-gradient:linear-gradient(135deg,#1a1a1a 0%,#2c2010 60%,#3a1a00 100%);
+  --ctc-radius:16px; --ctc-shadow:0 20px 60px rgba(0,0,0,.12);
+  --ctc-transition:all .3s cubic-bezier(.25,.8,.25,1);
   --font:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth;scroll-padding-top:80px}
-body{font-family:var(--font);color:var(--text);background:#fff;line-height:1.6;-webkit-font-smoothing:antialiased}
-img{max-width:100%;display:block}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:90px}
+body{font-family:var(--font);background:#fff;color:var(--ctc-text);line-height:1.69;overflow-x:hidden;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
-.container{width:100%;max-width:1200px;margin:0 auto;padding:0 20px}
-section{padding:80px 0}
-.eyebrow{display:inline-block;font-size:.8rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--primary);margin-bottom:12px}
-h2.title{font-size:clamp(1.8rem,4vw,2.5rem);font-weight:600;letter-spacing:-.3px;line-height:1.3}
-.lead{color:var(--muted);max-width:680px;margin-top:14px;font-size:1.05rem}
-.center{text-align:center}.center .lead{margin-left:auto;margin-right:auto}
+img{max-width:100%;display:block}
+ul{list-style:none}
+.ico{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0;vertical-align:middle}
+.ico-fill{fill:currentColor;stroke:none}
+.container{max-width:1400px;margin:0 auto;padding:0 2rem}
 
-/* Botones */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.9rem 1.8rem;border-radius:50px;border:2px solid var(--primary);background:var(--primary);color:#fff;font:600 .95rem var(--font);cursor:pointer;transition:all .2s ease}
-.btn:hover{background:var(--primary-dark);border-color:var(--primary-dark);transform:translateY(-2px);box-shadow:0 8px 20px rgba(255,70,5,.3)}
-.btn-ghost{background:transparent;border-color:rgba(255,255,255,.6)}
-.btn-ghost:hover{background:rgba(255,255,255,.12);border-color:#fff;box-shadow:none}
-.btn-lg{padding:1.1rem 2.2rem;font-size:1.05rem}
-.btn-block{width:100%}
+/* ===== HEADER ===== */
+.header{position:fixed;top:0;left:0;right:0;z-index:1000;background:#2c2c2c;border-bottom:1px solid rgba(255,255,255,.1);box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.navbar-content{display:flex;align-items:center;justify-content:space-between;gap:1.2rem;padding-top:.6rem;padding-bottom:.6rem}
+.logo{display:flex;align-items:center;gap:.75rem;font-weight:700;letter-spacing:1px;color:var(--color-primary);flex-shrink:0}
+.logo img{width:60px;height:60px;object-fit:contain}
+.logo>div{display:flex;flex-direction:column;line-height:1.2}
+.logo span{color:var(--color-primary);font-size:1.1rem;font-weight:700;display:block}
+.logo>div::after{content:'Tu primer coche';display:block;font-size:.65rem;color:rgba(255,255,255,.8);font-weight:400;letter-spacing:.5px}
+.nav-links{display:flex;gap:1.1rem;align-items:center}
+.nav-links a{font-size:.9rem;font-weight:500;letter-spacing:.2px;padding:.5rem 0;position:relative;color:#fff;white-space:nowrap;transition:color .3s}
+.nav-links a:hover{color:var(--color-primary)}
+.nav-vende-coche{display:inline-flex;align-items:center;gap:.5rem;background:var(--color-primary);color:#fff!important;padding:.55rem 1.1rem!important;border-radius:50px;font-weight:700!important;box-shadow:0 0 18px rgba(255,70,5,.45)}
+.nav-vende-coche:hover{background:var(--color-primary-dark);color:#fff!important}
+.nav-vende-badge{font-size:.62rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;background:rgba(255,255,255,.25);padding:.15rem .55rem;border-radius:50px}
+.nav-actions{display:flex;align-items:center;gap:1rem}
+.btn-contact{display:inline-flex;align-items:center;gap:.5rem;padding:.8rem 1.6rem;background:var(--color-primary);color:#fff;border:2px solid var(--color-primary);border-radius:50px;font-weight:600;font-size:.95rem;transition:all .2s;white-space:nowrap}
+.btn-contact:hover{background:var(--color-primary-dark);border-color:var(--color-primary-dark);transform:translateY(-2px);box-shadow:0 8px 20px rgba(255,70,5,.3)}
+.mobile-menu-toggle{display:none;flex-direction:column;justify-content:center;align-items:center;gap:5px;width:44px;height:44px;background:var(--color-primary);border:none;border-radius:12px;cursor:pointer}
+.ham-line{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:.3s}
+.mobile-menu-toggle.is-open .ham-line:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.mobile-menu-toggle.is-open .ham-line:nth-child(2){opacity:0}
+.mobile-menu-toggle.is-open .ham-line:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.bocadillo{display:none;position:fixed;top:78px;right:1rem;width:min(300px,calc(100vw - 2rem));background:#1a1a1a;border-radius:16px 0 16px 16px;padding:.5rem 0;box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.07);z-index:1100}
+.bocadillo.open{display:block}
+.bocadillo a{display:block;padding:.85rem 1.4rem;color:#fff;font-size:.95rem;font-weight:500}
+.bocadillo a:hover{background:rgba(255,70,5,.12);color:var(--color-primary)}
+.bocadillo a.hl{color:var(--color-primary);font-weight:700}
 
-/* Header */
-.header{position:fixed;inset:0 0 auto 0;z-index:1000;background:var(--dark);border-bottom:1px solid rgba(255,255,255,.1)}
-.nav{display:flex;align-items:center;justify-content:space-between;height:72px;gap:16px}
-.nav img{height:64px;width:64px;object-fit:contain}
-.nav-links{display:flex;gap:28px;font-size:.9rem;font-weight:500;color:#fff}
-.nav-links a{opacity:.85;transition:.2s}.nav-links a:hover{opacity:1;color:var(--primary)}
-.nav .btn{padding:.65rem 1.3rem;font-size:.88rem}
-.nav-phone{color:#fff;font-weight:600;font-size:.9rem}
+/* ===== BOTONES ===== */
+.ctc-btn-primary{display:inline-flex;align-items:center;gap:.75rem;background:var(--ctc-primary);color:#fff;font-weight:700;font-size:1rem;padding:1rem 2rem;border-radius:50px;border:2px solid var(--ctc-primary);transition:var(--ctc-transition);cursor:pointer;position:relative;overflow:hidden;font-family:inherit}
+.ctc-btn-primary::before{content:'';position:absolute;top:50%;left:50%;width:0;height:0;background:rgba(255,255,255,.2);border-radius:50%;transform:translate(-50%,-50%);transition:width .5s,height .5s}
+.ctc-btn-primary:hover::before{width:300px;height:300px}
+.ctc-btn-primary:hover{transform:translateY(-3px);box-shadow:0 12px 30px rgba(255,70,5,.5)}
+.ctc-btn-ghost{display:inline-flex;align-items:center;gap:.75rem;background:transparent;color:#fff;font-weight:600;font-size:1rem;padding:1rem 2rem;border-radius:50px;border:2px solid rgba(255,255,255,.3);transition:var(--ctc-transition)}
+.ctc-btn-ghost:hover{border-color:#fff;background:rgba(255,255,255,.08);transform:translateY(-2px)}
 
-/* Hero */
-.hero{position:relative;min-height:100vh;display:flex;align-items:center;padding:130px 0 70px;color:#fff;overflow:hidden;
-  background:radial-gradient(900px 500px at 85% 10%,rgba(255,70,5,.35),transparent 60%),linear-gradient(135deg,#1c1c1c 0%,#2c2c2c 55%,#3a3a3a 100%)}
-.hero::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(115deg,rgba(255,255,255,.025) 0 2px,transparent 2px 22px);pointer-events:none}
-.hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
-.badge{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem 1.1rem;background:var(--primary-light);border:1px solid rgba(255,70,5,.3);border-radius:50px;font-size:.82rem;font-weight:600;color:var(--primary);margin-bottom:22px}
-.hero h1{font-size:clamp(2.1rem,5.2vw,3.5rem);font-weight:700;line-height:1.15;letter-spacing:-.5px;margin-bottom:20px}
-.hero h1 .hl{color:var(--primary)}
-.hero p.sub{font-size:1.15rem;color:#e6e6e6;max-width:560px;margin-bottom:30px}
-.hero-cta{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:34px}
-.hero-checks{display:flex;flex-wrap:wrap;gap:10px 26px;font-size:.92rem;color:#ddd;list-style:none}
-.hero-checks li::before{content:"✓";color:var(--primary);font-weight:800;margin-right:8px}
+/* ===== HERO ===== */
+.ctc-hero{position:relative;min-height:100vh;display:flex;align-items:center;background:var(--ctc-gradient);overflow:hidden;padding-top:90px}
+.ctc-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 70% 50%,rgba(255,70,5,.18) 0%,transparent 70%),radial-gradient(ellipse 50% 80% at 10% 80%,rgba(255,70,5,.08) 0%,transparent 60%);pointer-events:none}
+.ctc-hero-particles{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ctc-particle{position:absolute;border-radius:50%;background:rgba(255,70,5,.15);animation:ctcFloat linear infinite}
+@keyframes ctcFloat{0%{transform:translateY(100vh) rotate(0);opacity:0}10%{opacity:1}90%{opacity:.5}100%{transform:translateY(-100px) rotate(720deg);opacity:0}}
+.ctc-hero-content{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1400px;margin:0 auto;padding:6rem 2rem 5rem;width:100%}
+.ctc-hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,70,5,.2);border:1px solid rgba(255,70,5,.4);color:#ff7a45;font-size:.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.5rem 1.2rem;border-radius:50px;margin-bottom:1.5rem}
+.ctc-hero-badge::before{content:'';width:8px;height:8px;background:#ff4605;border-radius:50%;animation:ctcPulse 1.5s ease-in-out infinite}
+@keyframes ctcPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.5);opacity:.6}}
+.ctc-hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:900;color:#fff;line-height:1.1;margin-bottom:1.5rem;letter-spacing:-1px}
+.ctc-hero h1 span{color:var(--ctc-primary);position:relative;display:inline-block}
+.ctc-hero h1 span::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:4px;background:var(--ctc-primary);border-radius:2px;transform:scaleX(0);transform-origin:left;animation:ctcUnderline .8s .4s cubic-bezier(.25,.8,.25,1) forwards}
+@keyframes ctcUnderline{to{transform:scaleX(1)}}
+.ctc-hero-desc{font-size:1.15rem;color:rgba(255,255,255,.75);line-height:1.75;margin-bottom:2.5rem;max-width:540px}
+.ctc-hero-desc strong{color:#fff}
+.ctc-hero-pills{display:flex;flex-wrap:wrap;gap:.75rem;margin-bottom:2.5rem}
+.ctc-pill{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.85);padding:.5rem 1rem;border-radius:50px;font-size:.85rem;font-weight:500;backdrop-filter:blur(4px)}
+.ctc-pill .ico{color:var(--ctc-primary)}
 
-/* Formulario */
-.form-card{background:#fff;color:var(--text);border-radius:20px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
-.form-card h3{font-size:1.3rem;font-weight:700;line-height:1.3}
-.form-card .hint{color:var(--muted);font-size:.9rem;margin:6px 0 18px}
-.field{margin-bottom:12px}
-.field label{display:block;font-size:.78rem;font-weight:600;margin-bottom:4px;color:var(--muted)}
-.field input,.field select{width:100%;padding:.8rem 1rem;border:1.5px solid var(--border);border-radius:12px;font:500 .95rem var(--font);background:#fff;color:var(--text);transition:.2s}
-.field input:focus,.field select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(255,70,5,.15)}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.check{display:flex;gap:10px;align-items:flex-start;font-size:.78rem;color:var(--muted);margin:6px 0 16px}
-.check input{margin-top:3px;accent-color:var(--primary)}
-.check a{color:var(--primary);text-decoration:underline}
-.form-note{font-size:.76rem;color:var(--muted);text-align:center;margin-top:10px}
+.ctc-hero-ctas{display:none}
+@media(max-width:1024px){.ctc-hero-ctas{display:block}}
+/* Formulario de cristal */
+.ctc-hero-form-wrap{background:rgba(255,255,255,.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.1);border-radius:24px;padding:2rem;box-shadow:0 40px 80px rgba(0,0,0,.4);position:relative}
+.ctc-hero-form-wrap::before{content:'';position:absolute;inset:-1px;border-radius:25px;background:linear-gradient(135deg,rgba(255,70,5,.3),transparent 50%,rgba(255,70,5,.1));pointer-events:none}
+.ctc-form-title{font-size:1.3rem;font-weight:800;color:#fff;margin-bottom:.4rem}
+.ctc-form-subtitle{font-size:.85rem;color:rgba(255,255,255,.5);margin-bottom:1.5rem}
+.ctc-stepper{display:flex;align-items:center;margin-bottom:1.5rem}
+.ctc-step{flex:1;display:flex;flex-direction:column;align-items:center;gap:.25rem;position:relative}
+.ctc-step:not(:last-child)::after{content:'';position:absolute;top:14px;left:55%;width:90%;height:2px;background:rgba(255,255,255,.15);z-index:0;transition:background .4s}
+.ctc-step.active:not(:last-child)::after,.ctc-step.done:not(:last-child)::after{background:var(--ctc-primary)}
+.ctc-step-num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:700;color:rgba(255,255,255,.4);transition:all .3s;position:relative;z-index:1}
+.ctc-step.active .ctc-step-num{background:var(--ctc-primary);border-color:var(--ctc-primary);color:#fff;box-shadow:0 0 0 4px rgba(255,70,5,.25)}
+.ctc-step.done .ctc-step-num{background:#22c55e;border-color:#22c55e;color:#fff}
+.ctc-step-label{font-size:.68rem;font-weight:600;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.5px}
+.ctc-step.active .ctc-step-label{color:rgba(255,255,255,.8)}
+.ctc-form-panel{display:none}.ctc-form-panel.active{display:block}
+.ctc-field{margin-bottom:1rem}
+.ctc-field label{display:block;font-size:.8rem;font-weight:600;color:rgba(255,255,255,.6);margin-bottom:.35rem;letter-spacing:.3px}
+.ctc-field input,.ctc-field select{width:100%;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.12);border-radius:10px;padding:.75rem 1rem;color:#fff;font-size:.92rem;font-family:inherit;transition:border-color .25s,background .25s;appearance:none;-webkit-appearance:none}
+.ctc-field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' fill='none' stroke='%23999' stroke-width='2' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 1rem center;padding-right:2.4rem}
+.ctc-field input::placeholder{color:rgba(255,255,255,.3)}
+.ctc-field input:focus,.ctc-field select:focus{outline:none;border-color:var(--ctc-primary);background-color:rgba(255,70,5,.06)}
+.ctc-field select option{background:#1a1a1a;color:#fff}
+.ctc-field.err input,.ctc-field.err select{border-color:#ef4444}
+.ctc-field-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.ctc-form-nav{display:flex;justify-content:space-between;align-items:center;gap:1rem;margin-top:1.2rem}
+.ctc-btn-next,.ctc-btn-prev{display:inline-flex;align-items:center;gap:.5rem;padding:.75rem 1.5rem;border-radius:50px;font-weight:700;font-size:.9rem;cursor:pointer;border:none;transition:var(--ctc-transition);font-family:inherit}
+.ctc-btn-next{background:var(--ctc-primary);color:#fff;flex:1;justify-content:center}
+.ctc-btn-next:hover{background:#e03d04;transform:translateY(-2px)}
+.ctc-btn-prev{background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);border:1.5px solid rgba(255,255,255,.1)}
+.ctc-btn-prev:hover{background:rgba(255,255,255,.12);color:#fff}
+.ctc-privacy-check{display:flex;align-items:flex-start;gap:.5rem;margin-top:1rem}
+.ctc-privacy-check input{width:auto;flex-shrink:0;accent-color:var(--ctc-primary);margin-top:3px}
+.ctc-privacy-check label{font-size:.78rem;color:rgba(255,255,255,.5)}
+.ctc-privacy-check a{color:var(--ctc-primary);text-decoration:underline}
+.ctc-form-msg{font-size:.8rem;color:#fca5a5;margin-top:.8rem;min-height:1em}
+.ctc-form-success{display:none;text-align:center;padding:2rem 1rem}
+.ctc-success-icon{width:64px;height:64px;background:rgba(34,197,94,.15);border:2px solid #22c55e;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;color:#22c55e;font-size:1.8rem}
+.ctc-form-success h3{color:#fff;font-size:1.3rem;margin-bottom:.5rem}
+.ctc-form-success p{color:rgba(255,255,255,.6);font-size:.9rem;line-height:1.6}
 
-/* Franja confianza */
-.strip{background:var(--dark);color:#fff;padding:26px 0}
-.strip-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
-.strip b{display:block;font-size:1.05rem;color:var(--primary)}
-.strip span{font-size:.85rem;color:#ccc}
+/* ===== BANDA NARANJA ===== */
+.ctc-trust-bar{background:var(--ctc-primary);padding:1rem 2rem;overflow:hidden}
+.ctc-trust-ticker{display:flex;gap:4rem;animation:ctcTicker 40s linear infinite;white-space:nowrap;width:max-content}
+.ctc-trust-ticker:hover{animation-play-state:paused}
+@keyframes ctcTicker{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.ctc-trust-item{display:inline-flex;align-items:center;gap:.5rem;color:#fff;font-weight:700;font-size:.85rem;letter-spacing:.5px;flex-shrink:0}
+.ctc-trust-item .ico{opacity:.8}
 
-/* Problema vs solución */
-.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:44px}
-.cmp{border-radius:20px;padding:34px}
-.cmp h3{font-size:1.25rem;margin-bottom:18px}
-.cmp ul{list-style:none;display:grid;gap:12px}
-.cmp li{display:flex;gap:12px;font-size:.98rem}
-.cmp.bad{background:var(--bg-light);border:1px solid var(--border)}
-.cmp.bad li::before{content:"✕";color:#b00020;font-weight:800}
-.cmp.good{background:var(--dark);color:#fff;border:2px solid var(--primary)}
-.cmp.good li::before{content:"✓";color:var(--primary);font-weight:800}
+/* ===== SECCIONES ===== */
+.ctc-section-header{text-align:center;margin-bottom:4rem}
+.ctc-section-badge{display:inline-block;background:rgba(255,70,5,.1);color:var(--ctc-primary);font-size:.78rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:.4rem 1rem;border-radius:50px;margin-bottom:1rem}
+.ctc-section-title{font-size:clamp(1.8rem,3.5vw,2.8rem);font-weight:900;color:var(--ctc-dark);margin-bottom:.75rem;line-height:1.2}
+.ctc-section-desc{font-size:1.05rem;color:var(--ctc-muted);max-width:600px;margin:0 auto;line-height:1.7}
 
-/* Servicios */
-.bg-light{background:var(--bg-light)}
-.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:24px;margin-top:44px}
-.card{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px;transition:.25s}
-.card:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(0,0,0,.1);border-color:var(--primary)}
-.ico{width:56px;height:56px;border-radius:16px;background:var(--primary-light);display:grid;place-items:center;font-size:1.6rem;margin-bottom:18px}
-.card h3{font-size:1.1rem;font-weight:700;margin-bottom:8px}
-.card p{color:var(--muted);font-size:.95rem}
+/* Incluye (tarjetas grises) */
+.ctc-stats{background:#fff;padding:5rem 2rem}
+.ctc-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2rem;max-width:1200px;margin:0 auto}
+.ctc-stat-card{text-align:center;padding:2.5rem 1.5rem;border-radius:var(--ctc-radius);background:var(--ctc-grey);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
+.ctc-stat-card::before{content:'';position:absolute;bottom:0;left:0;right:0;height:4px;background:var(--ctc-primary);transform:scaleX(0);transition:transform .4s}
+.ctc-stat-card:hover{transform:translateY(-6px);box-shadow:var(--ctc-shadow)}
+.ctc-stat-card:hover::before{transform:scaleX(1)}
+.ctc-stat-num{display:block;font-size:2.8rem;color:var(--ctc-primary);line-height:1;margin-bottom:.8rem}
+.ctc-stat-title{display:block;font-size:1.05rem;font-weight:800;color:var(--ctc-dark);margin-bottom:.4rem}
+.ctc-stat-label{font-size:.88rem;color:var(--ctc-muted);font-weight:500;line-height:1.55;display:block}
+.ctc-fee{max-width:1200px;margin:2.5rem auto 0;background:var(--ctc-dark);color:#fff;border-radius:20px;padding:1.6rem 2rem;display:flex;align-items:center;justify-content:center;gap:1rem 2.5rem;flex-wrap:wrap;text-align:center}
+.ctc-fee strong{font-size:2.2rem;font-weight:900;color:var(--ctc-primary);line-height:1}
+.ctc-fee span{font-size:1rem;color:rgba(255,255,255,.75)}
 
 /* Pasos */
-.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:24px;margin-top:44px;counter-reset:s}
-.step{background:var(--card-dark);color:#fff;border-radius:20px;padding:30px;position:relative}
-.step::before{counter-increment:s;content:counter(s);display:grid;place-items:center;width:44px;height:44px;border-radius:50%;background:var(--primary);font-weight:800;margin-bottom:16px}
-.step h3{font-size:1.05rem;margin-bottom:8px}
-.step p{font-size:.92rem;color:#ccc}
-.dark{background:var(--dark);color:#fff}
-.dark .lead{color:#ccc}
+.ctc-how{background:var(--ctc-grey);padding:6rem 2rem}
+.ctc-steps-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem;max-width:1100px;margin:0 auto;position:relative}
+.ctc-steps-grid::before{content:'';position:absolute;top:50px;left:calc(16.66% + 1rem);right:calc(16.66% + 1rem);height:2px;background:linear-gradient(to right,var(--ctc-primary),rgba(255,70,5,.3),var(--ctc-primary));z-index:0}
+.ctc-step-card{background:#fff;border-radius:var(--ctc-radius);padding:2.5rem 2rem;text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.06);position:relative;z-index:1;transition:transform .3s,box-shadow .3s}
+.ctc-step-card:hover{transform:translateY(-8px);box-shadow:0 20px 50px rgba(0,0,0,.12)}
+.ctc-step-icon{width:80px;height:80px;border-radius:50%;background:rgba(255,70,5,.08);border:2px solid rgba(255,70,5,.2);display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;transition:all .3s;font-size:2rem;color:var(--ctc-primary)}
+.ctc-step-card:hover .ctc-step-icon{background:var(--ctc-primary);border-color:var(--ctc-primary);color:#fff}
+.ctc-step-num-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--ctc-primary);color:#fff;width:28px;height:28px;border-radius:50%;font-size:.8rem;font-weight:800;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(255,70,5,.4)}
+.ctc-step-card h3{font-size:1.2rem;font-weight:800;color:var(--ctc-dark);margin-bottom:.75rem}
+.ctc-step-card p{font-size:.92rem;color:var(--ctc-muted);line-height:1.65}
 
+/* Por qué */
+.ctc-why{background:#fff;padding:6rem 2rem}
+.ctc-why-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1200px;margin:0 auto}
+.ctc-why-list{display:flex;flex-direction:column;gap:1.5rem;margin-top:2rem}
+.ctc-why-item{display:flex;gap:1.25rem;align-items:flex-start;padding:1.5rem;border-radius:var(--ctc-radius);background:var(--ctc-grey);transition:var(--ctc-transition)}
+.ctc-why-item:hover{background:rgba(255,70,5,.06);transform:translateX(6px)}
+.ctc-why-icon{width:52px;height:52px;flex-shrink:0;border-radius:12px;background:var(--ctc-primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem}
+.ctc-why-body h4{font-size:1rem;font-weight:800;color:var(--ctc-dark);margin-bottom:.35rem}
+.ctc-why-body p{font-size:.88rem;color:var(--ctc-muted);line-height:1.6}
+.ctc-why-card-main{background:var(--ctc-dark);border-radius:20px;padding:2rem;color:#fff;position:relative;overflow:hidden}
+.ctc-why-card-main::before{content:'';position:absolute;top:-50%;right:-20%;width:300px;height:300px;background:radial-gradient(circle,rgba(255,70,5,.25) 0%,transparent 70%);pointer-events:none}
+.ctc-why-card-label{font-size:.75rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:rgba(255,255,255,.4);margin-bottom:.5rem;position:relative}
+.ctc-why-card-price{font-size:1.9rem;font-weight:900;color:#fff;margin-bottom:.25rem;line-height:1.2;position:relative}
+.ctc-why-card-price span{color:var(--ctc-primary)}
+.ctc-why-card-sub{font-size:.85rem;color:rgba(255,255,255,.5);margin-bottom:1.4rem;position:relative}
+.calc-fields{position:relative}
+.calc-fields .ctc-field{margin-bottom:.9rem}
+.calc-rows{position:relative;margin-top:1.2rem}
+.calc-row{display:flex;justify-content:space-between;gap:12px;padding:.65rem 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:.92rem;color:rgba(255,255,255,.75)}
+.calc-row b{color:#fff}
+.calc-gain-l{margin-top:1.1rem;font-weight:700;position:relative}
+.calc-gain{font-size:2.4rem;font-weight:900;color:var(--ctc-primary);line-height:1.1;position:relative}
+.calc-disc{font-size:.72rem;color:rgba(255,255,255,.4);margin-top:.9rem;position:relative}
+.ctc-why-card-float{margin-top:1rem;border-radius:14px;background:var(--ctc-primary);color:#fff;padding:1rem 1.5rem;display:inline-block;box-shadow:0 15px 30px rgba(255,70,5,.35)}
+.ctc-why-card-float strong{display:block;font-size:1.4rem;font-weight:900;line-height:1.2}
+.ctc-why-card-float span{font-size:.78rem;opacity:.9}
 
-/* Tarifa: qué incluye + ventajas */
-.tarifa{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:44px}
-.tbox{border-radius:20px;padding:34px}
-.tbox h3{font-size:1.25rem;font-weight:700;margin-bottom:20px}
-.tbox ul{list-style:none;display:grid;gap:14px}
-.tbox li{display:flex;gap:12px;font-size:.98rem}
-.tbox li::before{content:"✓";color:var(--primary);font-weight:800}
-.tbox.inc{background:var(--dark);color:#fff;border:2px solid var(--primary)}
-.tbox.adv{background:var(--bg-light);border:1px solid var(--border)}
-.tbox li b{font-weight:700}
-.time{margin-top:24px;background:var(--primary);color:#fff;border-radius:20px;padding:26px 30px;text-align:center;font-size:1.25rem;font-weight:700;line-height:1.4}
-.time small{display:block;font-size:.95rem;font-weight:500;opacity:.92;margin-top:4px}
+/* Formulario anclado */
+.ctc-form-anchor{background:var(--ctc-dark);padding:6rem 2rem;position:relative;overflow:hidden}
+.ctc-form-anchor::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 60% 70% at 50% 50%,rgba(255,70,5,.1) 0%,transparent 70%)}
+.ctc-form-anchor-inner{max-width:780px;margin:0 auto;position:relative;z-index:1}
 
-/* Calculadora */
-.calc{display:grid;grid-template-columns:1fr 1fr;gap:36px;align-items:center;margin-top:44px}
-.calc-box{background:#fff;border:1px solid var(--border);border-radius:20px;padding:30px}
-.result{background:var(--dark);color:#fff;border-radius:20px;padding:30px}
-.result .line{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.12);font-size:.95rem}
-.result .total{border:0;padding-top:18px;font-size:1.15rem;font-weight:700}
-.result .gain{font-size:2.2rem;font-weight:800;color:var(--primary);line-height:1.1}
-.disclaimer{font-size:.75rem;color:var(--muted);margin-top:14px}
-.result .disclaimer{color:#aaa}
+/* Marcas */
+.ctc-marcas{background:var(--ctc-grey);padding:4rem 2rem;text-align:center}
+.ctc-marcas h2{font-size:1.4rem;font-weight:800;color:var(--ctc-dark);margin-bottom:.6rem}
+.ctc-marcas p{color:var(--ctc-muted);margin-bottom:2rem;font-size:.95rem}
+.ctc-marcas-list{display:flex;flex-wrap:wrap;gap:.75rem;justify-content:center;max-width:900px;margin:0 auto}
+.ctc-marca-tag{background:#fff;border:1.5px solid #e8e8e8;padding:.6rem 1.2rem;border-radius:50px;font-size:.85rem;font-weight:600;color:var(--ctc-text);transition:var(--ctc-transition)}
+.ctc-marca-tag:hover{border-color:var(--ctc-primary);color:var(--ctc-primary);transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,70,5,.12)}
 
 /* FAQ */
-.faq{max-width:820px;margin:44px auto 0;display:grid;gap:12px}
-details{background:#fff;border:1px solid var(--border);border-radius:16px;padding:20px 24px}
-details[open]{border-color:var(--primary)}
-summary{cursor:pointer;font-weight:600;list-style:none;display:flex;justify-content:space-between;gap:16px}
-summary::after{content:"+";color:var(--primary);font-size:1.4rem;line-height:1}
-details[open] summary::after{content:"–"}
-details p{margin-top:12px;color:var(--muted);font-size:.95rem}
+.ctc-faq{background:#fff;padding:6rem 2rem}
+.ctc-faq-wrap{max-width:820px;margin:0 auto}
+.ctc-faq-item{border-bottom:1px solid #e8e8e8}
+.ctc-faq-question{width:100%;text-align:left;display:flex;align-items:center;justify-content:space-between;gap:1rem;padding:1.4rem 0;font-size:1rem;font-weight:700;color:var(--ctc-dark);background:none;border:none;cursor:pointer;transition:color .25s;font-family:inherit}
+.ctc-faq-question:hover{color:var(--ctc-primary)}
+.ctc-faq-icon{width:28px;height:28px;flex-shrink:0;border-radius:50%;background:var(--ctc-grey);display:flex;align-items:center;justify-content:center;transition:background .25s,transform .3s;font-size:.9rem}
+.ctc-faq-item.open .ctc-faq-icon{background:var(--ctc-primary);transform:rotate(45deg);color:#fff}
+.ctc-faq-answer{max-height:0;overflow:hidden;transition:max-height .35s ease,padding .35s}
+.ctc-faq-item.open .ctc-faq-answer{max-height:400px;padding-bottom:1.25rem}
+.ctc-faq-answer p{font-size:.93rem;color:var(--ctc-muted);line-height:1.75}
 
 /* CTA final */
-.final{background:linear-gradient(135deg,var(--primary) 0%,var(--primary-dark) 100%);color:#fff;text-align:center;padding:70px 0}
-.final h2{font-size:clamp(1.7rem,4vw,2.4rem);font-weight:700;margin-bottom:12px}
-.final .btn{background:#fff;color:var(--primary);border-color:#fff;margin-top:22px}
-.final .btn:hover{background:var(--dark);color:#fff;border-color:var(--dark)}
+.ctc-cta-final{background:var(--ctc-gradient);padding:7rem 2rem;text-align:center;position:relative;overflow:hidden}
+.ctc-cta-final::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 80% at 50% 50%,rgba(255,70,5,.15) 0%,transparent 70%)}
+.ctc-cta-final>*{position:relative;z-index:1}
+.ctc-cta-final h2{font-size:clamp(2rem,4vw,3.2rem);font-weight:900;color:#fff;margin-bottom:1rem;line-height:1.15}
+.ctc-cta-final h2 span{color:var(--ctc-primary)}
+.ctc-cta-final p{font-size:1.1rem;color:rgba(255,255,255,.65);margin:0 auto 2.5rem;max-width:560px;line-height:1.7}
+.ctc-cta-phone{display:inline-flex;align-items:center;gap:1rem;font-size:2.2rem;font-weight:900;color:#fff;margin-bottom:1.5rem;transition:color .25s}
+.ctc-cta-phone:hover{color:var(--ctc-primary)}
+.ctc-cta-phone .ico{color:var(--ctc-primary)}
+.ctc-cta-btns{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap}
+.ctc-cta-final .links{margin-top:2.5rem;font-size:.85rem;color:rgba(255,255,255,.35)}
+.ctc-cta-final .links a{color:rgba(255,255,255,.55);text-decoration:underline}
 
 /* Footer */
-footer{background:var(--dark);color:#ccc;padding:56px 0 28px;font-size:.9rem}
-.f-grid{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:36px}
-footer h4{color:#fff;margin-bottom:12px;font-size:1rem}
-footer li{list-style:none;margin-bottom:6px}
-footer a:hover{color:var(--primary)}
-.copy{border-top:1px solid rgba(255,255,255,.1);margin-top:36px;padding-top:20px;text-align:center;font-size:.8rem}
+.footer{background:#2c2c2c;border-top:4px solid var(--color-primary);padding:4rem 0 2rem;color:#d6dde3}
+.footer-content{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:3rem;margin-bottom:3rem}
+.footer-section h4{margin-bottom:1.5rem;font-size:1.1rem;font-weight:700;color:#fff;text-transform:uppercase;letter-spacing:.5px}
+.footer-section p{color:#d6dde3;font-size:.92rem;margin-bottom:1rem}
+.footer-section li{margin-bottom:.75rem;color:#bdc3c7;font-size:.9rem;display:flex;gap:.6rem;align-items:flex-start}
+.footer-section li .ico{color:var(--color-primary);margin-top:.3rem}
+.footer-section li a{color:#bdc3c7;transition:color .2s}
+.footer-section li a:hover{color:var(--color-primary)}
+.footer .logo{margin-bottom:1rem}
+.social-links{display:flex;gap:.75rem}
+.social-links a{width:40px;height:40px;border:1px solid rgba(255,255,255,.2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#d6dde3;font-size:1.2rem;transition:.2s}
+.social-links a:hover{border-color:var(--color-primary);color:var(--color-primary)}
+.horario-list li span{color:#fff;font-weight:600;min-width:70px;display:inline-block}
+.footer-bottom{border-top:1px solid rgba(255,255,255,.1);padding-top:1.5rem;display:flex;justify-content:space-between;gap:1rem;flex-wrap:wrap;font-size:.85rem;color:#bdc3c7}
+.footer-links{display:flex;gap:1.2rem;flex-wrap:wrap}
+.footer-links a:hover{color:var(--color-primary)}
 
 /* WhatsApp flotante */
-.wa{position:fixed;right:18px;bottom:18px;z-index:999;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:.2s}
+.wa{position:fixed;right:18px;bottom:18px;z-index:999;width:58px;height:58px;border-radius:50%;background:#25d366;display:grid;place-items:center;box-shadow:0 8px 24px rgba(0,0,0,.3);transition:.2s;color:#fff;font-size:1.9rem}
 .wa:hover{transform:scale(1.08)}
-.wa svg{width:30px;height:30px;fill:#fff}
 
-/* Barra móvil */
-.mbar{display:none}
+/* Cookies */
+.cookie-banner-wrap{position:fixed;bottom:2rem;left:2rem;right:2rem;z-index:9999;background:rgba(15,15,15,.92);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.1);padding:1.5rem 2.5rem;border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.5);color:#fff;display:none}
+.cookie-content{display:flex;align-items:center;justify-content:space-between;gap:2rem;max-width:1200px;margin:0 auto}
+.cookie-text{display:flex;align-items:center;gap:1.5rem}
+.cookie-text .ico{font-size:1.5rem;color:#ff4605}
+.cookie-text p{font-size:.9rem;line-height:1.5;color:rgba(255,255,255,.8)}
+.cookie-text a{color:#ff4605;text-decoration:underline}
+.btn-cookie-accept{background:#ff4605;color:#fff;border:none;padding:.8rem 2rem;border-radius:10px;font-weight:800;cursor:pointer;transition:all .3s;white-space:nowrap;font-family:inherit}
+.btn-cookie-accept:hover{background:#ff6a35;transform:translateY(-2px)}
 
-@media(max-width:900px){
-  section{padding:56px 0}
-  .nav-links,.nav-phone{display:none}
-  .hero{padding-top:110px;min-height:auto}
-  .hero-grid,.compare,.calc,.f-grid,.tarifa{grid-template-columns:1fr}
-  .strip-grid{grid-template-columns:1fr 1fr}
-  .nav img{height:54px;width:54px}
+/* Reveal */
+.js .rv{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
+.js .rv.in{opacity:1;transform:none}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:1260px){.nav-links{display:none}.mobile-menu-toggle{display:flex}}
+@media(max-width:1024px){
+  .ctc-hero-content{grid-template-columns:1fr;gap:3rem}
+  .ctc-hero-form-wrap{max-width:560px;margin:0 auto;width:100%}
+  .ctc-stats-grid{grid-template-columns:repeat(2,1fr)}
+  .ctc-steps-grid{grid-template-columns:1fr;gap:2rem}
+  .ctc-steps-grid::before{display:none}
+  .ctc-why-grid{grid-template-columns:1fr}
 }
-@media(max-width:480px){
-  .row2{grid-template-columns:1fr}
-  .form-card{padding:22px}
-  .hero-cta .btn{width:100%}
-  .wa{bottom:78px}
-  .mbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:998;background:var(--dark);padding:10px 14px;gap:10px;border-top:1px solid rgba(255,255,255,.12)}
-  .mbar .btn{flex:1;padding:.8rem}
-  body{padding-bottom:70px}
+@media(max-width:768px){
+  .cookie-banner-wrap{bottom:1rem;left:1rem;right:1rem;padding:1.2rem}
+  .cookie-content{flex-direction:column;text-align:center;gap:1rem}
+  .cookie-text{flex-direction:column;gap:.5rem}
+  .container{padding:0 1.2rem}
 }
+@media(max-width:640px){
+  .ctc-hero{padding-top:80px}
+  .ctc-hero-content{padding:3rem 1.2rem 3rem}
+  .ctc-stats,.ctc-how,.ctc-why,.ctc-faq,.ctc-form-anchor{padding:4rem 1.2rem}
+  .ctc-stats-grid{grid-template-columns:1fr}
+  .ctc-field-row{grid-template-columns:1fr}
+  .ctc-hero h1{font-size:2.1rem}
+  .ctc-cta-phone{font-size:1.6rem}
+  .ctc-cta-btns .ctc-btn-primary,.ctc-cta-btns .ctc-btn-ghost,.ctc-hero-ctas .ctc-btn-primary{width:100%;justify-content:center}
+  .ctc-hero-form-wrap{padding:1.4rem}
+  .logo img{width:48px;height:48px}.logo span{font-size:.95rem}
+  .btn-contact{padding:.65rem 1rem;font-size:.85rem}
+  .navbar-content{gap:.8rem}
+  .ctc-section-header{margin-bottom:2.5rem}
+  .wa{bottom:14px;right:14px}
+}
+@media(max-width:400px){.btn-contact span{display:none}.btn-contact{padding:.7rem .85rem}}
 </style>
 </head>
 <body>
 
-<header class="header">
-  <div class="container nav">
-    <a href="#top"><img src="assets/logo.png" alt="Imperium Cars"></a>
-    <nav class="nav-links">
-      <a href="#que-incluye">Qué incluye</a>
-      <a href="#como-funciona">Cómo funciona</a>
-      <a href="#calculadora">Calculadora</a>
-      <a href="#faq">Preguntas</a>
-    </nav>
-    <a class="nav-phone" href="tel:+34672938336">672 93 83 36</a>
-    <a class="btn" href="#formulario">Quiero vender mi coche</a>
-  </div>
+<!-- Iconos -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+  <symbol id="i-tick" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></symbol>
+  <symbol id="i-tool" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></symbol>
+  <symbol id="i-tag" viewBox="0 0 24 24"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></symbol>
+  <symbol id="i-edit" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></symbol>
+  <symbol id="i-back" viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-car" viewBox="0 0 24 24"><path d="M5 17H3v-5l2-5h14l2 5v5h-2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/><path d="M9.5 17h5M3 12h18"/></symbol>
+  <symbol id="i-euro" viewBox="0 0 24 24"><path d="M18 7a7 7 0 1 0 0 10"/><line x1="4" y1="10" x2="14" y2="10"/><line x1="4" y1="14" x2="14" y2="14"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/><polyline points="22,6 12,13 2,6"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></symbol>
+  <symbol id="i-cookie" viewBox="0 0 24 24"><path d="M21.95 12.1a5 5 0 0 1-5-5 5 5 0 0 1-5-5 10 10 0 1 0 10 10z"/><path d="M8.5 8.5h.01M16 15.5h.01M12 12h.01M11 17h.01M7 14h.01"/></symbol>
+  <symbol id="i-wa" viewBox="0 0 32 32"><path fill="currentColor" stroke="none" d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.4.7 4.6 1.9 6.5L3 29l7.2-2.1c1.8 1 3.8 1.5 5.800 1.500 7 0 12.700-5.600 12.700-12.500S23 3 16 3zm0 22.800c-1.800 0-3.600-.5-5.100-1.400l-.4-.2-4.200 1.200 1.200-4.100-.3-.4a10 10 0 0 1-1.600-5.400C5.600 10 10.300 5.400 16 5.400s10.400 4.600 10.400 10.200S21.700 25.800 16 25.800zm5.700-7.600c-.3-.2-1.800-.9-2.100-1-.3-.1-.5-.2-.7.2-.2.300-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.300-.5-2.500-1.500-.9-.8-1.500-1.800-1.700-2.100-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.400s1 2.800 1.200 3c.1.200 2 3.100 4.900 4.300.7.300 1.200.5 1.600.6.700.2 1.300.2 1.800.1.500-.1 1.800-.7 2-1.400.3-.7.3-1.300.2-1.400-.1-.1-.3-.2-.6-.3z"/></symbol>
+</svg>
+
+<!-- HEADER -->
+<header class="header" role="banner">
+  <nav class="navbar" aria-label="Navegación principal">
+    <div class="container navbar-content">
+      <a href="https://imperiumcars.es/" class="logo" aria-label="Imperium Cars - Inicio">
+        <img src="assets/logo.png" alt="Logo Imperium Cars" width="60" height="60">
+        <div><span>IMPERIUM CARS</span></div>
+      </a>
+      <ul class="nav-links">
+        <li><a href="https://imperiumcars.es/stock">Coches de ocasión</a></li>
+        <li><a href="https://imperiumcars.es/servicios">Servicios</a></li>
+        <li><a href="https://imperiumcars.es/calculadora-financiacion">Financiación</a></li>
+        <li><a href="https://imperiumcars.es/contacto">Contacto</a></li>
+        <li><a href="#formulario-venta" class="nav-vende-coche"><svg class="ico"><use href="#i-car"/></svg><span>Gestionamos tu venta</span><span class="nav-vende-badge">Tarifa fija</span></a></li>
+      </ul>
+      <div class="nav-actions">
+        <a href="tel:+34672938336" class="btn-contact"><svg class="ico"><use href="#i-phone"/></svg><span>672 93 83 36</span></a>
+        <button class="mobile-menu-toggle" id="menuToggle" aria-label="Abrir menú" aria-expanded="false"><span class="ham-line"></span><span class="ham-line"></span><span class="ham-line"></span></button>
+      </div>
+    </div>
+    <div class="bocadillo" id="menu">
+      <a href="https://imperiumcars.es/stock">Coches de ocasión</a>
+      <a href="https://imperiumcars.es/autocaravana">AutoCaravana</a>
+      <a href="https://imperiumcars.es/servicios">Servicios</a>
+      <a href="https://imperiumcars.es/calculadora-financiacion">Financiación</a>
+      <a href="https://imperiumcars.es/blog">Blog</a>
+      <a href="https://imperiumcars.es/contacto">Contacto</a>
+      <a href="#formulario-venta" class="hl">Gestionamos tu venta</a>
+    </div>
+  </nav>
 </header>
 
-<main id="top">
-<!-- HERO -->
-<section class="hero">
-  <div class="container hero-grid">
-    <div>
-      <span class="badge">★ Gestión integral de venta de vehículos</span>
-      <h1>Vende tu coche por <span class="hl">lo que realmente vale</span>, no por lo que te ofrece un comprador al por mayor</h1>
-      <p class="sub">Nos encargamos de todo: lavado profesional, fotografía, anuncios en plataformas profesionales y mantenimiento. Tú cobras el precio de venta y nosotros, una tarifa fija. Sin comisiones sorpresa.</p>
-      <div class="hero-cta">
-        <a class="btn btn-lg" href="#formulario">Quiero sacar más por mi coche</a>
-        <a class="btn btn-lg btn-ghost" href="#calculadora">Calcula tu diferencia</a>
-      </div>
-      <ul class="hero-checks">
-        <li>Tarifa fija y transparente</li>
-        <li>Tu coche, cuidado en nuestras instalaciones</li>
-        <li>Sin presiones ni papeleos</li>
-      </ul>
-    </div>
+<main id="main-content">
 
-    <form class="form-card" id="formulario" novalidate>
-      <h3>Cuéntanos tu coche y te llamamos hoy</h3>
-      <p class="hint">Te decimos en cuánto podemos venderlo y qué ganarías de más.</p>
-      <div class="field"><label for="nombre">Nombre</label><input id="nombre" name="nombre" autocomplete="name" required placeholder="Tu nombre"></div>
-      <div class="field"><label for="tel">Teléfono</label><input id="tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" required placeholder="600 000 000"></div>
-      <div class="row2">
-        <div class="field"><label for="marca">Marca y modelo</label><input id="marca" name="marca" required placeholder="Ej. Seat León"></div>
-        <div class="field"><label for="anio">Año</label><input id="anio" name="anio" inputmode="numeric" maxlength="4" required placeholder="2019"></div>
+<!-- HERO -->
+<section class="ctc-hero" aria-labelledby="hero-title">
+  <div class="ctc-hero-particles" aria-hidden="true">
+    <div class="ctc-particle" style="width:13px;height:13px;left:52%;animation-duration:13s;animation-delay:12s"></div>
+    <div class="ctc-particle" style="width:17px;height:17px;left:58%;animation-duration:18s;animation-delay:8s"></div>
+    <div class="ctc-particle" style="width:16px;height:16px;left:28%;animation-duration:19s;animation-delay:0s"></div>
+    <div class="ctc-particle" style="width:8px;height:8px;left:13%;animation-duration:20s;animation-delay:7s"></div>
+    <div class="ctc-particle" style="width:11px;height:11px;left:23%;animation-duration:16s;animation-delay:0s"></div>
+    <div class="ctc-particle" style="width:14px;height:14px;left:78%;animation-duration:16s;animation-delay:8s"></div>
+    <div class="ctc-particle" style="width:19px;height:19px;left:73%;animation-duration:15s;animation-delay:10s"></div>
+    <div class="ctc-particle" style="width:6px;height:6px;left:61%;animation-duration:22s;animation-delay:5s"></div>
+    <div class="ctc-particle" style="width:9px;height:9px;left:44%;animation-duration:14s;animation-delay:7s"></div>
+  </div>
+  <div class="ctc-hero-content">
+    <div class="ctc-hero-left">
+      <div class="ctc-hero-badge">Gestión de venta · Tarifa fija</div>
+      <h1 id="hero-title">Vendemos<br><span>Tu Coche</span></h1>
+      <p class="ctc-hero-desc">
+        ¿Quieres sacar el máximo por tu coche en Zaragoza? En <strong>Imperium Cars</strong> lo lavamos, lo fotografiamos, lo publicamos y lo vendemos al precio de mercado. Tú cobras y nosotros una tarifa fija. Sin ofertas absurdas, sin regateos, sin quebraderos de cabeza.
+      </p>
+      <div class="ctc-hero-pills">
+        <span class="ctc-pill"><svg class="ico"><use href="#i-euro"/></svg>Tarifa fija de 1.500 €</span>
+        <span class="ctc-pill"><svg class="ico"><use href="#i-tag"/></svg>Defendemos tu precio</span>
+        <span class="ctc-pill"><svg class="ico"><use href="#i-shield"/></svg>Sin estafas ni negociadores</span>
+        <span class="ctc-pill"><svg class="ico"><use href="#i-file"/></svg>Trámites incluidos</span>
       </div>
-      <div class="row2">
-        <div class="field"><label for="km">Kilómetros</label><input id="km" name="km" inputmode="numeric" required placeholder="85.000"></div>
-        <div class="field"><label for="oferta">¿Qué te han ofrecido? (opcional)</label><input id="oferta" name="oferta" inputmode="numeric" placeholder="€"></div>
-      </div>
-      <label class="check"><input type="checkbox" id="priv" required> <span>Acepto la <a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">política de privacidad</a> y que me contacten sobre mi vehículo.</span></label>
-      <button class="btn btn-block btn-lg" type="submit">Enviar por WhatsApp</button>
-      <p class="form-note" id="formMsg">Respuesta en menos de 24 h laborables.</p>
-    </form>
+      <div class="ctc-hero-ctas"><a href="#hero-form" class="ctc-btn-primary">Quiero mi valoración gratuita <svg class="ico"><use href="#i-arrow"/></svg></a></div>
+    </div>
+    <div class="ctc-hero-form-wrap" id="hero-form" data-form data-title="Valoración rápida gratuita" data-sub="Rellena los datos y te llamamos en menos de 24h"></div>
   </div>
 </section>
 
-<!-- CONFIANZA -->
-<div class="strip">
-  <div class="container strip-grid">
-    <div><b>Tarifa fija</b><span>Sabes lo que pagas desde el primer día</span></div>
-    <div><b>Todo incluido</b><span>Lavado, fotos, anuncios y mantenimiento</span></div>
-    <div><b>Cobras tú</b><span>El comprador te paga a ti directamente</span></div>
-    <div><b>Trato directo</b><span>Concesionario en Cuarte de Huerva, Zaragoza</span></div>
-  </div>
+<!-- BANDA NARANJA -->
+<div class="ctc-trust-bar" aria-hidden="true">
+  <div class="ctc-trust-ticker" id="ticker"></div>
 </div>
 
-<!-- PROBLEMA / SOLUCIÓN -->
-<section>
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">La diferencia</span>
-      <h2 class="title">¿Por qué malvender tu coche a un comprador al por mayor?</h2>
-      <p class="lead">Las empresas de compra inmediata necesitan margen: te ofrecen menos para revenderlo ellas con beneficio. Con nosotros, ese margen se queda en tu bolsillo.</p>
-    </div>
-    <div class="compare">
-      <div class="cmp bad">
-        <h3>Vender a una compraventa online</h3>
-        <ul>
-          <li>Ofertas por debajo del valor real de mercado</li>
-          <li>Descuentos de última hora tras la “revisión”</li>
-          <li>Se quedan con el margen de la reventa</li>
-          <li>Tú no controlas el precio final</li>
-        </ul>
-      </div>
-      <div class="cmp good">
-        <h3>Gestión de venta con Imperium Cars</h3>
-        <ul>
-          <li>Tu coche se anuncia a precio de mercado</li>
-          <li>Presentación profesional que justifica un mejor precio</li>
-          <li>Tarifa fija conocida de antemano, sin porcentajes</li>
-          <li>Cobras directamente del comprador</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- QUÉ INCLUYE -->
-<section class="bg-light" id="que-incluye">
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">Todo incluido</span>
-      <h2 class="title">Lo que hacemos por tu coche</h2>
-      <p class="lead">Un coche bien presentado y bien publicitado se vende antes y mejor. Nosotros ponemos los medios y el trabajo.</p>
+<section class="ctc-stats" id="que-incluye" aria-labelledby="inc-title">
+  <div class="ctc-section-header rv">
+    <span class="ctc-section-badge">Todo incluido</span>
+    <h2 class="ctc-section-title" id="inc-title">Lo que incluye nuestra tarifa fija</h2>
+    <p class="ctc-section-desc">Un coche bien presentado y bien publicitado se vende antes y mejor. Nosotros ponemos los medios y el trabajo.</p>
+  </div>
+  <div class="ctc-stats-grid">
+    <div class="ctc-stat-card rv">
+      <span class="ctc-stat-num"><svg class="ico"><use href="#i-drop"/></svg></span>
+      <span class="ctc-stat-title">Lavado profesional</span>
+      <span class="ctc-stat-label">Limpieza interior y exterior completa para que tu coche luzca como el primer día.</span>
     </div>
-    <div class="grid3">
-      <div class="card"><div class="ico">🧼</div><h3>Lavado profesional</h3><p>Limpieza interior y exterior completa para que tu coche luzca como el primer día.</p></div>
-      <div class="card"><div class="ico">📸</div><h3>Fotografía profesional</h3><p>Reportaje fotográfico que destaca tu coche entre cientos de anuncios y atrae más contactos.</p></div>
-      <div class="card"><div class="ico">🌐</div><h3>Plataformas con perfil profesional</h3><p>Publicamos en portales con cuentas profesionales de pago, con más visibilidad y compradores reales.</p></div>
-      <div class="card"><div class="ico">🔧</div><h3>Mantenimiento mientras esté con nosotros</h3><p>Cuidamos el vehículo en nuestras instalaciones: batería, niveles y puesta a punto para mantenerlo en condiciones.</p></div>
-      <div class="card"><div class="ico">🛡️</div><h3>Seguro si hace falta</h3><p>Si tu coche lo necesita mientras está en nuestras instalaciones, lo cubrimos.</p></div>
-      <div class="card"><div class="ico">💶</div><h3>Una tarifa fija, sin sorpresas</h3><p>Tú cobras la venta y nos abonas nuestra tarifa. Sin porcentajes ni letra pequeña.</p></div>
+    <div class="ctc-stat-card rv">
+      <span class="ctc-stat-num"><svg class="ico"><use href="#i-camera"/></svg></span>
+      <span class="ctc-stat-title">Fotografía profesional</span>
+      <span class="ctc-stat-label">Reportaje fotográfico que destaca tu coche entre cientos de anuncios.</span>
+    </div>
+    <div class="ctc-stat-card rv">
+      <span class="ctc-stat-num"><svg class="ico"><use href="#i-globe"/></svg></span>
+      <span class="ctc-stat-title">Plataformas de pago</span>
+      <span class="ctc-stat-label">Publicado en portales de pago y con perfil profesional, para llegar a más compradores.</span>
+    </div>
+    <div class="ctc-stat-card rv">
+      <span class="ctc-stat-num"><svg class="ico"><use href="#i-tool"/></svg></span>
+      <span class="ctc-stat-title">Mantenimiento permanente</span>
+      <span class="ctc-stat-label">Tu coche, bien cuidado en nuestras instalaciones hasta que se venda.</span>
     </div>
   </div>
+  <div class="ctc-fee rv"><strong>1.500 €</strong><span>Tarifa fija. Sin porcentajes, sin comisiones, sin letra pequeña.</span></div>
 </section>
 
 <!-- CÓMO FUNCIONA -->
-<section class="dark" id="como-funciona">
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">Sencillo</span>
-      <h2 class="title">Así de fácil es venderlo con nosotros</h2>
+<section class="ctc-how" id="como-funciona" aria-labelledby="how-title">
+  <div class="ctc-section-header rv">
+    <span class="ctc-section-badge">Proceso simplificado</span>
+    <h2 class="ctc-section-title" id="how-title">Vende tu coche en 3 pasos</h2>
+    <p class="ctc-section-desc">Tú solo esperas a cobrar. Del resto nos ocupamos nosotros.</p>
+  </div>
+  <div class="ctc-steps-grid">
+    <div class="ctc-step-card rv">
+      <div class="ctc-step-num-badge">1</div>
+      <div class="ctc-step-icon"><svg class="ico"><use href="#i-edit"/></svg></div>
+      <h3>Cuéntanos tu coche</h3>
+      <p>Rellena el formulario con la marca, modelo, año y kilómetros. Solo tardas 2 minutos. Sin registro y sin compromiso.</p>
     </div>
-    <div class="steps">
-      <div class="step"><h3>Nos cuentas tu coche</h3><p>Rellenas el formulario o nos escribes por WhatsApp. Te orientamos sobre el precio realista de venta.</p></div>
-      <div class="step"><h3>Lo preparamos</h3><p>Lo traes a nuestras instalaciones: lavado, fotos profesionales y revisión de mantenimiento.</p></div>
-      <div class="step"><h3>Lo publicamos y lo vendemos</h3><p>Lo anunciamos en plataformas profesionales y atendemos a los compradores por ti.</p></div>
-      <div class="step"><h3>Tú cobras</h3><p>El comprador te paga a ti. Después, nos abonas la tarifa fija acordada. Todo claro desde el principio.</p></div>
+    <div class="ctc-step-card rv">
+      <div class="ctc-step-icon"><svg class="ico"><use href="#i-car"/></svg></div>
+      <div class="ctc-step-num-badge">2</div>
+      <h3>Lo preparamos y publicamos</h3>
+      <p>Lo traes a nuestras instalaciones en Cuarte de Huerva. Lavado, fotografía profesional, mantenimiento y publicación en plataformas de pago.</p>
+    </div>
+    <div class="ctc-step-card rv">
+      <div class="ctc-step-num-badge">3</div>
+      <div class="ctc-step-icon"><svg class="ico"><use href="#i-euro"/></svg></div>
+      <h3>Tú cobras</h3>
+      <p>Atendemos a los compradores y defendemos el precio. Nos encargamos de papeleos y trámites. Tú cobras la venta y nos abonas la tarifa fija.</p>
     </div>
   </div>
 </section>
 
-<!-- TARIFA FIJA -->
-<section id="tarifa">
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">Tu tarifa fija</span>
-      <h2 class="title">Una sola tarifa. Todo resuelto.</h2>
-      <p class="lead">Tú no pones nada más: ni tiempo, ni esfuerzo, ni sorpresas. Esto es lo que incluye.</p>
-    </div>
-    <div class="tarifa">
-      <div class="tbox inc">
-        <h3>Qué incluye nuestra tarifa fija</h3>
-        <ul>
-          <li><span><b>Lavado profesional</b> interior y exterior</span></li>
-          <li><span><b>Fotografía profesional</b> de tu vehículo</span></li>
-          <li><span><b>Publicado en plataformas de pago</b> y con perfil profesional</span></li>
-          <li><span><b>Mantenimiento adecuado del vehículo</b>, de forma permanente en nuestras instalaciones hasta que se venda</span></li>
-        </ul>
+<!-- POR QUÉ + CALCULADORA -->
+<section class="ctc-why" id="calculadora" aria-labelledby="why-title">
+  <div class="ctc-why-grid">
+    <div>
+      <div class="ctc-section-header rv" style="text-align:left;margin-bottom:0">
+        <span class="ctc-section-badge">Nuestras ventajas</span>
+        <h2 class="ctc-section-title" id="why-title" style="max-width:480px">¿Por qué vender tu coche con Imperium Cars?</h2>
+        <p class="ctc-section-desc" style="margin:0;text-align:left">Somos concesionarios profesionales en Zaragoza. Conocemos el mercado y sabemos lo que vale tu coche: por eso lo defendemos.</p>
       </div>
-      <div class="tbox adv">
-        <h3>Ventajas de venderlo con nosotros</h3>
-        <ul>
-          <li><span><b>Defendemos el precio</b> de tu coche</span></li>
-          <li><span><b>No te peleas con los negociadores</b> de las páginas de segunda mano: nos encargamos nosotros</span></li>
-          <li><span><b>Evitas intentos de estafa</b></span></li>
-          <li><span><b>Nos encargamos de todo:</b> papeleos, trámites, etc.</span></li>
-        </ul>
+      <div class="ctc-why-list">
+        <div class="ctc-why-item rv">
+          <div class="ctc-why-icon"><svg class="ico"><use href="#i-tag"/></svg></div>
+          <div class="ctc-why-body"><h4>Defendemos el precio</h4><p>Anunciamos tu coche a precio de mercado y lo defendemos ante los compradores. Sin ofertas absurdas.</p></div>
+        </div>
+        <div class="ctc-why-item rv">
+          <div class="ctc-why-icon"><svg class="ico"><use href="#i-shield"/></svg></div>
+          <div class="ctc-why-body"><h4>Sin negociadores ni estafas</h4><p>No te peleas con los negociadores de las páginas de segunda mano y evitas intentos de estafa: nos encargamos nosotros.</p></div>
+        </div>
+        <div class="ctc-why-item rv">
+          <div class="ctc-why-icon"><svg class="ico"><use href="#i-file"/></svg></div>
+          <div class="ctc-why-body"><h4>Nos encargamos de todo</h4><p>Papeleos, trámites y gestiones. Tu tiempo es tuyo: tú solo esperas a cobrar.</p></div>
+        </div>
       </div>
     </div>
-    <div class="time">Tu tiempo es tuyo.<small>Tú solo esperas a cobrar. Del resto nos ocupamos nosotros.</small></div>
+
+    <div class="rv">
+      <div class="ctc-why-card-main">
+        <p class="ctc-why-card-label">Calculadora</p>
+        <div class="ctc-why-card-price">¿Cuánto más podrías <span>sacar</span>?</div>
+        <p class="ctc-why-card-sub">Compara la oferta que te han hecho con el precio de venta.</p>
+        <div class="calc-fields">
+          <div class="ctc-field"><label for="cPrecio">Precio al que se venden coches como el tuyo (€)</label><input id="cPrecio" inputmode="numeric" value="15000"></div>
+          <div class="ctc-field"><label for="cOferta">Oferta que te han hecho (€)</label><input id="cOferta" inputmode="numeric" value="12000"></div>
+        </div>
+        <div class="calc-rows">
+          <div class="calc-row"><span>Precio de venta estimado</span><b id="rPrecio">–</b></div>
+          <div class="calc-row"><span>Nuestra tarifa fija</span><b id="rTarifa">–</b></div>
+          <div class="calc-row"><span>Tú recibes</span><b id="rNeto">–</b></div>
+          <div class="calc-row"><span>Oferta de la compraventa</span><b id="rOferta">–</b></div>
+        </div>
+        <p class="calc-gain-l">Diferencia a tu favor</p>
+        <div class="calc-gain" id="rGain">–</div>
+        <p class="calc-disc">Herramienta orientativa. El precio final de venta depende del mercado y del estado del vehículo; no constituye una garantía de venta.</p>
+      </div>
+      <div class="ctc-why-card-float">
+        <strong>Tu tiempo es tuyo</strong>
+        <span>Del resto nos ocupamos nosotros</span>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- CALCULADORA -->
-<section class="bg-light" id="calculadora">
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">Compruébalo</span>
-      <h2 class="title">¿Cuánto más podrías sacar?</h2>
-      <p class="lead">Compara la oferta que te han hecho con el precio al que se vende un coche como el tuyo.</p>
+<!-- FORMULARIO ANCLADO -->
+<section class="ctc-form-anchor" id="formulario-venta" aria-labelledby="form-title">
+  <div class="ctc-form-anchor-inner">
+    <div class="ctc-section-header rv" style="margin-bottom:2.5rem">
+      <span class="ctc-section-badge">Valoración gratuita</span>
+      <h2 class="ctc-section-title" id="form-title" style="color:#fff">Solicita tu valoración ahora</h2>
+      <p class="ctc-section-desc" style="color:rgba(255,255,255,.6)">Rellena el formulario y te llamamos. Sin compromiso.</p>
     </div>
-    <div class="calc">
-      <div class="calc-box">
-        <div class="field"><label for="cPrecio">Precio al que se venden coches como el tuyo (€)</label><input id="cPrecio" inputmode="numeric" value="15000"></div>
-        <div class="field"><label for="cOferta">Oferta que te han hecho (€)</label><input id="cOferta" inputmode="numeric" value="12000"></div>
-        <a class="btn btn-block" href="#formulario">Quiero esta diferencia</a>
-        <p class="disclaimer">Herramienta orientativa. El precio final de venta depende del mercado y del estado del vehículo; no constituye una garantía de venta.</p>
-      </div>
-      <div class="result">
-        <div class="line"><span>Precio de venta estimado</span><b id="rPrecio">–</b></div>
-        <div class="line"><span>Nuestra tarifa fija</span><b id="rTarifa">–</b></div>
-        <div class="line"><span>Tú recibes</span><b id="rNeto">–</b></div>
-        <div class="line"><span>Oferta de la compraventa</span><b id="rOferta">–</b></div>
-        <div class="line total"><span>Diferencia a tu favor</span></div>
-        <div class="gain" id="rGain">–</div>
-      </div>
-    </div>
+    <div class="ctc-hero-form-wrap" style="max-width:100%" data-form data-title="Datos de tu vehículo" data-sub="Todos los campos marcados con * son obligatorios"></div>
   </div>
+</section>
+
+<!-- MARCAS -->
+<section class="ctc-marcas" aria-labelledby="marcas-title">
+  <h2 id="marcas-title">Gestionamos la venta de coches de todas las marcas</h2>
+  <p>Cuéntanos el tuyo y te decimos si encaja.</p>
+  <div class="ctc-marcas-list" id="marcas"></div>
 </section>
 
 <!-- FAQ -->
-<section id="faq">
-  <div class="container">
-    <div class="center">
-      <span class="eyebrow">Dudas</span>
-      <h2 class="title">Preguntas frecuentes</h2>
-    </div>
-    <div class="faq">
-      <details><summary>¿Cuánto cuesta el servicio?</summary><p>Una tarifa fija de 1.500 €, que incluye lavado, fotografía, publicación en plataformas de pago y mantenimiento hasta la venta. No cobramos porcentaje sobre la venta, así que cuanto más se venda tu coche, más te quedas tú.</p></details>
-      <details><summary>¿Quién cobra la venta?</summary><p>Cobras tú directamente del comprador. Después nos abonas la tarifa fija acordada.</p></details>
-      <details><summary>¿Y si mi coche no se vende?</summary><p>Te explicamos las condiciones por escrito antes de empezar, incluido qué ocurre si no se concreta la venta. Pregúntanos y te lo detallamos para tu caso.</p></details>
-      <details><summary>¿Dónde está el coche mientras se vende?</summary><p>En nuestras instalaciones de Cuarte de Huerva (Zaragoza), cuidado, mantenido y, si hace falta, asegurado.</p></details>
-      <details><summary>¿Tengo que gestionar papeles o compradores?</summary><p>No. Atendemos a los interesados y te acompañamos en el proceso hasta el cambio de titularidad.</p></details>
-      <details><summary>¿Qué coches aceptáis?</summary><p>Vehículos de ocasión de cualquier marca. Cuéntanos modelo, año y kilómetros y te decimos si encaja.</p></details>
-    </div>
+<section class="ctc-faq" id="faq" aria-labelledby="faq-title">
+  <div class="ctc-section-header rv">
+    <span class="ctc-section-badge">Preguntas frecuentes</span>
+    <h2 class="ctc-section-title" id="faq-title">Todo lo que necesitas saber para vender tu coche con nosotros</h2>
+    <p class="ctc-section-desc">Resolvemos las dudas más habituales sobre nuestra gestión de venta.</p>
+  </div>
+  <div class="ctc-faq-wrap">
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Cuánto cuesta el servicio?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>Una tarifa fija de 1.500 €, que incluye lavado profesional, fotografía profesional, publicación en plataformas de pago con perfil profesional y mantenimiento del vehículo en nuestras instalaciones hasta que se venda. No cobramos porcentaje sobre la venta, así que cuanto más se venda tu coche, más te quedas tú.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Quién cobra la venta?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>Cobras tú directamente del comprador. Después nos abonas la tarifa fija acordada.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Dónde está mi coche mientras se vende?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>En nuestras instalaciones de Cuarte de Huerva (Zaragoza), donde lo mantenemos en buen estado hasta que se venda y, si hace falta, lo aseguramos.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Tengo que tratar con los compradores?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>No. Nosotros atendemos a los interesados, negociamos defendiendo el precio y filtramos los intentos de estafa. Tú no te peleas con los negociadores de las páginas de segunda mano.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Quién se encarga de los papeles y trámites?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>Nosotros. Papeleos, trámites y gestiones corren de nuestra cuenta, para que tu tiempo sea tuyo.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Y si mi coche no se vende?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>Te explicamos las condiciones por escrito antes de empezar, incluido qué ocurre si no se concreta la venta. Pregúntanos y te lo detallamos para tu caso.</p></div></div>
+    <div class="ctc-faq-item"><button class="ctc-faq-question" type="button">¿Qué coches aceptáis?<span class="ctc-faq-icon"><svg class="ico"><use href="#i-plus"/></svg></span></button><div class="ctc-faq-answer"><p>Vehículos de ocasión de cualquier marca. Cuéntanos modelo, año y kilómetros y te decimos si encaja.</p></div></div>
   </div>
 </section>
 
 <!-- CTA FINAL -->
-<section class="final">
-  <div class="container">
-    <h2>No regales el valor de tu coche</h2>
-    <p>Cuéntanos tu caso y te decimos, sin compromiso, cuánto podrías sacar.</p>
-    <a class="btn btn-lg" href="#formulario">Empezar ahora</a>
+<section class="ctc-cta-final" aria-labelledby="cta-title">
+  <div class="ctc-section-badge">¿Listo para vender?</div>
+  <h2 id="cta-title" style="margin-top:1rem">Vende tu coche sin perder tiempo.<br><span>Tu tiempo es tuyo.</span></h2>
+  <p>Llámanos ahora mismo o usa el formulario. Nuestro equipo se encarga de todo para que saques el máximo por tu coche.</p>
+  <a href="tel:+34672938336" class="ctc-cta-phone"><svg class="ico"><use href="#i-phone"/></svg>672 93 83 36</a>
+  <div class="ctc-cta-btns">
+    <a href="#formulario-venta" class="ctc-btn-primary"><svg class="ico"><use href="#i-edit"/></svg>Rellenar formulario</a>
+    <a href="https://wa.me/34672938336?text=Hola%2C%20quiero%20vender%20mi%20coche%20con%20vuestra%20gesti%C3%B3n" class="ctc-btn-ghost" target="_blank" rel="noopener"><svg class="ico ico-fill"><use href="#i-wa"/></svg>Escribir por WhatsApp</a>
+    <a href="https://imperiumcars.es/contacto" class="ctc-btn-ghost">Ver todas las opciones</a>
   </div>
+  <p class="links">También puedes <a href="https://imperiumcars.es/stock">ver nuestro stock de coches de ocasión</a> o <a href="https://compramostucoche.imperiumcars.es/">vender tu coche con pago inmediato</a>.</p>
 </section>
 </main>
 
-<footer>
-  <div class="container f-grid">
-    <div>
-      <img src="assets/logo.png" alt="Imperium Cars" style="height:90px;width:90px;margin-bottom:10px;object-fit:contain">
-      <p>Tu concesionario de vehículos de ocasión con el mejor servicio al cliente.</p>
+<!-- FOOTER -->
+<footer class="footer" role="contentinfo">
+  <div class="container">
+    <div class="footer-content">
+      <div class="footer-section">
+        <a href="https://imperiumcars.es/" class="logo" aria-label="Imperium Cars - Inicio"><img src="assets/logo.png" alt="Logo Imperium Cars" width="60" height="60"><span>IMPERIUM CARS</span></a>
+        <p>Imperium Cars, tu primer coche, tu concesionario de vehículos de ocasión con el mejor servicio al cliente garantizado.</p>
+        <div class="social-links"><a href="https://wa.me/34672938336" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="ico ico-fill"><use href="#i-wa"/></svg></a></div>
+      </div>
+      <div class="footer-section">
+        <h4>Navegación</h4>
+        <ul>
+          <li><a href="https://imperiumcars.es/">Quienes somos</a></li>
+          <li><a href="https://imperiumcars.es/stock">Nuestros Coches</a></li>
+          <li><a href="https://compramostucoche.imperiumcars.es/">Compramos tu coche</a></li>
+          <li><a href="#top" style="color:#ff4605;font-weight:700">Gestión y venta</a></li>
+          <li><a href="https://imperiumcars.es/blog">Blog</a></li>
+          <li><a href="https://imperiumcars.es/preguntas-frecuentes">FAQ</a></li>
+          <li><a href="https://imperiumcars.es/contacto">Contacto</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Contacto</h4>
+        <ul>
+          <li><svg class="ico"><use href="#i-phone"/></svg><a href="tel:+34672938336">672 93 83 36</a></li>
+          <li><svg class="ico"><use href="#i-phone"/></svg><a href="tel:+34681029934">681 02 99 34</a></li>
+          <li><svg class="ico"><use href="#i-mail"/></svg><a href="mailto:imperiumcars.santi@gmail.com">imperiumcars.santi@gmail.com</a></li>
+          <li><svg class="ico"><use href="#i-pin"/></svg>C. Valencia, km 6, 5, 50410 Cuarte de Huerva, Zaragoza</li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Horario</h4>
+        <ul class="horario-list">
+          <li><span>Lun-Vie:</span> 8:30-13:30, 16:00-19:00</li>
+          <li><span>Sábado:</span> 9:00-14:00</li>
+          <li><span>Domingo:</span> Cerrado</li>
+        </ul>
+      </div>
     </div>
-    <div>
-      <h4>Contacto</h4>
-      <ul>
-        <li><a href="tel:+34672938336">672 93 83 36</a></li>
-        <li><a href="tel:+34681029934">681 02 99 34</a></li>
-        <li><a href="mailto:imperiumcars.santi@gmail.com">imperiumcars.santi@gmail.com</a></li>
-        <li>C. Valencia, km 6, 5, 50410 Cuarte de Huerva, Zaragoza</li>
-      </ul>
-    </div>
-    <div>
-      <h4>Horario</h4>
-      <ul>
-        <li>Lun–Vie: 8:30–13:30 y 16:00–19:00</li>
-        <li>Sábado: 9:00–14:00</li>
-        <li>Domingo: cerrado</li>
-      </ul>
-      <h4 style="margin-top:16px">Legal</h4>
-      <ul>
-        <li><a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">Política de privacidad</a></li>
-        <li><a href="https://imperiumcars.es/politica-cookies.php" target="_blank" rel="noopener">Política de cookies</a></li>
-        <li><a href="https://imperiumcars.es/aviso-legal.php" target="_blank" rel="noopener">Aviso legal</a></li>
-      </ul>
+    <div class="footer-bottom">
+      <p>© <span id="yr"></span> Imperium Cars. Todos los derechos reservados.</p>
+      <div class="footer-links">
+        <a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">Política de privacidad</a>
+        <a href="https://imperiumcars.es/politica-cookies.php" target="_blank" rel="noopener">Política de Cookies</a>
+        <a href="https://imperiumcars.es/aviso-legal.php" target="_blank" rel="noopener">Aviso Legal</a>
+      </div>
     </div>
   </div>
-  <div class="container copy">© <span id="yr"></span> Imperium Cars. Todos los derechos reservados.</div>
 </footer>
 
-<a class="wa" href="https://wa.me/34672938336?text=Hola%2C%20quiero%20vender%20mi%20coche%20con%20vuestra%20gesti%C3%B3n" target="_blank" rel="noopener" aria-label="WhatsApp">
-  <svg viewBox="0 0 32 32"><path d="M16 3C9 3 3.3 8.6 3.3 15.5c0 2.4.7 4.6 1.9 6.5L3 29l7.2-2.1c1.8 1 3.8 1.5 5.8 1.5 7 0 12.7-5.6 12.7-12.5S23 3 16 3zm0 22.8c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-4.2 1.2 1.2-4.1-.3-.4a10 10 0 0 1-1.6-5.4C5.6 10 10.3 5.4 16 5.4S26.4 10 26.4 15.6 21.700 25.800 16 25.800zm5.700-7.600c-.3-.2-1.800-.9-2.100-1-.3-.1-.5-.2-.7.2-.2.300-.8 1-1 1.200-.2.200-.4.200-.7.100-.3-.2-1.300-.5-2.500-1.500-.9-.8-1.500-1.800-1.700-2.100-.2-.3 0-.5.100-.6l.5-.5c.1-.2.200-.3.300-.5.100-.2 0-.4 0-.5l-1-2.300c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.100-.8.400-.3.300-1 1-1 2.400s1 2.800 1.200 3c.1.200 2 3.100 4.900 4.300.7.300 1.200.5 1.600.6.700.2 1.300.2 1.800.1.500-.1 1.800-.7 2-1.400.3-.7.300-1.300.2-1.400-.1-.1-.3-.2-.6-.3z"/></svg>
-</a>
+<a class="wa" href="https://wa.me/34672938336?text=Hola%2C%20quiero%20vender%20mi%20coche%20con%20vuestra%20gesti%C3%B3n" target="_blank" rel="noopener" aria-label="WhatsApp"><svg class="ico ico-fill"><use href="#i-wa"/></svg></a>
 
-<div class="mbar">
-  <a class="btn btn-ghost" href="tel:+34672938336">Llamar</a>
-  <a class="btn" href="#formulario">Vender mi coche</a>
+<div id="cookie-banner" class="cookie-banner-wrap" role="dialog" aria-label="Aviso de cookies">
+  <div class="cookie-content">
+    <div class="cookie-text">
+      <svg class="ico"><use href="#i-cookie"/></svg>
+      <p>Utilizamos cookies para asegurar que damos la mejor experiencia al usuario en nuestra web. Si continúas utilizando este sitio, asumiremos que estás de acuerdo. <a href="https://imperiumcars.es/politica-cookies.php" target="_blank" rel="noopener">Más información</a></p>
+    </div>
+    <button class="btn-cookie-accept" id="cookieOk" type="button">Aceptar</button>
+  </div>
 </div>
 
 <script>
+document.documentElement.classList.add('js');
+
 /* ====== CONFIGURACIÓN ====== */
 const TARIFA_FIJA = 1500;          // tarifa fija en €
 const WHATSAPP = '34672938336';    // número que recibe los leads
+const MARCAS = ['Volkswagen','BMW','Mercedes-Benz','Audi','SEAT','Toyota','Renault','Peugeot','Ford','Opel','Hyundai','Kia','Citroën','Skoda','Dacia','Nissan','Mazda','Honda','Volvo','Land Rover','Jeep','Porsche'];
+
+const $ = id => document.getElementById(id);
+const ic = (n,f) => `<svg class="ico${f?' ico-fill':''}"><use href="#i-${n}"/></svg>`;
+
+/* ====== Marcas + banda naranja ====== */
+$('marcas').innerHTML = MARCAS.map(m => `<span class="ctc-marca-tag">${m}</span>`).join('');
+const TICK = ['Tarifa fija de 1.500 €','Lavado profesional incluido','Fotografía profesional','Publicado en plataformas de pago','Mantenimiento hasta que se venda','Defendemos tu precio','Sin negociadores ni estafas','Nos encargamos de los trámites'];
+const tickHTML = TICK.map(t => `<span class="ctc-trust-item">${ic('check')}${t}</span>`).join('');
+$('ticker').innerHTML = tickHTML + tickHTML;
 
 /* ====== Calculadora ====== */
-const $ = id => document.getElementById(id);
 const eur = n => new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0,useGrouping:'always'}).format(n);
 const num = v => parseFloat(String(v).replace(/\./g,'').replace(',','.')) || 0;
 function calc(){
@@ -466,23 +665,106 @@ function calc(){
 ['cPrecio','cOferta'].forEach(i => $(i).addEventListener('input', calc));
 calc();
 
-/* ====== Formulario → WhatsApp (+ evento Lead de Meta) ====== */
-$('formulario').addEventListener('submit', e => {
-  e.preventDefault();
-  const f = e.target, msg = $('formMsg');
-  const v = n => f.elements[n].value.trim();
-  if(!v('nombre') || v('tel').replace(/\D/g,'').length < 9 || !v('marca') || !v('anio') || !v('km')){
-    msg.textContent = 'Revisa los campos: nombre, teléfono, marca/modelo, año y kilómetros.'; msg.style.color = '#b00020'; return;
-  }
-  if(!$('priv').checked){ msg.textContent = 'Debes aceptar la política de privacidad.'; msg.style.color = '#b00020'; return; }
-  try{ if(window.fbq) fbq('track','Lead'); }catch(_){}
-  const text = `Hola, quiero vender mi coche con vuestra gestión.%0A` +
-    `Nombre: ${encodeURIComponent(v('nombre'))}%0ATeléfono: ${encodeURIComponent(v('tel'))}%0A` +
-    `Coche: ${encodeURIComponent(v('marca'))} (${encodeURIComponent(v('anio'))}), ${encodeURIComponent(v('km'))} km` +
-    (v('oferta') ? `%0AOferta recibida: ${encodeURIComponent(v('oferta'))} €` : '');
-  msg.textContent = 'Abriendo WhatsApp…'; msg.style.color = '';
-  window.open(`https://wa.me/${WHATSAPP}?text=${text}`, '_blank', 'noopener');
+/* ====== Formularios en 2 pasos (hero + sección) ====== */
+const opts = (arr, ph) => `<option value="">${ph}</option>` + arr.map(a => `<option>${a}</option>`).join('');
+const yearNow = new Date().getFullYear();
+const YEARS = Array.from({length: 26}, (_, i) => yearNow - i);
+function formHTML(title, sub){
+  return `
+  <p class="ctc-form-title">${title}</p>
+  <p class="ctc-form-subtitle">${sub}</p>
+  <div class="ctc-stepper">
+    <div class="ctc-step active" data-ind="1"><div class="ctc-step-num">1</div><div class="ctc-step-label">Tu coche</div></div>
+    <div class="ctc-step" data-ind="2"><div class="ctc-step-num">2</div><div class="ctc-step-label">Tus datos</div></div>
+  </div>
+  <form novalidate>
+    <div class="ctc-form-panel active" data-panel="1">
+      <div class="ctc-field"><label>Marca del vehículo *</label><select name="marca" required>${opts(MARCAS.concat(['Otra']),'Selecciona marca…')}</select></div>
+      <div class="ctc-field"><label>Modelo *</label><input name="modelo" required placeholder="Ej: Golf, Serie 3, A4…"></div>
+      <div class="ctc-field-row">
+        <div class="ctc-field"><label>Año *</label><select name="anio" required>${opts(YEARS,'Año…')}</select></div>
+        <div class="ctc-field"><label>Kilómetros *</label><input name="km" inputmode="numeric" required placeholder="Ej: 85000"></div>
+      </div>
+      <div class="ctc-field-row">
+        <div class="ctc-field"><label>Combustible *</label><select name="comb" required>${opts(['Gasolina','Diésel','Híbrido','Eléctrico','GLP / GNC'],'Tipo…')}</select></div>
+        <div class="ctc-field"><label>Cambio *</label><select name="cambio" required>${opts(['Manual','Automático'],'Tipo…')}</select></div>
+      </div>
+      <div class="ctc-form-nav"><button type="button" class="ctc-btn-next" data-next>Siguiente ${ic('arrow')}</button></div>
+    </div>
+    <div class="ctc-form-panel" data-panel="2">
+      <div class="ctc-field"><label>Nombre *</label><input name="nombre" autocomplete="name" required placeholder="Tu nombre"></div>
+      <div class="ctc-field"><label>Teléfono *</label><input name="tel" type="tel" inputmode="tel" autocomplete="tel" required placeholder="600 000 000"></div>
+      <div class="ctc-field"><label>¿Qué oferta te han hecho? (opcional)</label><input name="oferta" inputmode="numeric" placeholder="€"></div>
+      <div class="ctc-privacy-check"><input type="checkbox" name="priv" required><label>Acepto la <a href="https://imperiumcars.es/politica-privacidad.php" target="_blank" rel="noopener">política de privacidad</a> y que me contacten sobre mi vehículo.</label></div>
+      <p class="ctc-form-msg" role="alert"></p>
+      <div class="ctc-form-nav"><button type="button" class="ctc-btn-prev" data-prev>${ic('back')} Atrás</button><button type="submit" class="ctc-btn-next">Enviar por WhatsApp ${ic('arrow')}</button></div>
+    </div>
+  </form>
+  <div class="ctc-form-success">
+    <div class="ctc-success-icon">${ic('tick')}</div>
+    <h3>¡Gracias! Ya casi está</h3>
+    <p>Se ha abierto WhatsApp con los datos de tu coche. Pulsa enviar y te contestamos en menos de 24 h laborables.</p>
+  </div>`;
+}
+function setStep(root, n){
+  root.querySelectorAll('.ctc-form-panel').forEach(p => p.classList.toggle('active', p.dataset.panel == n));
+  root.querySelectorAll('.ctc-step').forEach(s => {
+    const i = +s.dataset.ind; s.classList.toggle('active', i === n); s.classList.toggle('done', i < n);
+  });
+}
+function validate(panel){
+  let ok = true;
+  panel.querySelectorAll('[required]').forEach(el => {
+    if(el.type === 'checkbox') return;
+    const bad = !el.value.trim() || (el.name === 'tel' && el.value.replace(/\D/g,'').length < 9);
+    el.closest('.ctc-field').classList.toggle('err', bad); if(bad) ok = false;
+  });
+  return ok;
+}
+document.querySelectorAll('[data-form]').forEach(root => {
+  root.innerHTML = formHTML(root.dataset.title, root.dataset.sub);
+  const form = root.querySelector('form'), msg = root.querySelector('.ctc-form-msg');
+  root.querySelector('[data-next]').addEventListener('click', () => { if(validate(root.querySelector('[data-panel="1"]'))) setStep(root, 2); });
+  root.querySelector('[data-prev]').addEventListener('click', () => setStep(root, 1));
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    if(!validate(root.querySelector('[data-panel="2"]'))){ msg.textContent = 'Revisa tu nombre y teléfono.'; return; }
+    if(!form.elements.priv.checked){ msg.textContent = 'Debes aceptar la política de privacidad.'; return; }
+    msg.textContent = '';
+    const v = n => form.elements[n].value.trim(), q = encodeURIComponent;
+    try{ if(window.fbq) fbq('track','Lead'); }catch(_){}
+    const text = `Hola, quiero vender mi coche con vuestra gestión.%0A` +
+      `Nombre: ${q(v('nombre'))}%0ATeléfono: ${q(v('tel'))}%0A` +
+      `Coche: ${q(v('marca'))} ${q(v('modelo'))} (${q(v('anio'))}), ${q(v('km'))} km, ${q(v('comb'))}, ${q(v('cambio'))}` +
+      (v('oferta') ? `%0AOferta recibida: ${q(v('oferta'))} €` : '');
+    window.open(`https://wa.me/${WHATSAPP}?text=${text}`, '_blank', 'noopener');
+    form.style.display = 'none'; root.querySelector('.ctc-stepper').style.display = 'none';
+    root.querySelector('.ctc-form-success').style.display = 'block';
+  });
 });
+
+/* ====== FAQ ====== */
+document.querySelectorAll('.ctc-faq-question').forEach(b => b.addEventListener('click', () => {
+  const it = b.parentElement, open = it.classList.contains('open');
+  document.querySelectorAll('.ctc-faq-item.open').forEach(x => x.classList.remove('open'));
+  if(!open) it.classList.add('open');
+}));
+
+/* ====== Menú móvil ====== */
+const mt = $('menuToggle'), mm = $('menu');
+mt.addEventListener('click', () => { const o = mm.classList.toggle('open'); mt.classList.toggle('is-open', o); mt.setAttribute('aria-expanded', o); });
+mm.querySelectorAll('a').forEach(a => a.addEventListener('click', () => { mm.classList.remove('open'); mt.classList.remove('is-open'); }));
+
+/* ====== Aparición al hacer scroll ====== */
+if('IntersectionObserver' in window){
+  const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }), {threshold:.12});
+  document.querySelectorAll('.rv').forEach(el => io.observe(el));
+} else document.querySelectorAll('.rv').forEach(el => el.classList.add('in'));
+
+/* ====== Cookies ====== */
+try{ if(!localStorage.getItem('ic_cookies')) $('cookie-banner').style.display = 'block'; }catch(_){ $('cookie-banner').style.display = 'block'; }
+$('cookieOk').addEventListener('click', () => { $('cookie-banner').style.display = 'none'; try{ localStorage.setItem('ic_cookies','1'); }catch(_){} });
+
 $('yr').textContent = new Date().getFullYear();
 </script>
 </body>
