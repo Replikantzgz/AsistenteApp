@@ -133,6 +133,9 @@ caption{caption-side:bottom;text-align:left;padding:.7rem .85rem;font-size:.8rem
 .check li::before{content:"";position:absolute;left:0;top:.35rem;width:.95rem;height:.95rem;border:2px solid var(--accent);border-radius:3px}
 .src{columns:2 300px;column-gap:2rem;font-size:.82rem;padding-left:1.1rem}
 .src li{break-inside:avoid;margin-bottom:.4rem;overflow-wrap:anywhere}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem;min-width:0}
+.stat b{display:block;font:700 2.1rem/1 var(--display);color:var(--accent-text);font-variant-numeric:tabular-nums;margin-bottom:.3rem}
+.stat span{font-size:.85rem;color:var(--muted);line-height:1.4;display:block}
 footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
 @media (prefers-reduced-motion:no-preference){nav.toc a{transition:box-shadow .15s,border-color .15s}}
 </style>
@@ -157,8 +160,8 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
     <div class="kpis">
       <div class="kpi"><b>390–460 €</b><span>Tarifa mensual propuesta para la Fiorino, sin IVA, con mínimo 3–6 meses</span></div>
       <div class="kpi"><b>720–860 €</b><span>Tarifa mensual propuesta para la Master L2H2, sin IVA</span></div>
-      <div class="kpi"><b>18–20 %</b><span>Rentabilidad anual de caja con 85 % de ocupación, sin contar la pérdida de valor</span></div>
-      <div class="kpi"><b>6–9 %</b><span>Rentabilidad tras la pérdida de valor del vehículo, comprando a precio de mercado</span></div>
+      <div class="kpi"><b>22–27 %</b><span>Rentabilidad anual de caja con 85 % de ocupación y tus precios de compra (Fiorino 8.000 €, Master 14.000 €)</span></div>
+      <div class="kpi"><b>12–13 %</b><span>Rentabilidad tras la pérdida de valor del vehículo, con los mismos precios</span></div>
     </div>
   </div>
 </header>
@@ -166,14 +169,14 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
 <div class="wrap">
 <nav class="toc" aria-label="Secciones">
   <a href="#resumen">Resumen</a><a href="#mercado">Precios de mercado</a><a href="#compra">Qué comprar</a><a href="#costes">Costes</a>
-  <a href="#modelo">Calculadora</a><a href="#condiciones">Condiciones</a><a href="#clientes">Clientes</a><a href="#legal">Trámites</a>
+  <a href="#modelo">Calculadora</a><a href="#escenario">Tu escenario</a><a href="#condiciones">Condiciones</a><a href="#clientes">Clientes</a><a href="#legal">Trámites</a>
   <a href="#riesgos">Riesgos</a><a href="#marca">Marca</a><a href="#web">Plan web</a><a href="#siguiente">Siguientes pasos</a>
 </nav>
 
 <section id="resumen">
   <span class="eyebrow">Resumen</span>
-  <h2>El negocio sale, pero no como un piso</h2>
-  <p class="lead">En caja, una furgoneta bien alquilada devuelve entre un 18 % y un 20 % al año sobre lo invertido. Si descuentas lo que pierde de valor por los kilómetros, queda entre un 6 % y un 9 %. Es parecido o mejor que un piso, pero con más trabajo y más riesgo.</p>
+  <h2>Con tus precios de compra, el negocio sale</h2>
+  <p class="lead">Con una Fiorino a 8.000 € y una Master a 14.000 €, una furgoneta alquilada al 85 % devuelve entre un 22 % y un 27 % al año en caja. Si descuentas lo que pierde de valor por los kilómetros, queda entre un 12 % y un 13 %. Es claramente mejor que un piso, con más trabajo y más riesgo. A precios de mercado (sin tu descuento) quedaba en un 6–9 %: tu acceso a la compra es lo que hace el negocio.</p>
   <div class="grid2">
     <div class="card"><h3>Lo que sí encaja</h3>
       <ul class="clean">
@@ -189,7 +192,7 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
         <li>La Master de 3.500 kg no es válida para quien reparte paquetes de terceros sin su propia tarjeta de transporte. La Fiorino sí (ver Trámites).</li>
       </ul></div>
   </div>
-  <div class="callout"><p><b>Recomendación.</b> Empieza con 1 Master L2H2 y 1 Fiorino, o 2 Master. La Master tiene más margen en euros y menos clientes en conflicto con la normativa de transporte si se alquila a empresas con uso propio. Mientras llegan las furgonetas, monta una landing de validación y mide cuántas personas piden precio.</p></div>
+  <div class="callout"><p><b>Recomendación.</b> Tu plan de 3 Master L2H2 con alquiler mínimo de 6 meses es coherente con los números. Antes de comprar las tres, consigue reservas o cartas de intención firmadas de las empresas de tu contacto, y empieza con una o dos si no llegan. Mientras tanto, monta la landing de validación. Ver el detalle en "Tu escenario".</p></div>
 </section>
 
 <section id="mercado">
@@ -271,14 +274,14 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
   <div class="scroll"><table>
     <thead><tr><th>Concepto</th><th class="n">Fiorino</th><th class="n">Master L2H2</th><th>Base del dato</th></tr></thead>
     <tbody>
-      <tr><td>Compra</td><td class="n">9.500 €</td><td class="n">17.900 €</td><td>Anuncios actuales (ver Qué comprar)</td></tr>
-      <tr><td>Gastos de compra (transferencia, ITV, gestoría, puesta a punto)</td><td class="n">700 €</td><td class="n">1.000 €</td><td><span class="tag sup">Supuesto</span> Confirmar con gestoría según comunidad y origen de la compra</td></tr>
+      <tr><td>Compra</td><td class="n">8.000 €</td><td class="n">14.000 €</td><td>Tu precio. Los anuncios de mercado piden 8.500–10.500 € y 17.500–19.500 € (ver Qué comprar)</td></tr>
+      <tr><td>Gastos de compra (transferencia, ITV, gestoría)</td><td class="n">120 €</td><td class="n">120 €</td><td>Dato tuyo. Da por hecho que no hay impuesto de transmisión; si compras a un particular se paga, y conviene que lo confirme la gestoría</td></tr>
       <tr><td>Seguro al año</td><td class="n">1.000 €</td><td class="n">1.500 €</td><td><span class="tag sup">Supuesto</span> Un particular paga 250–600 € a todo riesgo y unos 1.000 € sin franquicia; el seguro de alquiler a terceros es más caro. Pide cotización a un corredor</td></tr>
       <tr><td>Mantenimiento y neumáticos al año</td><td class="n">800 €</td><td class="n">1.600 €</td><td>El renting de una Fiorino cuenta 498 €/año de mantenimiento y averías con 10.000 km/año. Una revisión cuesta 200–260 € cada 25.000–30.000 km. Alquilada hará 25.000–35.000 km/año, y el desgaste sube</td></tr>
       <tr><td>Impuesto de circulación e ITV</td><td class="n">150 €</td><td class="n">250 €</td><td><span class="tag sup">Supuesto</span> El renting de la Fiorino calcula 194 €/año de impuestos</td></tr>
       <tr><td>GPS, gestoría y administración</td><td class="n">300 €</td><td class="n">350 €</td><td><span class="tag sup">Supuesto</span></td></tr>
       <tr><td>Reserva por daños e impagos</td><td class="n">5 % de ingresos</td><td class="n">5 % de ingresos</td><td><span class="tag sup">Supuesto</span> La fianza cubre solo una parte</td></tr>
-      <tr><td>Pérdida de valor al año</td><td class="n">≈900 € (9,5 %)</td><td class="n">≈2.800 € (15,6 %)</td><td><span class="tag sup">Supuesto</span> Uso intensivo de 25.000–35.000 km/año</td></tr>
+      <tr><td>Pérdida de valor al año</td><td class="n">≈760 € (9,5 %)</td><td class="n">≈2.184 € (15,6 %)</td><td><span class="tag sup">Supuesto</span> Uso intensivo de 25.000–35.000 km/año, calculado sobre lo que pagas. Si al vender te pagan según el mercado de anuncios, serían ≈2.800 € en la Master</td></tr>
       <tr><td>Combustible</td><td class="n">0 €</td><td class="n">0 €</td><td>Lo paga el cliente (lleno/lleno)</td></tr>
     </tbody>
     <caption>Cada fila marcada como supuesto es editable en la calculadora de abajo.</caption>
@@ -288,7 +291,7 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
 <section id="modelo">
   <span class="eyebrow">Calculadora</span>
   <h2>Cámbialo y mira qué pasa</h2>
-  <p class="lead">Cada casilla se puede modificar. Los valores iniciales son los del estudio. Prueba a poner un descuento de compra: es tu ventaja por trabajar donde trabajas.</p>
+  <p class="lead">Cada casilla se puede modificar. Los valores iniciales son ya los tuyos: Fiorino a 8.000 € y Master a 14.000 €, con 120 € de gastos de compra. Prueba a bajar la Fiorino a 6.500 € o a subir la ocupación.</p>
   <div class="model" id="model"></div>
 
   <h3 style="margin-top:2rem">Beneficio de caja al año según ocupación</h3>
@@ -302,7 +305,54 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
     </tbody>
     <caption>Antes de la pérdida de valor y sin IVA. Con los supuestos de la tabla de costes.</caption>
   </table></div>
-  <div class="callout"><p><b>Lectura.</b> La Master gana más en euros y aguanta mejor una ocupación baja. La Fiorino necesita estar alquilada casi siempre para compensar el seguro y el mantenimiento. Comprando un 15 % más barato, la Master pasa de un 5,6 % a un 9 % de rentabilidad tras la pérdida de valor.</p></div>
+  <div class="callout"><p><b>Lectura.</b> La Master gana más en euros y aguanta mejor una ocupación baja. La Fiorino necesita estar alquilada casi siempre para compensar el seguro y el mantenimiento. Con tu precio de 14.000 €, la Master da un 11,9 % tras la pérdida de valor; con el precio de mercado (17.900 €) daba un 5,6 %.</p></div>
+</section>
+
+<section id="escenario">
+  <span class="eyebrow">Tu escenario</span>
+  <h2>3 Master L2H2 a 14.000 €, mínimo 6 meses</h2>
+  <p class="lead">Tarifa de 780 €/mes sin IVA (la de 6 meses), 85 % de ocupación y el resto de supuestos del estudio. Sin descuento de flota en seguro ni mantenimiento.</p>
+  <div class="grid3">
+    <div class="stat"><b>42.360 €</b><span>Inversión total: 3 × (14.000 € + 120 €)</span></div>
+    <div class="stat"><b>23.868 €</b><span>Ingresos al año sin IVA</span></div>
+    <div class="stat"><b>11.574 €</b><span>Beneficio de caja al año, un 27,3 % sobre lo invertido</span></div>
+    <div class="stat"><b>5.022 €</b><span>Resultado tras la pérdida de valor, un 11,9 %</span></div>
+    <div class="stat"><b>3,7 años</b><span>Para recuperar la inversión solo con la caja</span></div>
+    <div class="stat"><b>42 %</b><span>Ocupación mínima para no perder dinero en caja</span></div>
+  </div>
+
+  <h3 style="margin-top:2rem">Beneficio de caja al año: por furgoneta y entre las tres</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Tarifa mensual</th><th class="n">Ocupación 70 %</th><th class="n">Ocupación 85 %</th><th class="n">Ocupación 95 %</th></tr></thead>
+    <tbody>
+      <tr><td>780 €</td><td class="n">2.524 € · <b>7.572 €</b></td><td class="n">3.858 € · <b>11.574 €</b></td><td class="n">4.747 € · <b>14.241 €</b></td></tr>
+      <tr><td>850 €</td><td class="n">3.083 € · <b>9.249 €</b></td><td class="n">4.536 € · <b>13.608 €</b></td><td class="n">5.506 € · <b>16.518 €</b></td></tr>
+      <tr><td>900 €</td><td class="n">3.482 € · <b>10.446 €</b></td><td class="n">5.021 € · <b>15.063 €</b></td><td class="n">6.047 € · <b>18.141 €</b></td></tr>
+    </tbody>
+    <caption>Cada celda: una furgoneta · las tres. Antes de la pérdida de valor, sin IVA.</caption>
+  </table></div>
+
+  <div class="callout"><p><b>Sobre la demanda.</b> Que un cliente te diga que hay mucha demanda es una buena señal, pero es una sola voz. Con tu contacto de empresas de reparto tienes un atajo: pide a dos o tres empresas una carta de intención o una reserva firmada para 6 meses antes de comprar las tres. Si firman, el riesgo de ocupación baja mucho. Si dudan, empieza con una o dos.</p></div>
+
+  <h3>Lo que puede tumbar el 11,9 %</h3>
+  <ul class="clean">
+    <li><b>Seguro de uso en reparto.</b> Si cada Master paga 2.500 € al año en vez de 1.500 €, la rentabilidad total baja a un 4,8 % y necesitas un 53 % de ocupación para no perder en caja. Dile al corredor que el uso es alquiler a empresas de reparto: si no lo declaras, el seguro puede negarse a pagar un siniestro.</li>
+    <li><b>Pérdida de valor.</b> El 11,9 % supone que vendes a un precio proporcional al que pagaste. Si al vender te pagan según los anuncios de mercado (unos 2.800 € de pérdida al año), baja a un 7,5 %. Con 70 % de ocupación y esa pérdida, saldría un −2 %.</li>
+    <li><b>Un cliente, tres furgonetas.</b> Si las tres van a empresas del mismo contacto, un impago o un cambio de proveedor deja las tres paradas a la vez. Reparte entre al menos dos clientes distintos.</li>
+    <li><b>Tarjeta de transporte.</b> Una Master de 3.500 kg que reparte para terceros exige que el cliente tenga tarjeta MDL. Pídele copia a cada empresa antes de entregar.</li>
+    <li><b>Ocupación real.</b> Con 6 meses de mínimo hay semanas entre clientes (limpieza, revisión, ITV). El 85 % ya las incluye; con 95 % supones casi cero huecos.</li>
+  </ul>
+
+  <h3>Fiorino a 8.000 €, o a 6.000–8.000 €</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Precio de compra</th><th class="n">Rent. de caja</th><th class="n">Rent. total</th><th class="n">Recuperas en</th></tr></thead>
+    <tbody>
+      <tr><td>8.000 € (+120 €)</td><td class="n">22,4 %</td><td class="n">13,1 %</td><td class="n">4,5 años</td></tr>
+      <tr><td>6.500 € (+120 €)</td><td class="n">27,5 %</td><td class="n">18,2 %</td><td class="n">3,6 años</td></tr>
+    </tbody>
+    <caption>420 €/mes, 85 % de ocupación. Beneficio de caja de 1.820 € al año en los dos casos.</caption>
+  </table></div>
+  <div class="callout warn"><p><b>Ojo con las Fiorino de 6.000–8.000 €.</b> En los anuncios que encontré, las de 6.600–7.500 € tenían entre 110.000 y 150.000 km. Con tantos kilómetros el mantenimiento sube y el cliente de alquiler la nota. Si compras una así, revisa el estado del motor y sube la partida de mantenimiento por encima de 800 €.</p></div>
 </section>
 
 <section id="condiciones">
@@ -500,8 +550,8 @@ footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
 <script>
 (function(){
   var CFG=[
-    ['compra','Precio de compra (€)',9500,17900],
-    ['gc','Gastos de compra (€)',700,1000],
+    ['compra','Precio de compra (€)',8000,14000],
+    ['gc','Gastos de compra (€)',120,120],
     ['tarifa','Tarifa mensual sin IVA (€)',420,780],
     ['occ','Ocupación anual (%)',85,85],
     ['seg','Seguro al año (€)',1000,1500],
