@@ -1,0 +1,549 @@
+<title>Estudio Alquiler de Furgonetas</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Concepto: informe de trabajo para enseñar a socios, gestor y aseguradora. Tinta azul del Ebro + ámbar de señal de obra. */
+:root{
+  --bg:#F2F5F8; --surface:#FFFFFF; --fg:#0E2238; --muted:#4F5E6E; --line:#D8DFE6;
+  --accent:#FFB400; --accent-text:#8A5700; --panel:#0E2238; --panel-fg:#EAF0F6; --panel-muted:#9FB0C2;
+  --good:#17805A; --bad:#B3342A; --soft:#E9EEF3; --bar:#9FB0C2;
+  --display:'Barlow Condensed','Arial Narrow',Arial,sans-serif;
+  --body:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#09131F; --surface:#10202F; --fg:#E8EEF4; --muted:#9AA9B8; --line:#233548;
+  --accent-text:#FFB400; --panel:#0B1826; --panel-fg:#EAF0F6; --panel-muted:#93A5B8;
+  --good:#3CC592; --bad:#FF7B6E; --soft:#17283A; --bar:#3B5168; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#09131F; --surface:#10202F; --fg:#E8EEF4; --muted:#9AA9B8; --line:#233548;
+  --accent-text:#FFB400; --panel:#0B1826; --panel-fg:#EAF0F6; --panel-muted:#93A5B8;
+  --good:#3CC592; --bad:#FF7B6E; --soft:#17283A; --bar:#3B5168; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.6 var(--body);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 4rem}
+.wrap{max-width:1040px;margin:0 auto}
+h1,h2,h3{font-family:var(--display);font-weight:700;letter-spacing:.01em;line-height:1.05;margin:0;text-wrap:balance}
+h1{font-size:clamp(2.6rem,7vw,4.6rem)}
+h2{font-size:clamp(1.9rem,4.2vw,2.7rem);margin-bottom:.4rem}
+h3{font-size:1.45rem;margin-bottom:.4rem}
+p{margin:0 0 1rem;max-width:68ch}
+a{color:var(--accent-text);text-underline-offset:2px}
+.eyebrow{font:600 .75rem/1 var(--body);letter-spacing:.14em;text-transform:uppercase;color:var(--accent-text);display:block;margin-bottom:.6rem}
+section{padding-top:3.5rem}
+.lead{font-size:1.1rem;color:var(--muted)}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.tag{display:inline-block;font:600 .7rem/1 var(--body);letter-spacing:.06em;text-transform:uppercase;padding:.3rem .5rem;border-radius:4px;background:var(--soft);color:var(--muted);vertical-align:middle}
+.tag.ok{background:color-mix(in srgb,var(--good) 16%,transparent);color:var(--good)}
+.tag.no{background:color-mix(in srgb,var(--bad) 16%,transparent);color:var(--bad)}
+.tag.sup{background:color-mix(in srgb,var(--accent) 28%,transparent);color:var(--fg)}
+
+/* Cabecera */
+.top{background:var(--panel);color:var(--panel-fg);margin-inline:calc(-1*max(16px,env(safe-area-inset-left,0px)));
+  margin-top:0;padding:2.5rem max(16px,env(safe-area-inset-right,0px)) 3rem max(16px,env(safe-area-inset-left,0px))}
+.top .wrap{display:grid;gap:1.4rem}
+.top .meta{font:500 .8rem/1.4 var(--body);letter-spacing:.12em;text-transform:uppercase;color:var(--panel-muted)}
+.top h1 span{color:var(--accent)}
+.top p{color:var(--panel-muted);font-size:1.1rem}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.14);border-radius:10px;overflow:hidden;margin-top:.6rem}
+.kpi{background:var(--panel);padding:1.1rem 1.2rem;min-width:0}
+.kpi b{display:block;font:700 2.1rem/1 var(--display);color:var(--accent);margin-bottom:.35rem;font-variant-numeric:tabular-nums}
+.kpi span{font-size:.85rem;color:var(--panel-muted);line-height:1.4;display:block}
+nav.toc{display:flex;flex-wrap:wrap;gap:.4rem .5rem;padding-top:1.4rem}
+nav.toc a{font:500 .85rem/1 var(--body);text-decoration:none;color:var(--fg);padding:.5rem .8rem;border:1px solid var(--line);border-radius:999px;background:var(--surface)}
+nav.toc a:hover,nav.toc a:focus-visible{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 45%,transparent)}
+
+/* Bloques */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:1.3rem 1.4rem}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:1rem}
+.card > :last-child{margin-bottom:0}
+.callout{border-left:4px solid var(--accent);background:var(--surface);padding:1rem 1.2rem;border-radius:0 8px 8px 0;margin:1.2rem 0}
+.callout.warn{border-left-color:var(--bad)}
+.callout > :last-child{margin-bottom:0}
+ul.clean{margin:0 0 1rem;padding-left:1.15rem;display:grid;gap:.45rem;max-width:72ch}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:640px;font-size:.9rem;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:.7rem .85rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 .72rem/1.2 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--soft)}
+tr:last-child td{border-bottom:0}
+td.n,th.n{text-align:right}
+caption{caption-side:bottom;text-align:left;padding:.7rem .85rem;font-size:.8rem;color:var(--muted)}
+
+/* Barras de precio */
+.bars{display:grid;gap:.5rem;margin:1rem 0 .4rem}
+.bar{display:grid;grid-template-columns:minmax(120px,215px) 1fr;gap:.8rem;align-items:center;font-size:.88rem}
+.bar .l{min-width:0;line-height:1.3}
+.bar .l small{display:block;color:var(--muted);font-size:.75rem}
+.bar .t{display:flex;align-items:center;gap:.6rem;min-width:0}
+.bar .f{height:22px;border-radius:3px;background:var(--accent);width:calc(var(--w)*.86);min-width:4px}
+.bar.ref .f{background:var(--bar)}
+.bar.me .f{background:var(--fg)}
+.bar .v{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;font-size:.8rem;color:var(--muted);margin:.6rem 0 1.4rem}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:2px;margin-right:.4rem;vertical-align:-1px}
+@media(max-width:520px){.bar{grid-template-columns:1fr;gap:.2rem}}
+
+/* Modelo */
+.model{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:1rem;margin-top:1rem}
+.van h3 span{color:var(--accent-text)}
+.field{display:grid;grid-template-columns:1fr 112px;gap:.6rem;align-items:center;margin-bottom:.5rem;font-size:.85rem}
+.field label{color:var(--muted);line-height:1.3}
+.field input{width:100%;font:600 .9rem var(--body);color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums}
+.field input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.out{margin-top:1rem;border-top:2px solid var(--fg);padding-top:.6rem}
+.row{display:flex;justify-content:space-between;gap:1rem;padding:.35rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.row b{font-variant-numeric:tabular-nums;white-space:nowrap}
+.row.big{font-size:1.02rem}
+.row.big b{font:700 1.55rem/1.1 var(--display);color:var(--accent-text)}
+.row.neg b{color:var(--bad)}
+
+/* Marca */
+.brand{background:var(--panel);color:var(--panel-fg);border-radius:14px;padding:clamp(1.2rem,4vw,2.4rem);margin-top:1.2rem}
+.brand h3{color:var(--panel-fg)}
+.logos{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem}
+.logobox{border-radius:10px;padding:2rem 1.2rem;display:grid;place-items:center;min-height:190px}
+.logobox.l1{background:#F2F5F8;color:#0E2238}
+.logobox.l2{background:#0E2238;color:#F2F5F8;border:1px solid rgba(255,255,255,.18)}
+.logobox.l3{background:#FFB400;color:#0E2238}
+.lockup{display:flex;align-items:center;gap:.8rem}
+.lockup svg{width:68px;height:68px;flex:none}
+.lockup .w{font:700 2.6rem/.9 var(--display);letter-spacing:.06em}
+.lockup .w small{display:block;font:600 .78rem/1 var(--body);letter-spacing:.42em;margin-top:.45rem;opacity:.85}
+.sw{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem;margin-top:1.2rem}
+.sw div{border-radius:8px;padding:.9rem .9rem 1rem;min-height:112px;display:flex;flex-direction:column;justify-content:flex-end;font-size:.78rem;line-height:1.35}
+.sw b{font:700 1.1rem/1.1 var(--display);letter-spacing:.03em;display:block}
+.specimen{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem;margin-top:1.2rem}
+.specimen > div{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:1.1rem}
+.specimen .d{font:700 2.6rem/1 var(--display);letter-spacing:.02em}
+.ui{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:1rem;margin-top:1.2rem}
+.pcard{background:#F2F5F8;color:#0E2238;border-radius:12px;padding:1.2rem;display:grid;gap:.5rem}
+.pcard .n{font:700 1.7rem/1 var(--display)}
+.pcard .p{font:700 2.4rem/1 var(--display)}
+.pcard .p small{font:500 .85rem var(--body);color:#4F5E6E}
+.pcard ul{margin:0;padding-left:1.1rem;font-size:.85rem;display:grid;gap:.2rem}
+.pbtn{display:inline-block;background:#FFB400;color:#0E2238;font:700 .95rem var(--body);padding:.75rem 1.2rem;border-radius:8px;text-align:center}
+.pbtn.o{background:transparent;border:2px solid #FFB400;color:#FFB400}
+
+.steps{counter-reset:s;display:grid;gap:.8rem;list-style:none;padding:0;margin:1rem 0}
+.steps li{counter-increment:s;display:grid;grid-template-columns:2.2rem 1fr;gap:.8rem;align-items:start}
+.steps li::before{content:counter(s);display:grid;place-items:center;width:2.2rem;height:2.2rem;border-radius:50%;background:var(--accent);color:#0E2238;font:700 1.1rem var(--display)}
+.check li{list-style:none;position:relative;padding-left:1.7rem}
+.check li::before{content:"";position:absolute;left:0;top:.35rem;width:.95rem;height:.95rem;border:2px solid var(--accent);border-radius:3px}
+.src{columns:2 300px;column-gap:2rem;font-size:.82rem;padding-left:1.1rem}
+.src li{break-inside:avoid;margin-bottom:.4rem;overflow-wrap:anywhere}
+footer{padding-top:3rem;font-size:.85rem;color:var(--muted)}
+@media (prefers-reduced-motion:no-preference){nav.toc a{transition:box-shadow .15s,border-color .15s}}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="mark" viewBox="0 0 96 96">
+    <rect width="96" height="96" rx="20" fill="#FFB400"/>
+    <g stroke="#0E2238" stroke-width="3.5" stroke-linecap="round" fill="none"><path d="M7 38h9"/><path d="M5 47h11"/><path d="M8 56h8"/></g>
+    <path fill="#0E2238" d="M22 33h36v29H22z"/>
+    <path fill="#0E2238" d="M60 40h13.5l8.5 10.5V62H60z"/>
+    <path fill="#FFB400" d="M64 44h7.8l5 6.5H64z"/>
+    <circle cx="35" cy="64" r="7" fill="#0E2238"/><circle cx="35" cy="64" r="2.6" fill="#FFB400"/>
+    <circle cx="70" cy="64" r="7" fill="#0E2238"/><circle cx="70" cy="64" r="2.6" fill="#FFB400"/>
+  </symbol>
+</svg>
+
+<header class="top">
+  <div class="wrap">
+    <div class="meta">Estudio de mercado · Zaragoza · 28 noviembre 2026</div>
+    <h1>Alquiler de furgonetas <span>por meses</span></h1>
+    <p>Furgoneta pequeña de caja (Fiat Fiorino) y mediana de caja L2H2 (Renault Master): qué se cobra hoy, qué cuesta comprarlas, qué gastos tienen y si salen los números. Incluye propuesta de marca y plan de la web.</p>
+    <div class="kpis">
+      <div class="kpi"><b>390–460 €</b><span>Tarifa mensual propuesta para la Fiorino, sin IVA, con mínimo 3–6 meses</span></div>
+      <div class="kpi"><b>720–860 €</b><span>Tarifa mensual propuesta para la Master L2H2, sin IVA</span></div>
+      <div class="kpi"><b>18–20 %</b><span>Rentabilidad anual de caja con 85 % de ocupación, sin contar la pérdida de valor</span></div>
+      <div class="kpi"><b>6–9 %</b><span>Rentabilidad tras la pérdida de valor del vehículo, comprando a precio de mercado</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<nav class="toc" aria-label="Secciones">
+  <a href="#resumen">Resumen</a><a href="#mercado">Precios de mercado</a><a href="#compra">Qué comprar</a><a href="#costes">Costes</a>
+  <a href="#modelo">Calculadora</a><a href="#condiciones">Condiciones</a><a href="#clientes">Clientes</a><a href="#legal">Trámites</a>
+  <a href="#riesgos">Riesgos</a><a href="#marca">Marca</a><a href="#web">Plan web</a><a href="#siguiente">Siguientes pasos</a>
+</nav>
+
+<section id="resumen">
+  <span class="eyebrow">Resumen</span>
+  <h2>El negocio sale, pero no como un piso</h2>
+  <p class="lead">En caja, una furgoneta bien alquilada devuelve entre un 18 % y un 20 % al año sobre lo invertido. Si descuentas lo que pierde de valor por los kilómetros, queda entre un 6 % y un 9 %. Es parecido o mejor que un piso, pero con más trabajo y más riesgo.</p>
+  <div class="grid2">
+    <div class="card"><h3>Lo que sí encaja</h3>
+      <ul class="clean">
+        <li>El alquiler flexible por meses se cobra entre 1,7 y 2,9 veces lo que cuesta el renting de la misma furgoneta (Master L2H2 nueva en renting: 419–471 €/mes frente a 724–1.200 €/mes en alquiler mensual).</li>
+        <li>Con 3–6 meses de mínimo puedes cobrar menos que los alquileres de "desde 1 mes" y mucho más que un renting, y aun así ganar.</li>
+        <li>Hay un hueco claro: quien necesita furgoneta ya y no puede esperar semanas ni meses a que le entreguen el renting, o no cumple los requisitos de un renting.</li>
+      </ul></div>
+    <div class="card"><h3>Lo que hay que vigilar</h3>
+      <ul class="clean">
+        <li>La rentabilidad depende de la ocupación. Con 60 % la Fiorino casi no deja nada.</li>
+        <li>El seguro de una furgoneta de alquiler a terceros no es el de un particular. Es el dato más incierto de todo el estudio: necesita cotización real.</li>
+        <li>Con 3 furgonetas, una parada deja ese mes un 33 % menos de ingresos.</li>
+        <li>La Master de 3.500 kg no es válida para quien reparte paquetes de terceros sin su propia tarjeta de transporte. La Fiorino sí (ver Trámites).</li>
+      </ul></div>
+  </div>
+  <div class="callout"><p><b>Recomendación.</b> Empieza con 1 Master L2H2 y 1 Fiorino, o 2 Master. La Master tiene más margen en euros y menos clientes en conflicto con la normativa de transporte si se alquila a empresas con uso propio. Mientras llegan las furgonetas, monta una landing de validación y mide cuántas personas piden precio.</p></div>
+</section>
+
+<section id="mercado">
+  <span class="eyebrow">Mercado</span>
+  <h2>A cuánto se alquila hoy por meses</h2>
+  <p class="lead">Precios publicados "desde", en euros al mes sin IVA. No encontré ningún especialista local de alquiler mensual en Zaragoza con tarifas públicas: lo que aparece son oficinas de alquiler corto (Europcar, Sixt, Enterprise) y renting de largo plazo. Conviene confirmarlo llamando.</p>
+
+  <h3>Furgoneta pequeña de caja (≈3 m³)</h3>
+  <div class="bars" role="list">
+    <div class="bar ref" role="listitem" style="--w:23%"><div class="l">Renting 5 años, Berlingo<small>Total Renting · todo incluido · 10.000 km/año</small></div><div class="t"><div class="f"></div><span class="v">299</span></div></div>
+    <div class="bar" role="listitem" style="--w:35%"><div class="l">Renting66<small>mín. 1 mes · 2.500 km/mes</small></div><div class="t"><div class="f"></div><span class="v">458</span></div></div>
+    <div class="bar" role="listitem" style="--w:36%"><div class="l">Concerent (Sevilla)<small>sin permanencia · mantenimiento incluido</small></div><div class="t"><div class="f"></div><span class="v">469</span></div></div>
+    <div class="bar" role="listitem" style="--w:48%"><div class="l">RentoAuto<small>7.000 km/mes · 756,84 € con IVA</small></div><div class="t"><div class="f"></div><span class="v">625</span></div></div>
+    <div class="bar" role="listitem" style="--w:76%"><div class="l">Iberfurgo<small>"desde" · km no concretados</small></div><div class="t"><div class="f"></div><span class="v">990</span></div></div>
+    <div class="bar me" role="listitem" style="--w:32%"><div class="l"><b>Tu tarifa propuesta</b><small>Fiorino, mín. 3–6 meses</small></div><div class="t"><div class="f"></div><span class="v">390–460</span></div></div>
+  </div>
+
+  <h3>Furgoneta mediana de caja L2H2 (≈10–13 m³)</h3>
+  <div class="bars" role="list">
+    <div class="bar ref" role="listitem" style="--w:32%"><div class="l">Renting 5 años, Master L2H2<small>Total Renting · a estrenar · 10.000 km/año</small></div><div class="t"><div class="f"></div><span class="v">419–471</span></div></div>
+    <div class="bar" role="listitem" style="--w:56%"><div class="l">Just Renting, L2H2<small>sin permanencia · todo incluido</small></div><div class="t"><div class="f"></div><span class="v">724</span></div></div>
+    <div class="bar" role="listitem" style="--w:56%"><div class="l">Concerent, grande 10–12 m³<small>seguro, mantenimiento, ITV</small></div><div class="t"><div class="f"></div><span class="v">733</span></div></div>
+    <div class="bar" role="listitem" style="--w:64%"><div class="l">Renting66, 12 m³<small>mín. 1 mes · 5.000 km/mes</small></div><div class="t"><div class="f"></div><span class="v">830</span></div></div>
+    <div class="bar" role="listitem" style="--w:69%"><div class="l">RentoAuto, 11–13 m³<small>7.000 km/mes · 1.061–1.096 € con IVA</small></div><div class="t"><div class="f"></div><span class="v">877–906</span></div></div>
+    <div class="bar" role="listitem" style="--w:92%"><div class="l">Furgonetas Irama<small>4.000 km/mes · fianza 300 €</small></div><div class="t"><div class="f"></div><span class="v">1.200</span></div></div>
+    <div class="bar" role="listitem" style="--w:99%"><div class="l">Iberfurgo, 12–15 m³<small>"desde"</small></div><div class="t"><div class="f"></div><span class="v">1.290</span></div></div>
+    <div class="bar me" role="listitem" style="--w:60%"><div class="l"><b>Tu tarifa propuesta</b><small>Master L2H2, mín. 3–6 meses</small></div><div class="t"><div class="f"></div><span class="v">720–860</span></div></div>
+  </div>
+  <div class="legend"><span><i style="background:var(--accent)"></i>Alquiler mensual de terceros</span><span><i style="background:var(--bar)"></i>Renting de 4–5 años (referencia de suelo)</span><span><i style="background:var(--fg)"></i>Tu tarifa propuesta</span></div>
+  <p class="small muted">Athlon también publica alquiler flexible de furgoneta de carga pequeña, con cifras de 637,62 €/mes (1–2 meses) a 475,21 €/mes (11 meses o más) más IVA. Su web bloqueó la lectura, así que ese dato viene solo del buscador y no está verificado.</p>
+
+  <h3>Condiciones que ofrece la competencia</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Proveedor</th><th>Mínimo</th><th>Km incluidos</th><th>Fianza</th><th>Seguro</th><th>Mantenimiento</th><th>Requisitos</th></tr></thead>
+    <tbody>
+      <tr><td>Renting66</td><td>1 mes</td><td>2.500–5.000/mes</td><td>Importe no publicado; retienen 1 mes de alquiler</td><td>Todo riesgo con franquicia</td><td>Sustitución y asistencia</td><td>25 años, 1 año de carnet, tarjeta</td></tr>
+      <tr><td>RentoAuto</td><td>No consta</td><td>7.000/mes</td><td>150 €</td><td>Todo riesgo con franquicia</td><td>No consta</td><td>25–70 años, tarjeta física</td></tr>
+      <tr><td>Furgonetas Irama</td><td>Renovable cada mes</td><td>4.000/mes; extra 0,20 €/km</td><td>300 €</td><td>Terceros básico</td><td>Preventivo incluido</td><td>No consta</td></tr>
+      <tr><td>Concerent</td><td>Sin permanencia</td><td>No consta</td><td>No consta</td><td>Terceros; todo riesgo con suplemento</td><td>Incluido, con ITV e impuestos</td><td>No consta</td></tr>
+      <tr><td>Just Renting</td><td>Desde 1 mes (su tabla dice 6 para particulares)</td><td>No consta</td><td>No consta</td><td>Todo riesgo</td><td>Incluido</td><td>Carnet y tarjeta de débito</td></tr>
+      <tr><td>Iberfurgo</td><td>No consta</td><td>Ilimitado o ampliado</td><td>Tarjeta de crédito</td><td>Todo riesgo con franquicia</td><td>ITV y mantenimiento en la mayoría</td><td>Carnet B; 1 año de antigüedad</td></tr>
+      <tr><td>Total Renting (renting)</td><td>48–60 meses</td><td>10.000–20.000/año</td><td>Sin entrada ni fianza</td><td>Todo riesgo sin franquicia</td><td>Incluido, con neumáticos</td><td>Autónomo con 1 año; sin Asnef</td></tr>
+    </tbody>
+    <caption>Fuente: páginas de cada proveedor leídas el 28/11/2026. "No consta" significa que la web no lo publica.</caption>
+  </table></div>
+
+  <div class="callout"><p><b>Lo que enseñan estos datos.</b> (1) El alquiler mensual de terceros cuesta casi el doble que un renting; esa diferencia es tu margen y tu argumento de venta (sin permanencia de años, sin esperas). (2) Los extras son pequeños: fianzas de 150–300 € y entre 2.500 y 7.000 km/mes. (3) El renting tarda "entre unas semanas y un par de meses" en entregar y exige ser autónomo con un año de antigüedad y no estar en Asnef. Quien no cumple eso o tiene prisa es cliente tuyo.</p></div>
+</section>
+
+<section id="compra">
+  <span class="eyebrow">Compra</span>
+  <h2>Qué cuesta comprarlas</h2>
+  <p class="lead">Precios de anuncios y de ventas cerradas encontrados hoy. Son precios de mercado: tu acceso por trabajo debería mejorarlos.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Modelo</th><th>Año</th><th class="n">Km</th><th class="n">Precio</th><th>Origen</th></tr></thead>
+    <tbody>
+      <tr><td>Fiorino Cargo SX 1.3 Mjet 80 CV</td><td>2020</td><td class="n">40.965</td><td class="n">9.500 €</td><td>Anuncio (Lugo, Pontevedra)</td></tr>
+      <tr><td>Fiorino (media del mercado)</td><td>2020</td><td class="n">≈121.900</td><td class="n">8.959 €</td><td>Autouncle, rango 6.565–11.416 €</td></tr>
+      <tr><td>Fiorino (media del mercado)</td><td>2019</td><td class="n">≈114.000</td><td class="n">7.480 €</td><td>Autouncle, rango 6.280–8.865 €</td></tr>
+      <tr><td>Fiorino Cargo Base</td><td>2019</td><td class="n">111.227</td><td class="n">7.190 €</td><td>Anuncio en Madrid</td></tr>
+      <tr><td>Fiorino (venta cerrada)</td><td>2020</td><td class="n">129.068</td><td class="n">7.150 €</td><td>csvmotor</td></tr>
+      <tr><td>Master DC T L2H2 3500 dCi 135 CV</td><td>2020</td><td class="n">66.531</td><td class="n">17.990 €</td><td>Carnovo (Madrid)</td></tr>
+      <tr><td>Master L2H2 2.3 dCi</td><td>2020</td><td class="n">≈88.000</td><td class="n">17.800 €</td><td>Wallapop (Mataró); el anuncio dice 80.000 y 90.000 km en otros sitios</td></tr>
+      <tr><td>Master (media de todas las versiones)</td><td>2019–2020</td><td class="n">≈100.000</td><td class="n">20.650–21.000 €</td><td>Autouncle, rango 15.067–26.840 €</td></tr>
+    </tbody>
+    <caption>Fuentes al final. Los precios cambian rápido: confirma cada anuncio con ficha, historial de mantenimiento y kilometraje real.</caption>
+  </table></div>
+  <div class="grid2" style="margin-top:1rem">
+    <div class="card"><h3>Fiat Fiorino</h3>
+      <p>Con menos de 100.000 km, 2019–2021, cuenta con <b>8.500–10.500 €</b>. Casi todo lo barato (6.600–7.500 €) tiene más de 110.000 km. Es una furgoneta de 2 plazas y unos 2,8 m³ (verifica el dato en la ficha técnica), válida para reparto ligero y servicios técnicos. Los clientes que alquilan por meses suelen preferir 3 plazas y más volumen (Berlingo, Partner, Kangoo), así que valora esas alternativas.</p></div>
+    <div class="card"><h3>Renault Master L2H2</h3>
+      <p>Con menos de 100.000 km, 2019–2021, cuenta con <b>17.500–19.500 €</b>. Busca 2.3 dCi de 130–135 CV, 3.500 kg, Euro 6 (etiqueta C) y mantenimiento en red. No he buscado 2017–2018 en concreto; por su uso profesional suelen llevar más kilómetros. Pon el límite en 100.000 km y pide siempre el historial de revisiones.</p></div>
+  </div>
+</section>
+
+<section id="costes">
+  <span class="eyebrow">Costes</span>
+  <h2>Qué gastos tiene cada furgoneta</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Concepto</th><th class="n">Fiorino</th><th class="n">Master L2H2</th><th>Base del dato</th></tr></thead>
+    <tbody>
+      <tr><td>Compra</td><td class="n">9.500 €</td><td class="n">17.900 €</td><td>Anuncios actuales (ver Qué comprar)</td></tr>
+      <tr><td>Gastos de compra (transferencia, ITV, gestoría, puesta a punto)</td><td class="n">700 €</td><td class="n">1.000 €</td><td><span class="tag sup">Supuesto</span> Confirmar con gestoría según comunidad y origen de la compra</td></tr>
+      <tr><td>Seguro al año</td><td class="n">1.000 €</td><td class="n">1.500 €</td><td><span class="tag sup">Supuesto</span> Un particular paga 250–600 € a todo riesgo y unos 1.000 € sin franquicia; el seguro de alquiler a terceros es más caro. Pide cotización a un corredor</td></tr>
+      <tr><td>Mantenimiento y neumáticos al año</td><td class="n">800 €</td><td class="n">1.600 €</td><td>El renting de una Fiorino cuenta 498 €/año de mantenimiento y averías con 10.000 km/año. Una revisión cuesta 200–260 € cada 25.000–30.000 km. Alquilada hará 25.000–35.000 km/año, y el desgaste sube</td></tr>
+      <tr><td>Impuesto de circulación e ITV</td><td class="n">150 €</td><td class="n">250 €</td><td><span class="tag sup">Supuesto</span> El renting de la Fiorino calcula 194 €/año de impuestos</td></tr>
+      <tr><td>GPS, gestoría y administración</td><td class="n">300 €</td><td class="n">350 €</td><td><span class="tag sup">Supuesto</span></td></tr>
+      <tr><td>Reserva por daños e impagos</td><td class="n">5 % de ingresos</td><td class="n">5 % de ingresos</td><td><span class="tag sup">Supuesto</span> La fianza cubre solo una parte</td></tr>
+      <tr><td>Pérdida de valor al año</td><td class="n">≈900 € (9,5 %)</td><td class="n">≈2.800 € (15,6 %)</td><td><span class="tag sup">Supuesto</span> Uso intensivo de 25.000–35.000 km/año</td></tr>
+      <tr><td>Combustible</td><td class="n">0 €</td><td class="n">0 €</td><td>Lo paga el cliente (lleno/lleno)</td></tr>
+    </tbody>
+    <caption>Cada fila marcada como supuesto es editable en la calculadora de abajo.</caption>
+  </table></div>
+</section>
+
+<section id="modelo">
+  <span class="eyebrow">Calculadora</span>
+  <h2>Cámbialo y mira qué pasa</h2>
+  <p class="lead">Cada casilla se puede modificar. Los valores iniciales son los del estudio. Prueba a poner un descuento de compra: es tu ventaja por trabajar donde trabajas.</p>
+  <div class="model" id="model"></div>
+
+  <h3 style="margin-top:2rem">Beneficio de caja al año según ocupación</h3>
+  <div class="scroll"><table>
+    <thead><tr><th>Ocupación</th><th class="n">Fiorino (420 €/mes)</th><th class="n">Master (780 €/mes)</th></tr></thead>
+    <tbody>
+      <tr><td>60 %</td><td class="n">623 €</td><td class="n">1.635 €</td></tr>
+      <tr><td>70 %</td><td class="n">1.102 €</td><td class="n">2.524 €</td></tr>
+      <tr><td>85 %</td><td class="n">1.820 €</td><td class="n">3.858 €</td></tr>
+      <tr><td>95 %</td><td class="n">2.299 €</td><td class="n">4.747 €</td></tr>
+    </tbody>
+    <caption>Antes de la pérdida de valor y sin IVA. Con los supuestos de la tabla de costes.</caption>
+  </table></div>
+  <div class="callout"><p><b>Lectura.</b> La Master gana más en euros y aguanta mejor una ocupación baja. La Fiorino necesita estar alquilada casi siempre para compensar el seguro y el mantenimiento. Comprando un 15 % más barato, la Master pasa de un 5,6 % a un 9 % de rentabilidad tras la pérdida de valor.</p></div>
+</section>
+
+<section id="condiciones">
+  <span class="eyebrow">Condiciones</span>
+  <h2>Cómo plantear tarifas y contrato</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Concepto</th><th>Fiorino</th><th>Master L2H2</th></tr></thead>
+    <tbody>
+      <tr><td>Tarifa mínimo 3 meses</td><td>460 €/mes</td><td>860 €/mes</td></tr>
+      <tr><td>Tarifa mínimo 6 meses</td><td>420 €/mes</td><td>780 €/mes</td></tr>
+      <tr><td>Tarifa 12 meses o más</td><td>390 €/mes</td><td>720 €/mes</td></tr>
+      <tr><td>Kilómetros incluidos</td><td>3.000 al mes</td><td>4.000 al mes</td></tr>
+      <tr><td>Kilómetro extra</td><td>0,12 €</td><td>0,18 €</td></tr>
+      <tr><td>Fianza</td><td>450 € (1 mes)</td><td>900 € (1 mes)</td></tr>
+      <tr><td>Franquicia a cargo del cliente</td><td>600 €</td><td>1.000 €</td></tr>
+    </tbody>
+    <caption>Propuesta de partida. Todos los importes sin IVA salvo la fianza. El mercado usa fianzas de 150–300 €, así que una fianza de un mes es más alta que la media: vale la pena porque no hay otra garantía.</caption>
+  </table></div>
+  <div class="grid2" style="margin-top:1rem">
+    <div class="card"><h3>Cobro</h3>
+      <ul class="clean"><li>Primer mes y fianza en mano o por transferencia el día de la entrega.</li><li>Resto de cuotas por domiciliación SEPA, con cargo los primeros días del mes.</li><li>Recibo y factura mensual con IVA del 21 %.</li><li>Cancelación anticipada: pierde la fianza o paga un mes.</li></ul></div>
+    <div class="card"><h3>Requisitos del cliente</h3>
+      <ul class="clean"><li>Mínimo 25 años y 2 años de carnet (la competencia pide 25 y 1).</li><li>DNI o CIF, carnet, justificante de domicilio y de actividad.</li><li>Consulta de morosidad antes de entregar.</li><li>Empresas: escritura y firma del representante.</li></ul></div>
+    <div class="card"><h3>Qué incluye la cuota</h3>
+      <ul class="clean"><li>Mantenimiento preventivo y neumáticos por desgaste normal.</li><li>Seguro con franquicia del cliente.</li><li>Asistencia en carretera.</li><li>No incluye: combustible, multas, peajes, averías por mal uso.</li></ul></div>
+    <div class="card"><h3>Entrega y devolución</h3>
+      <ul class="clean"><li>Entrega y devolución en tu nave o campa de Zaragoza.</li><li>Acta con fotos y kilometraje firmadas por ambos.</li><li>GPS e inmovilizador instalados.</li><li>Revisión del kilometraje cada mes y de estado cada trimestre.</li></ul></div>
+  </div>
+</section>
+
+<section id="clientes">
+  <span class="eyebrow">Clientes</span>
+  <h2>Quién alquila una furgoneta por meses</h2>
+  <div class="grid3">
+    <div class="card"><h3>Autónomos de reparto</h3><p class="small">Mensajería, última milla, paquetería. Encajan con la Fiorino. En temporada alta (Black Friday, Navidad) piden flota flexible.</p></div>
+    <div class="card"><h3>Instaladores y reformas</h3><p class="small">Fontaneros, electricistas, pintores, técnicos. Necesitan una furgoneta unos meses para una obra o mientras arreglan la suya.</p></div>
+    <div class="card"><h3>Pymes de puente</h3><p class="small">Esperan la entrega de un renting o de una compra. Tu ventaja es entregar en días.</p></div>
+    <div class="card"><h3>Sin acceso a renting</h3><p class="small">Autónomos con menos de un año o con incidencias de pago. Pagan más, pero son el riesgo mayor: exige fianza, GPS y domiciliación.</p></div>
+    <div class="card"><h3>Empresas de mudanzas y logística</h3><p class="small">Necesitan Master L2H2 para refuerzo temporal. Cuentan con su propia autorización de transporte.</p></div>
+    <div class="card"><h3>Particulares de larga estancia</h3><p class="small">Mudanzas largas o proyectos personales. Volumen pequeño y trato más costoso. No es el foco.</p></div>
+  </div>
+  <div class="callout"><p><b>Qué no sé.</b> No encontré datos fiables de demanda local. Un informe cita unas 130.000 furgonetas de reparto en España, pero no dice cuántas se alquilan. Antes de comprar la segunda unidad, mide la demanda con la landing y un anuncio de 100–300 €.</p></div>
+</section>
+
+<section id="legal">
+  <span class="eyebrow">Trámites</span>
+  <h2>Lo que tiene que confirmar un gestor</h2>
+  <p class="lead">Estos puntos salen de fuentes oficiales y divulgativas. Ninguno sustituye a una consulta con gestoría antes de comprar.</p>
+  <ul class="clean">
+    <li><b>Autorización de alquiler sin conductor.</b> El Ministerio de Transportes anunció en 2017 que se suprime la exigencia de autorización para arrendar vehículos sin conductor, aunque siguen vigentes las normas sobre cómo se ejerce la actividad y cómo se usan los vehículos arrendados. Confirma qué reglas se mantienen hoy.</li>
+    <li><b>Alta fiscal.</b> El epígrafe del IAE 854.1 corresponde a "alquiler de automóviles sin conductor" y el 854.2 al renting. No pude confirmar que las furgonetas entren en el 854.1: la gestoría tiene que verlo. Necesitas alta como autónomo o sociedad, porque es una actividad económica habitual.</li>
+    <li><b>IVA.</b> Repercutes el 21 % a tus clientes. Lo que puedas deducir en la compra depende de quién te vende: un particular no te factura IVA y un concesionario en régimen de margen tampoco lo hace deducible.</li>
+    <li><b>Tarjeta de transporte del cliente.</b> Con vehículos de hasta 3.500 kg, el transporte de mercancías propias está exento de autorización. Quien hace transporte público de mercancías para terceros necesita tarjeta MDL con vehículos de más de 2 toneladas. La Master de 3.500 kg queda fuera de ese uso para repartidores sin tarjeta. Comprueba el peso máximo de la Fiorino en su ficha técnica.</li>
+    <li><b>Zona de Bajas Emisiones de Zaragoza.</b> La última fase empezó el 12 de diciembre de 2025. Los vehículos con distintivo B, C, ECO o CERO circulan sin registrarse. En noviembre de 2026 se anunció un acuerdo para activar las restricciones solo en episodios de contaminación por dióxido de nitrógeno, pendiente de aprobación. Compra diésel Euro 6 con etiqueta C.</li>
+    <li><b>Contrato y entrega.</b> Una guía jurídica indica que el contrato debe firmarse en el local del arrendador, aunque la entrega pueda ser en otro sitio. Verifica si sigue vigente.</li>
+    <li><b>Tu situación laboral.</b> Si compras a través de tu trabajo, revisa que tu contrato permita una actividad paralela y cómo se factura cada operación.</li>
+  </ul>
+</section>
+
+<section id="riesgos">
+  <span class="eyebrow">Riesgos</span>
+  <h2>Qué puede salir mal</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Riesgo</th><th>Efecto</th><th>Cómo reducirlo</th></tr></thead>
+    <tbody>
+      <tr><td>Impago o desaparición del cliente</td><td>Meses sin cobrar y furgoneta fuera de control</td><td>Fianza de un mes, SEPA, consulta de morosidad, GPS e inmovilizador, contrato con cláusula de recuperación</td></tr>
+      <tr><td>Accidente o daños</td><td>Parada y franquicia</td><td>Todo riesgo con franquicia a cargo del cliente, acta de entrega con fotos</td></tr>
+      <tr><td>Ocupación baja</td><td>Cae la caja</td><td>Tarifa de 3 meses más alta que la de 6, mínimo de contrato, anuncios locales continuos</td></tr>
+      <tr><td>Avería grave del motor</td><td>Gasto de miles de euros</td><td>Comprar con historial, revisión previa, reserva de 3–5 % de ingresos</td></tr>
+      <tr><td>Seguro rechazado o muy caro</td><td>Mata la rentabilidad</td><td>Cotizar con corredores de flotas antes de comprar nada</td></tr>
+      <tr><td>Pocas unidades</td><td>Una parada pesa mucho</td><td>Empezar con 2 y crecer cuando la ocupación sea estable</td></tr>
+      <tr><td>Pérdida de valor mayor de lo previsto</td><td>El total baja del 5 %</td><td>Controlar kilómetros, vender a los 2–3 años, comprar barato</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="marca">
+  <span class="eyebrow">Marca</span>
+  <h2>Nombre, colores y primer logo</h2>
+  <p class="lead">Propuesta de partida para decidir. La disponibilidad de dominios es una consulta de registro del 28/11/2026: no he reservado nada. Antes de decidir, comprueba el nombre en la OEPM.</p>
+
+  <div class="scroll"><table>
+    <thead><tr><th>Opción</th><th>Idea</th><th>Dominios</th></tr></thead>
+    <tbody>
+      <tr><td><b>A. Cierzo Vans</b> <span class="tag ok">Recomendada</span></td><td>El cierzo es el viento del valle del Ebro. Nombre propio, corto, aragonés y fácil de decir. No depende de Imperium.</td><td>cierzovans.es <span class="tag ok">libre</span> · cierzovans.com <span class="tag ok">libre</span> · cierzorent.es <span class="tag ok">libre</span> · cierzofurgonetas.es <span class="tag ok">libre</span></td></tr>
+      <tr><td><b>B. Imperium Vans</b></td><td>Sub-marca de Imperium Cars. Aprovecha su reputación y sus reseñas, pero liga el negocio a esa marca.</td><td>imperiumvans.es <span class="tag ok">libre</span> · imperiumvans.com <span class="tag no">ocupado</span> · imperiumfurgonetas.es <span class="tag ok">libre</span></td></tr>
+      <tr><td><b>C. Furgoneo / Ebro Vans</b></td><td>Más coloquial (Furgoneo) o más geográfico (Ebro Vans).</td><td>furgoneo.es <span class="tag ok">libre</span> · ebrovans.es <span class="tag ok">libre</span> · furgoebro.es <span class="tag ok">libre</span></td></tr>
+      <tr><td>Genéricos con ciudad</td><td>Buen SEO, poca marca.</td><td>furgozaragoza.es <span class="tag ok">libre</span> · vanzaragoza.es <span class="tag ok">libre</span> · alquilerfurgonetaszaragoza.es <span class="tag no">ocupado</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="brand">
+    <h3>Cierzo Vans · dirección visual</h3>
+    <p style="color:var(--panel-muted)">Una marca de utilidad: tinta azul oscuro como el asfalto de noche y ámbar de señal de obra. Se lee desde lejos, se imprime en la furgoneta y funciona en pantalla.</p>
+    <div class="logos">
+      <div class="logobox l1"><div class="lockup"><svg aria-hidden="true"><use href="#mark"/></svg><div class="w">CIERZO<small>VANS</small></div></div></div>
+      <div class="logobox l2"><div class="lockup"><svg aria-hidden="true"><use href="#mark"/></svg><div class="w">CIERZO<small>VANS</small></div></div></div>
+      <div class="logobox l3"><div class="lockup"><svg aria-hidden="true"><use href="#mark"/></svg><div class="w">CIERZO<small>VANS</small></div></div></div>
+    </div>
+    <p class="small" style="color:var(--panel-muted);margin-top:.8rem">El símbolo es una furgoneta de perfil con tres líneas de viento detrás. Es un boceto de trabajo: un diseñador debería afinar proporciones antes de rotular vehículos.</p>
+
+    <div class="sw">
+      <div style="background:#0E2238;border:1px solid rgba(255,255,255,.25);color:#EAF0F6"><b>Tinta Ebro</b>#0E2238 · fondos, texto</div>
+      <div style="background:#FFB400;color:#0E2238"><b>Ámbar señal</b>#FFB400 · acciones, acentos</div>
+      <div style="background:#F2F5F8;color:#0E2238"><b>Niebla</b>#F2F5F8 · fondo claro</div>
+      <div style="background:#4F5E6E;color:#fff"><b>Acero</b>#4F5E6E · texto secundario</div>
+      <div style="background:#17805A;color:#fff"><b>Disponible</b>#17805A · estado libre</div>
+      <div style="background:#B3342A;color:#fff"><b>Alquilada</b>#B3342A · estado ocupada</div>
+    </div>
+
+    <div class="specimen">
+      <div><div class="d">Barlow Condensed</div><p class="small" style="color:var(--panel-muted);margin:.6rem 0 0">Titulares, precios y rótulos. Estrecha, firme, legible a distancia. Gratuita en Google Fonts.</p></div>
+      <div><div style="font:600 1.5rem/1.2 var(--body)">Inter</div><p class="small" style="color:var(--panel-muted);margin:.6rem 0 0">Texto de la web, tablas y formularios. Gratuita en Google Fonts.</p></div>
+    </div>
+
+    <div class="ui">
+      <div class="pcard"><div class="n">Renault Master L2H2</div><div class="p">780 € <small>/mes + IVA · mín. 6 meses</small></div>
+        <ul><li>4.000 km al mes incluidos</li><li>Mantenimiento y asistencia</li><li>Recogida en Zaragoza</li></ul><span class="pbtn">Solicitar esta furgoneta</span></div>
+      <div class="pcard" style="background:#0E2238;color:#EAF0F6"><div class="n">Fiat Fiorino Cargo</div><div class="p">420 € <small style="color:#9FB0C2">/mes + IVA · mín. 6 meses</small></div>
+        <ul><li>3.000 km al mes incluidos</li><li>Ideal para reparto y servicios</li><li>Disponible esta semana</li></ul><span class="pbtn o">Pedir precio</span></div>
+    </div>
+
+    <p style="margin-top:1.2rem;color:var(--panel-muted)"><b style="color:var(--panel-fg)">Lema.</b> "Furgonetas por meses en Zaragoza. Sin rodeos." <b style="color:var(--panel-fg)">Tono.</b> Directo, de tú, con el precio por delante. Frases cortas, sin jerga de renting.</p>
+  </div>
+</section>
+
+<section id="web">
+  <span class="eyebrow">Plan de la web</span>
+  <h2>Qué construiremos, antes de programar</h2>
+  <p class="lead">Una web pública para mostrar las furgonetas, sus precios y condiciones, y recibir solicitudes. Sin pasarela de pago: el cobro del primer mes y la fianza se hacen en persona.</p>
+  <div class="grid2">
+    <div class="card"><h3>Páginas</h3>
+      <ul class="clean"><li><b>Inicio:</b> propuesta de valor, buscador por duración y tipo, flota destacada.</li><li><b>Flota:</b> listado y ficha de cada furgoneta con fotos, medidas, carga útil, precio por tramos, km incluidos, fianza y estado (disponible o alquilada hasta una fecha).</li><li><b>Cómo alquilar:</b> los pasos y los documentos.</li><li><b>Condiciones:</b> seguro, franquicia, kilómetros, devolución.</li><li><b>Recogida y devolución:</b> dirección, horario y mapa.</li><li><b>Preguntas frecuentes, contacto y legales.</b></li></ul></div>
+    <div class="card"><h3>Qué hace en la v1</h3>
+      <ul class="clean"><li>Formulario de solicitud: furgoneta, fecha de inicio, duración, tipo de cliente, teléfono.</li><li>Aviso inmediato por correo y WhatsApp.</li><li>Panel privado: altas de furgonetas, tarifas, disponibilidad y lista de solicitudes con su estado.</li><li>Etiqueta "disponible desde…" en cada ficha.</li><li>Eventos de medición para Meta y Google.</li></ul></div>
+    <div class="card"><h3>Flujo del cliente</h3>
+      <ol class="steps"><li><span>Elige furgoneta y envía la solicitud.</span></li><li><span>Le llamas, confirmas requisitos y disponibilidad.</span></li><li><span>Quedáis en persona: contrato, primer mes y fianza.</span></li><li><span>Entrega con acta. Cuotas por SEPA.</span></li></ol></div>
+    <div class="card"><h3>Pila técnica propuesta</h3>
+      <ul class="clean"><li>Next.js en Vercel (ya usas ese entorno en este repositorio).</li><li>Supabase para furgonetas, tarifas, solicitudes y panel con acceso privado.</li><li>Fotos optimizadas y datos estructurados de producto para buscadores.</li><li>v2: contrato digital, cobro con pasarela, área de cliente, avisos de ITV y revisión.</li></ul></div>
+  </div>
+  <div class="callout"><p><b>SEO local.</b> Búsquedas objetivo: "alquiler furgoneta por meses Zaragoza", "alquiler furgoneta larga duración Zaragoza", "alquiler furgoneta autónomos Zaragoza". Ficha de Google Business Profile desde el primer día y una landing por modelo.</p></div>
+</section>
+
+<section id="siguiente">
+  <span class="eyebrow">Siguientes pasos</span>
+  <h2>Antes de gastar un euro</h2>
+  <ul class="clean check">
+    <li><b>Llamar a 5 competidores</b> como cliente (Europcar, Sixt, Enterprise, Total Renting, Concerent) y anotar precio, km, fianza y plazo de entrega para Zaragoza.</li>
+    <li><b>Pedir 3 cotizaciones de seguro</b> a corredores que trabajen con flotas de alquiler, para Fiorino y Master.</li>
+    <li><b>Consultar a una gestoría:</b> epígrafe, forma jurídica, IVA de compra y autorización actual.</li>
+    <li><b>Medir la demanda</b> con una landing de una página y un anuncio de 100–300 € durante dos semanas.</li>
+    <li><b>Localizar 3 unidades concretas</b> de cada modelo y pedir historial de mantenimiento.</li>
+    <li><b>Elegir nombre</b> y comprobarlo en la OEPM.</li>
+  </ul>
+  <div class="card"><h3>Lo que necesito de ti para empezar la web</h3>
+    <ul class="clean"><li>Nombre elegido (A, B o C) y si va en dominio propio o dentro de Imperium.</li><li>Dirección y horario de recogida.</li><li>Cuántas furgonetas y qué modelos, con tarifas y condiciones definitivas.</li><li>Si hay fotos de las furgonetas o hay que prever una sesión.</li></ul></div>
+</section>
+
+<section id="fuentes">
+  <span class="eyebrow">Fuentes</span>
+  <h2>De dónde salen los datos</h2>
+  <p class="small muted">Consultadas el 28/11/2026. Los precios son los que mostraba cada página ese día.</p>
+  <ol class="src">
+    <li><a href="https://totalrenting.es/furgonetas/furgonetas-por-meses/">Total Renting · furgonetas por meses</a></li>
+    <li><a href="https://totalrenting.es/renault-master-l2h2-3500-dci-130cv-furgon/">Total Renting · Renault Master L2H2</a></li>
+    <li><a href="https://totalrenting.es/fiat/fiorino/">Total Renting · Fiat Fiorino</a></li>
+    <li><a href="https://www.iberfurgo.com/precios-de-alquiler-de-furgonetas-en-2026-guia-completa-de-tarifas/">Iberfurgo · tarifas 2026</a></li>
+    <li><a href="https://furgonetasirama.com/alquiler-furgoneta-larga-duracion-vs-renting/">Furgonetas Irama</a></li>
+    <li><a href="https://rentoauto.com/es/mensuales">RentoAuto · ofertas mensuales</a></li>
+    <li><a href="https://www.concerent.com/suscripcion-furgonetas/">Concerent · suscripción de furgonetas</a></li>
+    <li><a href="https://www.renting66.com/renting-furgonetas/">Renting66</a></li>
+    <li><a href="https://justrenting.es/alquiler-por-meses">Just Renting</a></li>
+    <li><a href="https://www.athlon.com/es/soluciones-renting/empresas-autonomos/renting-flexible/furgonetas/furgoneta-de-carga-pequena/">Athlon · carga pequeña (dato no verificado)</a></li>
+    <li><a href="https://carnovo.com/es/stock/renault/master">Carnovo · Renault Master</a></li>
+    <li><a href="https://es.wallapop.com/item/renault-master-2020-1230568380">Wallapop · Master 2020</a></li>
+    <li><a href="https://www.autouncle.es/es/coches-segunda-mano/Renault/Master/y-2019">Autouncle · Master 2019</a></li>
+    <li><a href="https://www.autouncle.es/es/coches-segunda-mano/Fiat/Fiorino/y-2020">Autouncle · Fiorino 2020</a></li>
+    <li><a href="https://www.coches.com/coches-segunda-mano/fiat-fiorino.htm">Coches.com · Fiorino</a></li>
+    <li><a href="https://www.motor.es/segunda-mano/fiat/fiorino/">Motor.es · Fiorino</a></li>
+    <li><a href="https://csvmotor.com/precios-reales/fiat/fiorino/">csvmotor · precios reales Fiorino</a></li>
+    <li><a href="https://roams.es/seguros/seguro-furgoneta/">Roams · seguro de furgoneta</a></li>
+    <li><a href="https://roams.es/seguros/seguro-coche/vehiculos-comerciales/">Roams · vehículos comerciales</a></li>
+    <li><a href="https://www.espaciofurgo.com/las-7-furgonetas-con-menor-coste-de-mantenimiento-para-autonomos-ranking/">Espacio Furgo · mantenimiento</a></li>
+    <li><a href="https://www.transportes.gob.es/ministerio/comunicacion/sala-prensa/mar-08082017-1340-5">Ministerio de Transportes · reglamento 2017</a></li>
+    <li><a href="https://www.supercontable.com/informacion/IAE/Epigrafe_854.1_de_las_tarifas_del_IAE.html">Supercontable · epígrafe IAE 854.1</a></li>
+    <li><a href="https://www.race.es/tarjeta-tansporte-vehiculos-obligados">RACE · tarjeta de transporte</a></li>
+    <li><a href="https://www.zaragoza.es/sede/portal/turismo/es-util/servicio/noticia/detail/346150">Ayuntamiento de Zaragoza · ZBE</a></li>
+    <li><a href="https://documentacion.fundacionmapfre.org/documentacion/media/group/125.do">Fundación Mapfre · furgonetas de reparto</a></li>
+    <li><a href="https://www.moncloa.com/2022/10/28/alquiler-de-furgoneta-para-autonomos-con-pinveco-1683369/">Moncloa · alquiler para autónomos</a></li>
+  </ol>
+  <footer>Estudio orientativo. Los supuestos están marcados y se pueden modificar en la calculadora. No es asesoramiento fiscal, legal ni financiero.</footer>
+</section>
+</div>
+
+<script>
+(function(){
+  var CFG=[
+    ['compra','Precio de compra (€)',9500,17900],
+    ['gc','Gastos de compra (€)',700,1000],
+    ['tarifa','Tarifa mensual sin IVA (€)',420,780],
+    ['occ','Ocupación anual (%)',85,85],
+    ['seg','Seguro al año (€)',1000,1500],
+    ['mant','Mantenimiento y neumáticos al año (€)',800,1600],
+    ['imp','Impuesto de circulación e ITV al año (€)',150,250],
+    ['adm','GPS, gestoría y administración al año (€)',300,350],
+    ['prov','Reserva por daños e impagos (% de ingresos)',5,5],
+    ['dep','Pérdida de valor al año (% del precio)',9.5,15.6],
+    ['dto','Descuento que consigues en la compra (%)',0,0]
+  ];
+  var eur=function(n){return new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR',maximumFractionDigits:0,useGrouping:'always'}).format(n)};
+  var pct=function(n){return (isFinite(n)?n.toFixed(1).replace('.',','):'–')+' %'};
+  var host=document.getElementById('model');
+  var vans=[{id:'f',name:'Fiat Fiorino',i:2},{id:'m',name:'Renault Master L2H2',i:3}];
+  vans.forEach(function(v){
+    var d=document.createElement('div'); d.className='card van';
+    var h='<h3>'+v.name+'</h3>';
+    CFG.forEach(function(c){h+='<div class="field"><label for="'+v.id+'_'+c[0]+'">'+c[1]+'</label><input id="'+v.id+'_'+c[0]+'" inputmode="decimal" value="'+String(c[v.i]).replace('.',',')+'"></div>'});
+    h+='<div class="out" id="'+v.id+'_out"></div>';
+    d.innerHTML=h; host.appendChild(d);
+    d.addEventListener('input',function(){calc(v)});
+    calc(v);
+  });
+  function val(v,k){var x=parseFloat(String(document.getElementById(v.id+'_'+k).value).replace(/\./g,'').replace(',','.'));return isFinite(x)?x:0}
+  function calc(v){
+    var g=function(k){return val(v,k)};
+    var compra=g('compra')*(1-g('dto')/100), inv=compra+g('gc');
+    var rev=g('tarifa')*12*g('occ')/100;
+    var fijos=g('seg')+g('mant')+g('imp')+g('adm'), prov=rev*g('prov')/100;
+    var caja=rev-fijos-prov, dep=compra*g('dep')/100, net=caja-dep;
+    var be=g('tarifa')>0?fijos/(g('tarifa')*12*(1-g('prov')/100))*100:NaN;
+    var rows=[
+      ['Ingresos al año',eur(rev),''],['Gastos al año',eur(fijos+prov),''],
+      ['Beneficio de caja',eur(caja),caja<0?'neg':''],
+      ['Rentabilidad de caja',pct(caja/inv*100),caja<0?'neg':''],
+      ['Pérdida de valor',eur(dep),''],
+      ['Resultado tras la pérdida de valor',eur(net),net<0?'neg':''],
+      ['Rentabilidad total',pct(net/inv*100),'big'+(net<0?' neg':'')],
+      ['Inversión recuperada solo con caja en',caja>0?(inv/caja).toFixed(1).replace('.',',')+' años':'No se recupera',''],
+      ['Ocupación mínima para no perder dinero en caja',pct(be),'']
+    ];
+    document.getElementById(v.id+'_out').innerHTML=rows.map(function(r){return '<div class="row '+r[2]+'"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>'}).join('');
+  }
+})();
+</script>
